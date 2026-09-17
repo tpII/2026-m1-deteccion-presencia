@@ -9,3 +9,7 @@ Semana 10/9:
 - Definimos elementos a utilizar
 - Redaccion de propuesta inicial
 
+17/9:
+- Revisamos y ajustamos requerimientos
+
+
