@@ -13,15 +13,7 @@ Semana 10/9:
 - Revisamos y ajustamos requerimientos en clase
 
 18/9:
-Búsqueda  de documentación técnica necesaria para la investigación y desarrollo del proyecto
-
-Documentación relevada
-
-Recurso	Link
-Sensor PIR https://github.com/timmo001/ESP8266-MQTT-PIR-Sensor 
-HUAWEI CSI https://info.support.huawei.com/info-finder/encyclopedia/en/CSI+Sensing.htmll 
-Espressif CSI https://github.com/espressif/esp-csi
-Proyecto ESP32 + CSI WiFi https://github.com/PeterkoCZ91/HLK-LD2412-POE-WiFi-CSI-security
+- Búsqueda  de documentación técnica necesaria para la investigación y desarrollo del proyecto.
 
 
 ## Documentación relevada
