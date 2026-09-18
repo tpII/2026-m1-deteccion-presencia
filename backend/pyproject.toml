@@ -1,0 +1,35 @@
+[project]
+name = "presence-detection-backend"
+version = "0.1.0"
+description = "Backend para Detección de Presencia mediante PIR y CSI Wi-Fi"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.6.0",
+    "aiosqlite>=0.20.0",
+    "numpy>=2.0.0",
+    "scipy>=1.14.0",
+    "paho-mqtt>=2.1.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["."]
+testpaths = ["../tests/backend"]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = []

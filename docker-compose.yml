@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # Broker MQTT para comunicación de telemetría con nodos ESP32
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: presence_mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./infrastructure/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+
+  # Backend FastAPI: Ingesta, Procesamiento de Señal, REST y WebSockets
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: presence_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATA_SOURCE=mock
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - DATABASE_URL=sqlite+aiosqlite:////data/presence.db
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+      - LOG_LEVEL=INFO
+    volumes:
+      - backend_data:/data
+    depends_on:
+      - mosquitto
+
+  # Frontend React + Vite Dashboard
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:8000
+        - VITE_WS_URL=ws://localhost:8000/ws/telemetry
+    container_name: presence_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  mosquitto_data:
+  mosquitto_log:
+  backend_data:

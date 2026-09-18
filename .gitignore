@@ -1,0 +1,49 @@
+# Node / Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/.env.*.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Python / Backend
+backend/.venv/
+backend/__pycache__/
+backend/*/__pycache__/
+backend/*/*/__pycache__/
+backend/*/*/*/__pycache__/
+*.py[cod]
+*$py.class
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/*.db
+backend/*.sqlite3
+backend/*.sqlite
+*.db
+*.sqlite3
+*.sqlite
+
+# Environment variables
+.env
+
+# IDE / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Mosquitto local data
+infrastructure/mosquitto/data/
+infrastructure/mosquitto/log/
+
+# Docker
+.docker/
+docker-compose.override.yml
+docker-compose*.local.yml
+*.docker.log
+backend_data/
+mosquitto_data/
+mosquitto_log/
