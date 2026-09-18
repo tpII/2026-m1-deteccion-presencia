@@ -10,6 +10,7 @@ Semana 10/9:
 - Redaccion de propuesta inicial
 
 17/9:
-- Revisamos y ajustamos requerimientos
+- Revisamos y ajustamos requerimientos en clase
 
+18/9:
 
