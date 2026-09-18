@@ -9,6 +9,21 @@ Plataforma full-stack de adquisición, procesamiento de señal y visualización 
 
 ---
 
+## ⚡ Inicio Rápido (1 Solo Comando)
+
+Podés levantar y ver la aplicación completa inmediatamente (Frontend React + Backend FastAPI con datos simulados en vivo) ejecutando el script de inicio:
+
+```bash
+./start.sh
+```
+
+Una vez levantado:
+- 🌐 **Dashboard Web interactivo:** [http://localhost:5173](http://localhost:5173)
+- 📚 **Documentación API REST (Swagger):** [http://localhost:8000/docs](http://localhost:8000/docs)
+- 🩺 **Health Check del Backend:** [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
+
+---
+
 ## 1. Arquitectura General
 
 ```
@@ -102,7 +117,6 @@ tp2/
 - **npm**: $\ge 10.0.0$
 - **Python**: $\ge 3.12$ (recomendado 3.12 o 3.13)
 - **Git**
-- *(Opcional)* Docker y Docker Compose si se desea levantar en contenedores.
 
 ---
 
@@ -179,11 +193,7 @@ Cuando se conecten los nodos físicos ESP32:
 
 1. **Iniciar el broker Mosquitto**:
    ```bash
-   # Vía Mosquitto local:
    mosquitto -c infrastructure/mosquitto/mosquitto.conf -v
-   
-   # O vía Docker:
-   docker run -d -p 1883:1883 -v $(pwd)/infrastructure/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf eclipse-mosquitto:2.0
    ```
 
 2. **Cambiar la fuente de datos en `.env`**:
@@ -206,17 +216,7 @@ Cuando se conecten los nodos físicos ESP32:
 
 ---
 
-## 8. Ejecución con Docker Compose
-
-Para levantar Mosquitto, Backend y Frontend en un único comando:
-
-```bash
-docker compose up --build
-```
-
----
-
-## 9. Pruebas Automatizadas
+## 8. Pruebas Automatizadas
 
 ### Backend:
 
@@ -235,7 +235,7 @@ npm run build
 
 ---
 
-## 10. Resolución de Problemas Frecuentes (Troubleshooting)
+## 9. Resolución de Problemas Frecuentes (Troubleshooting)
 
 - **Puerto 8000 o 5173 ocupado**:
   - Backend: `uvicorn app.main:app --reload --port 8001` y actualizar `VITE_API_URL` en `frontend/.env`.
