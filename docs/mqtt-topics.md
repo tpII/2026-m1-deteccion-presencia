@@ -30,6 +30,19 @@ Publicado por el nodo ESP32 conectado al sensor PIR tras cambio de nivel lógico
 - `latency_ms`: Tiempo de propagación / procesamiento interno en milisegundos.
 - `ground_truth`: Opcional, estado real verificado durante ensayos experimentales.
 
+### Firmware PIR mínimo incluido
+
+`firmware/pir_mqtt/pir_mqtt.ino` publica cada 200 ms en este tópico, con QoS 0 y sin retain:
+
+```json
+{"case_id":"pir","source":"pir-94e68605a918","presence":true,"raw_value":1}
+```
+
+`timestamp` se puede omitir: FastAPI usa su hora de recepción. Si se omite `latency_ms`,
+su valor por defecto es 0 (no medido). El firmware no calcula latencia física ni ground truth.
+Ante cortes de Wi-Fi/MQTT reintenta la conexión y descarta las lecturas que no pudo enviar.
+Los nodos CSI físicos todavía no tienen firmware en el repositorio.
+
 ---
 
 ## 2. Tópico: `presence/csi/router/raw`
@@ -112,11 +125,14 @@ Heartbeat de estado del nodo físico.
 
 Emitidos por el backend hacia los nodos para ajustar parámetros de radiofrecuencia y muestreo en tiempo real.
 
+El firmware PIR mínimo no se suscribe a estos comandos. Sus parámetros se definen
+en `config.h` y requieren recompilar y cargar la placa; no se aplican desde la web.
+
 ### `presence/nodes/pir/config`
 ```json
 {
   "node_id": "esp32_pir_node_01",
-  "gpio_pin": 13,
+  "gpio_pin": 27,
   "trigger_mode": "RISING",
   "debounce_ms": 3000,
   "sample_interval_ms": 200,
@@ -149,19 +165,3 @@ Emitidos por el backend hacia los nodos para ajustar parámetros de radiofrecuen
 ```
 
 ---
-
-## Simulación de Hardware
-
-Para simular publicaciones de hardware sin encender microcontroladores físicos:
-
-```bash
-# Simulación general
-python scripts/mqtt_test_publisher.py --host localhost --port 1883 --case all
-
-# Simulación de objeto periódico (ventilador en marcha)
-python scripts/mqtt_test_publisher.py --host localhost --port 1883 --case all --scenario object_fan
-
-# Simulación de persona en reposo (respiración micro-Doppler)
-python scripts/mqtt_test_publisher.py --host localhost --port 1883 --case all --scenario human_static
-```
-

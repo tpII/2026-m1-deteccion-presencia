@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends
 from app.core.config import settings
 from app.services.websocket_manager import WebSocketManager
 from app.api.dependencies import get_websocket_manager
+from app.services.telemetry_service import telemetry_service
+from app.data_sources.mqtt_source import MQTTDataSource
 
 router = APIRouter(prefix="/health", tags=["Salud del Sistema"])
 
@@ -17,6 +19,10 @@ async def get_health_status(ws_mgr: WebSocketManager = Depends(get_websocket_man
         "app_name": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "data_source": settings.DATA_SOURCE,
+        "mqtt_connected": (
+            telemetry_service.data_source.is_connected
+            if isinstance(telemetry_service.data_source, MQTTDataSource) else None
+        ),
         "active_ws_clients": ws_mgr.client_count,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }

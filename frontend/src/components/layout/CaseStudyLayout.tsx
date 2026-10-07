@@ -73,10 +73,10 @@ export const CaseStudyLayout: React.FC<CaseStudyLayoutProps> = ({
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Estado en Vivo:</span>
-              <PresenceBadge presence={presence} size="lg" />
+              <PresenceBadge presence={presence} connected={status?.is_connected ?? false} size="lg" />
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-              Latencia actual: <strong>{latency} ms</strong>
+              Latencia actual: <strong>{latency > 0 ? `${latency} ms` : 'Sin medir'}</strong>
             </div>
           </div>
         </div>

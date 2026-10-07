@@ -17,7 +17,7 @@ export const CsiDedicatedCasePage: React.FC = () => {
       caseId="csi_dedicated"
       title="Caso 3 — CSI en Red Dedicada (Par AP-STA)"
       subtitle="Enlace Wi-Fi Punto a Punto Estrictamente Controlado"
-      description="Dos microcontroladores ESP32 forman un enlace cerrado punto a punto: uno como Access Point (AP) inyectando tramas de prueba a tasa periódica fija y otro como receptor analizando el canal RF. Al no competir con tráfico externo de Internet o dispositivos ajenos, ofrece menor piso de ruido estático y alta reproducibilidad de la zona de Fresnel."
+      description="Dos microcontroladores ESP32 forman un enlace cerrado punto a punto: uno como Access Point (AP) inyectando tramas de prueba a tasa periódica fija y otro como receptor analizando el canal RF. El ensayo debe registrar las condiciones del canal y sus interferencias para evaluar la reproducibilidad del enlace."
       technology="Enlace Dedicado 2x ESP32 (AP + Station)"
       status={status}
       metrics={metrics}
@@ -29,7 +29,6 @@ export const CsiDedicatedCasePage: React.FC = () => {
             rawPoints={caseData?.raw_points || []}
             filteredPoints={caseData?.filtered_points || []}
             title="Respuesta en Amplitud del Enlace Dedicado: Línea Base Limpia y Fluctuaciones por Presencia"
-            threshold={35.0}
             height={300}
             yAxisName="Amplitud (dB)"
           />
@@ -49,10 +48,10 @@ export const CsiDedicatedCasePage: React.FC = () => {
               Arquitectura: <strong>ESP32-AP (Emisor) ↔ ESP32-STA (Receptor)</strong>
             </span>
             <span>
-              Piso de ruido térmico: <strong>~0.3 dB (Bajo / Estable)</strong>
+              Condiciones del enlace: <strong>A medir en el ensayo</strong>
             </span>
             <span>
-              Score Actual: <strong>{((caseData?.current_score ?? 0) * 100).toFixed(1)}%</strong>
+              Score Actual: <strong>{caseData?.raw_points.length ? `${((caseData.current_score ?? 0) * 100).toFixed(1)}%` : 'Sin muestras'}</strong>
             </span>
           </div>
         </div>

@@ -12,13 +12,7 @@ export const ENDPOINTS = {
   RECORD_TRIAL: `${ENV.API_URL}/api/v1/metrics/trial`,
   CASES_LIST: `${ENV.API_URL}/api/v1/cases`,
   CASE_DETAIL: (caseId: string) => `${ENV.API_URL}/api/v1/cases/${caseId}`,
-  SIMULATION_TOGGLE: `${ENV.API_URL}/api/v1/telemetry/simulation/toggle`,
-  SIMULATION_STATUS: `${ENV.API_URL}/api/v1/telemetry/simulation/status`,
   CONFIG_NODES: `${ENV.API_URL}/api/v1/config/nodes`,
   CONFIG_HEADER: (nodeId: string) => `${ENV.API_URL}/api/v1/config/header/${nodeId}`,
-  CONFIG_SCENARIOS: `${ENV.API_URL}/api/v1/config/scenarios`,
-  CONFIG_SCENARIO_CURRENT: `${ENV.API_URL}/api/v1/config/scenario/current`,
-  CONFIG_SCENARIO_SET: `${ENV.API_URL}/api/v1/config/scenario`,
-  CONFIG_SCENARIO_RESET: `${ENV.API_URL}/api/v1/config/scenario/reset`,
   WS_TELEMETRY: ENV.WS_URL,
 };

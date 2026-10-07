@@ -1,6 +1,6 @@
 # Modelo de Datos y Persistencia
 
-## 1. Esquema Relacional SQLite (`presence.db`)
+## 1. Esquema Relacional SQLite (`presence-hardware.db`)
 
 ### Tabla: `trials`
 Registra cada ensayo experimental individual evaluado contra Ground Truth.

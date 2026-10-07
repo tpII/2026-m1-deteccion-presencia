@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script para resetear la base de datos SQLite y restaurar los ensayos académicos iniciales.
+Script para resetear la base de datos SQLite.
 """
 
 import asyncio
@@ -22,7 +22,7 @@ async def main():
     else:
         print("No existía base de datos previa.")
 
-    print("Inicializando nuevo esquema y ensayos de referencia...")
+    print("Inicializando esquema vacío...")
     await init_db()
     print("Base de datos reseteada exitosamente.")
 

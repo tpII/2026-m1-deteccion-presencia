@@ -4,7 +4,7 @@ Servicio backend de alto rendimiento desarrollado con **FastAPI**, **Pydantic v2
 
 ## Características
 
-- **Arquitectura desacoplada**: Capa de ingesta (`DataSource`) intercambiable entre simulación sintética (`MockDataSource`) y hardware físico (`MQTTDataSource`) mediante configuración de entorno.
+- **Arquitectura desacoplada**: Capa de ingesta de hardware (`MQTTDataSource`) separada del procesamiento y la API.
 - **Pipeline de Procesamiento de Señal**: Filtro de Hampel para eliminación de valores atípicos (*outliers*) basado en Desviación Absoluta de la Mediana (MAD), filtro de Media Móvil y extracción de varianza/energía temporal.
 - **Transmisión en Tiempo Real**: WebSocket `/ws/telemetry` con control de tasa de refresco (~8 Hz) y buffer circular en memoria para evitar latencia de base de datos.
 - **Persistencia Experimental**: Almacenamiento en SQLite para registro de ensayos con Ground Truth y cálculo de matrices de confusión (TP, TN, FP, FN, Tasa de detección, Latencia media).
@@ -19,7 +19,7 @@ backend/
 │   │   └── dependencies.py # Inyección de dependencias
 │   ├── core/               # Configuración (Pydantic Settings), constantes, logs
 │   ├── database/           # Conexión asíncrona SQLite y esquema
-│   ├── data_sources/       # Abstracción DataSource (Mock y MQTT)
+│   ├── data_sources/       # Recepción de telemetría física MQTT
 │   ├── models/             # Modelos de dominio
 │   ├── repositories/       # Buffers circulares en memoria y consultas SQLite
 │   ├── schemas/            # Esquemas de validación Pydantic
@@ -62,7 +62,7 @@ uvicorn app.main:app --reload --port 8000
 - Health check: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
 - WebSocket endpoint: `ws://localhost:8000/ws/telemetry`
 
-## Cambio a Modo Hardware MQTT
+## Conexión al hardware mediante MQTT
 
 Modificar en el archivo `.env`:
 
@@ -72,4 +72,6 @@ MQTT_HOST=localhost
 MQTT_PORT=1883
 ```
 
-Al reiniciar el servidor, el backend se conectará al broker Mosquitto y procesará los mensajes publicados en los tópicos `presence/#`.
+Iniciá primero Mosquitto. El backend procesa los tópicos PIR y CSI especificados en [docs/mqtt-topics.md](../docs/mqtt-topics.md).
+La guía de carga del firmware y pruebas físicas está en el [README principal](../README.md).
+La base por defecto es `presence-hardware.db` al ejecutar desde `backend/`. Se inicializa vacía y conserva las muestras recibidas y los ensayos registrados; no precarga resultados.

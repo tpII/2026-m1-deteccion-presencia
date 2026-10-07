@@ -37,27 +37,27 @@ class InMemoryTelemetryRepository:
             CaseId.PIR.value: CaseCurrentStatus(
                 case_id=CaseId.PIR,
                 name="Caso 1 — Sensor PIR",
-                is_connected=True,
+                is_connected=False,
                 presence=False,
-                current_latency_ms=145.0,
+                current_latency_ms=0.0,
                 last_updated=datetime.now(timezone.utc).isoformat(),
                 total_samples=0,
             ),
             CaseId.CSI_ROUTER.value: CaseCurrentStatus(
                 case_id=CaseId.CSI_ROUTER,
                 name="Caso 2 — CSI con Router Wi-Fi",
-                is_connected=True,
+                is_connected=False,
                 presence=False,
-                current_latency_ms=318.0,
+                current_latency_ms=0.0,
                 last_updated=datetime.now(timezone.utc).isoformat(),
                 total_samples=0,
             ),
             CaseId.CSI_DEDICATED.value: CaseCurrentStatus(
                 case_id=CaseId.CSI_DEDICATED,
                 name="Caso 3 — CSI en Red Dedicada (AP-STA)",
-                is_connected=True,
+                is_connected=False,
                 presence=False,
-                current_latency_ms=395.0,
+                current_latency_ms=0.0,
                 last_updated=datetime.now(timezone.utc).isoformat(),
                 total_samples=0,
             ),
@@ -89,6 +89,7 @@ class InMemoryTelemetryRepository:
             status.current_latency_ms = round(latency_ms, 1)
             status.last_updated = datetime.now(timezone.utc).isoformat()
             status.total_samples += 1
+            status.is_connected = True
             if features and hasattr(features, "target_type"):
                 status.target_type = features.target_type
             elif case_id == CaseId.PIR.value:
@@ -180,6 +181,12 @@ class InMemoryTelemetryRepository:
         return list(buf)
 
     def get_all_statuses(self) -> List[CaseCurrentStatus]:
+        # Un caso conectado significa que recibimos muestras recientemente,
+        # no solamente que el navegador o el broker esten conectados.
+        now = datetime.now(timezone.utc)
+        for status in self._current_statuses.values():
+            age = (now - datetime.fromisoformat(status.last_updated)).total_seconds()
+            status.is_connected = status.total_samples > 0 and age < 10
         return list(self._current_statuses.values())
 
     def get_status(self, case_id: str) -> Optional[CaseCurrentStatus]:

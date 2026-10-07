@@ -29,7 +29,6 @@ export const CsiRouterCasePage: React.FC = () => {
             rawPoints={caseData?.raw_points || []}
             filteredPoints={caseData?.filtered_points || []}
             title="Amplitud de Subportadora CSI: Señal Cruda con Ruido vs Señal Filtrada (Hampel + MA)"
-            threshold={22.0}
             height={300}
             yAxisName="Amplitud (dB)"
           />
@@ -46,13 +45,13 @@ export const CsiRouterCasePage: React.FC = () => {
             }}
           >
             <span>
-              Frecuencia de portadora: <strong>2.412 GHz (Canal 1 Wi-Fi)</strong>
+              Canal de captura: <strong>Configurado en el receptor</strong>
             </span>
             <span>
-              Subportadoras monitoreadas: <strong>30 OFDM subcarriers</strong>
+              Procesamiento: <strong>Primera amplitud recibida</strong>
             </span>
             <span>
-              Score Actual: <strong>{((caseData?.current_score ?? 0) * 100).toFixed(1)}%</strong>
+              Score Actual: <strong>{caseData?.raw_points.length ? `${((caseData.current_score ?? 0) * 100).toFixed(1)}%` : 'Sin muestras'}</strong>
             </span>
           </div>
         </div>

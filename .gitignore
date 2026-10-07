@@ -27,6 +27,7 @@ backend/*.sqlite
 
 # Environment variables
 .env
+firmware/pir_mqtt/config.h
 
 # IDE / OS
 .DS_Store

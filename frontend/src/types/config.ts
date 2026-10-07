@@ -36,15 +36,6 @@ export interface SystemNodesConfig {
   csi_dedicated: CsiDedicatedConfig;
 }
 
-export interface ScenarioDetail {
-  scenario: string;
-  name: string;
-  description: string;
-  pir_behavior: string;
-  csi_behavior: string;
-  target_classification: string;
-}
-
 export interface CHeaderResponse {
   node_id: string;
   filename: string;

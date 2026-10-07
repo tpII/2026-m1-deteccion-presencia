@@ -14,7 +14,7 @@ El sistema implementa una arquitectura desacoplada orientada a eventos para proc
 [ Broker Mosquitto:1883 ]
         │
         ▼ (paho-mqtt)
-[ Backend FastAPI ] ◄────── [ MockDataSource ] (si DATA_SOURCE=mock)
+[ Backend FastAPI ]
    ├── Ingesta & Validación (Pydantic)
    ├── Pipeline de Señal (Hampel Filter + Moving Average + Varianza)
    ├── Persistencia Asíncrona (SQLite / aiosqlite)
@@ -36,8 +36,7 @@ El sistema implementa una arquitectura desacoplada orientada a eventos para proc
 
 ### A. Capa de Telemetría e Ingesta (`data_sources/`)
 - **Abstracción `DataSource`**: Define la interfaz `start()`, `stop()`, `set_sample_handler()`.
-- **`MockDataSource`**: Produce flujos sintéticos de alta fidelidad con ruido de radiofrecuencia, perturbaciones Doppler por presencia y outliers esporádicos para validar filtros.
-- **`MQTTDataSource`**: Se conecta al broker Mosquitto, se suscribe a los tópicos definidos y reinyecta datos al mismo pipeline sin alterar el backend ni el frontend.
+- **`MQTTDataSource`**: Se conecta al broker Mosquitto, se suscribe a los tópicos definidos y entrega las lecturas físicas al pipeline.
 
 ### B. Capa de Procesamiento de Señal (`signal_processing/`)
 - **`HampelFilter`**: Suprime picos anómalos transitorios producidos por interferencia electromagnética mediante la Desviación Absoluta de la Mediana (MAD).

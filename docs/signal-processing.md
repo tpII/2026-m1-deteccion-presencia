@@ -57,8 +57,7 @@ $$y[n] = \frac{1}{M} \sum_{k=0}^{M-1} x[n-k]$$
 
 ### Etapa 3: Extracción de Características
 - **Varianza Temporal ($\sigma^2$)**:
-  En reposo (sala vacía), la señal oscila alrededor de una línea base con varianza mínima ($\sigma^2 \le 0.8\text{ dB}^2$).
-  Con presencia humana, las variaciones dinámicas elevan la varianza a $\sigma^2 \ge 2.2\text{ dB}^2$.
+  Se calcula sobre las amplitudes capturadas. Los umbrales iniciales del pipeline deben calibrarse con mediciones del ambiente; no constituyen resultados experimentales.
 - **Energía de la Señal ($E$)**:
   Energía cuadrática media normalizada en ventana deslizante.
 
@@ -71,7 +70,6 @@ Si $\text{Score} \ge 0.5$, se emite el estado **PRESENCIA**; de lo contrario, **
 
 ---
 
-## 3. Estado de Simulación y Transición a Hardware
+## 3. Adquisición desde hardware
 
-- **Modo Actual (MOCK)**: Modela las subportadoras mediante combinación de frecuencias fundamentales, ruido gaussiano de RF y ráfagas estocásticas cuando hay personas presentes.
-- **Modo Hardware (MQTT)**: Los nodos ESP32 con firmware `esp-csi` emitirán los vectores de bytes decodificados hacia los tópicos MQTT, ingresando al mismo pipeline exacto sin modificar el software de procesamiento ni la interfaz de usuario.
+- **Ingesta de hardware (MQTT)**: El backend recibe amplitudes reales por MQTT según el contrato de `mqtt-topics.md`. Todavía falta implementar los firmware CSI de los casos 2 y 3. Sin esos nodos publicando, no se generan muestras.

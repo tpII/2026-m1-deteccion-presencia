@@ -1,4 +1,4 @@
-"""Abstracción para fuentes de datos (Mock vs MQTT)."""
+"""Contrato de recepción de telemetría."""
 
 from abc import ABC, abstractmethod
 from typing import Callable, Awaitable, Any
@@ -7,13 +7,12 @@ from typing import Callable, Awaitable, Any
 class DataSource(ABC):
     """
     Contrato unificado para proveedores de datos.
-    Permite intercambiar generación sintética (Mock) por telemetría física (MQTT)
-    sin modificar el procesamiento ni la API de WebSockets.
+    Separa la recepción de telemetría física del procesamiento y la API de WebSockets.
     """
 
     @abstractmethod
     async def start(self):
-        """Inicia el bucle de recepción o simulación."""
+        """Inicia el bucle de recepción."""
         pass
 
     @abstractmethod

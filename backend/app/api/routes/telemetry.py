@@ -1,6 +1,6 @@
 """Rutas REST para consulta de telemetría y buffers de señal."""
 
-from typing import List, Dict, Any
+from typing import List
 from fastapi import APIRouter, HTTPException, Depends
 from app.core.constants import CaseId
 from app.repositories.telemetry_repository import telemetry_repo
@@ -54,23 +54,3 @@ async def get_case_pipeline_info(
         }
     else:
         raise HTTPException(status_code=404, detail=f"Caso '{case_id}' no encontrado")
-
-
-@router.post("/simulation/toggle")
-async def toggle_simulation(
-    telemetry_svc: TelemetryService = Depends(get_telemetry_service),
-):
-    """Pausa o reanuda la generación de datos en modo MOCK."""
-    if telemetry_svc.is_simulation_paused:
-        telemetry_svc.resume_simulation()
-    else:
-        telemetry_svc.pause_simulation()
-    return {"paused": telemetry_svc.is_simulation_paused}
-
-
-@router.get("/simulation/status")
-async def get_simulation_status(
-    telemetry_svc: TelemetryService = Depends(get_telemetry_service),
-):
-    """Retorna si la simulación está actualmente pausada."""
-    return {"paused": telemetry_svc.is_simulation_paused}

@@ -56,6 +56,10 @@ class MQTTDataSource(DataSource):
             logger.info("Cliente MQTT desconectado.")
 
     def _on_connect(self, client, userdata, flags, reason_code, properties=None):
+        if reason_code != 0:
+            self._is_connected = False
+            logger.error(f"El broker rechazo la conexion MQTT (rc={reason_code})")
+            return
         logger.info(f"Conectado a broker MQTT exitosamente (rc={reason_code})")
         self._is_connected = True
         # Suscribir a tópicos de telemetría
@@ -89,8 +93,15 @@ class MQTTDataSource(DataSource):
             else:
                 return
 
+            if sample.case_id.value != case_id:
+                raise ValueError("case_id no coincide con el topico MQTT")
+
             if self._handler and self._loop and self._loop.is_running():
                 asyncio.run_coroutine_threadsafe(self._handler(case_id, sample), self._loop)
 
         except Exception as e:
             logger.error(f"Error parseando mensaje MQTT de {msg.topic}: {e}")
+
+    @property
+    def is_connected(self) -> bool:
+        return self._is_connected

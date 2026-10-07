@@ -88,7 +88,7 @@ export const PirSerialTestPage: React.FC = () => {
         )}
       </GlassPanel>
       <GlassPanel>
-        <SectionHeader title="Lecturas guardadas" subtitle="Historial PIR USB en SQLite · Últimos 50 registros · Independiente de mock/MQTT" />
+        <SectionHeader title="Lecturas guardadas" subtitle="Historial PIR USB en SQLite · Últimos 50 registros · Lecturas USB separadas de MQTT" />
         <p style={{ marginBottom: '1rem', fontSize: '0.86rem' }}>
           El guardado requiere el backend iniciado. Guardá antes de salir o reconectar;
           los mensajes que salgan del historial de 50 se descartan si no los guardaste.

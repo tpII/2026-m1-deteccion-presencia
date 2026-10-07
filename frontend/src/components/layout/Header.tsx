@@ -3,14 +3,25 @@ import { ConnectionStatus } from '../status/ConnectionStatus';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { useTheme } from '../../hooks/useTheme';
 import { api } from '../../services/api';
-import { Cpu, Radio, Play, Pause, Sun, Moon } from 'lucide-react';
+import { Cpu, Radio, Sun, Moon } from 'lucide-react';
 
 export const Header: React.FC = () => {
   const { connectionState } = useWebSocket();
   const { theme, toggleTheme } = useTheme();
   const [timeStr, setTimeStr] = useState<string>('');
-  const [isPaused, setIsPaused] = useState<boolean>(false);
-  const [toggling, setToggling] = useState<boolean>(false);
+  const [dataSource, setDataSource] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (connectionState === 'LIVE') {
+      api.getHealth().then((health) => {
+        if (!cancelled) setDataSource(health.data_source);
+      }).catch(() => { if (!cancelled) setDataSource(null); });
+    } else {
+      setDataSource(null);
+    }
+    return () => { cancelled = true; };
+  }, [connectionState]);
 
   useEffect(() => {
     const update = () => {
@@ -20,23 +31,8 @@ export const Header: React.FC = () => {
     update();
     const interval = setInterval(update, 1000);
 
-    // Consultar estado inicial de la simulación
-    api.getSimulationStatus().then((res) => setIsPaused(res.paused)).catch(() => {});
-
     return () => clearInterval(interval);
   }, []);
-
-  const handleToggleSimulation = async () => {
-    setToggling(true);
-    try {
-      const res = await api.toggleSimulation();
-      setIsPaused(res.paused);
-    } catch (e) {
-      console.error('Error cambiando estado de simulación:', e);
-    } finally {
-      setToggling(false);
-    }
-  };
 
   return (
     <header
@@ -108,30 +104,6 @@ export const Header: React.FC = () => {
           )}
         </button>
 
-        {/* Botón de Pausa / Reanudación de Simulación */}
-        <button
-          onClick={handleToggleSimulation}
-          disabled={toggling}
-          title={isPaused ? "Reanudar generación de datos en vivo" : "Pausar/congelar generación de datos"}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            padding: '0.35rem 0.85rem',
-            borderRadius: 'var(--radius-full)',
-            background: isPaused ? 'var(--state-warning-bg)' : 'var(--surface-subtle)',
-            border: isPaused ? '1px solid var(--state-warning-border)' : '1px solid var(--glass-border-subtle)',
-            color: isPaused ? 'var(--state-warning-text)' : 'var(--text-secondary)',
-            fontSize: '0.76rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all var(--transition-fast)',
-          }}
-        >
-          {isPaused ? <Play size={13} fill="currentColor" /> : <Pause size={13} fill="currentColor" />}
-          <span>{isPaused ? 'SIMULACIÓN PAUSADA' : 'PAUSAR SIMULACIÓN'}</span>
-        </button>
-
         <div
           style={{
             display: 'flex',
@@ -147,7 +119,7 @@ export const Header: React.FC = () => {
           }}
         >
           <Cpu size={13} style={{ color: 'var(--accent-blue)' }} />
-          <span>MOCK</span>
+          <span>{dataSource?.toUpperCase() ?? 'SIN CONEXIÓN'}</span>
         </div>
 
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-muted)' }}>

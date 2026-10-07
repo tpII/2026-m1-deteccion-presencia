@@ -13,9 +13,9 @@ CASES_INFO = {
         "short_name": "PIR",
         "description": "Detección de radiación térmica infrarroja emitida por el cuerpo humano en movimiento a través de una lente de Fresnel.",
         "technology": "Sensor piroeléctrico analógico + comparador / GPIO",
-        "hardware": "ESP32 DevKit v1 + Sensor HC-SR501 / AM312",
+        "hardware": "ESP32 DevKit v1 + Sensor HW-416-B",
         "signal_nature": "Digital binaria (0 = Ausencia, 1 = Detección de calor/movimiento)",
-        "advantages": ["Bajo consumo energético", "Latencia física instantánea", "Simplicidad de procesamiento"],
+        "advantages": ["Bajo consumo energético", "Salida digital directa", "Simplicidad de procesamiento"],
         "limitations": ["Requiere línea de visión directa", "Incapaz de detectar personas estáticas o dormidas", "Sensible a cambios térmicos ambientales"],
     },
     CaseId.CSI_ROUTER.value: {

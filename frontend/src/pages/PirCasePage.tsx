@@ -16,8 +16,8 @@ export const PirCasePage: React.FC = () => {
       caseId="pir"
       title="Caso 1 — Sensor Infrarrojo Pasivo (PIR)"
       subtitle="Detección Piroeléctrica Térmica"
-      description="El sensor PIR capta las variaciones de radiación infrarroja térmica emitidas por cuerpos vivos al desplazarse a través de las diferentes zonas de su lente de Fresnel. Produce una salida lógica digital activa en alto (0: Ausencia / 1: Presencia) con latencia de disparo casi instantánea."
-      technology="Hardware: ESP32 + HC-SR501"
+      description="El sensor PIR capta las variaciones de radiación infrarroja térmica emitidas por cuerpos vivos al desplazarse a través de las diferentes zonas de su lente de Fresnel. Produce una salida lógica digital activa en alto (0: Sin movimiento / 1: Movimiento). El ensayo debe registrar también la presencia observada independientemente del sensor."
+      technology="Hardware: ESP32 + HW-416-B"
       status={status}
       metrics={metrics}
       trials={trials}
@@ -26,7 +26,7 @@ export const PirCasePage: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <DigitalSignalChart
             points={caseData?.raw_points || []}
-            title="Línea Temporal Binaria de Salida GPIO (0: Ausencia / 1: Detección)"
+            title="Línea Temporal Binaria de Salida GPIO (0: Sin movimiento / 1: Movimiento)"
             height={260}
           />
           <div
@@ -45,10 +45,10 @@ export const PirCasePage: React.FC = () => {
               Tipo de señal: <strong>Digital Discreta (Active High)</strong>
             </span>
             <span>
-              Muestreo: <strong>Interrupción física / 10 Hz Polling</strong>
+              Muestreo: <strong>GPIO27 / cada 200 ms (5 Hz)</strong>
             </span>
             <span>
-              Retardo de mantenimiento: <strong>~3 - 5 segundos</strong>
+              Retención de salida: <strong>Según ajuste del sensor</strong>
             </span>
           </div>
         </div>

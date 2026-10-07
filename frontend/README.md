@@ -31,7 +31,7 @@ La aplicación se abrirá en [http://localhost:5173](http://localhost:5173).
 Abrí **Prueba PIR — USB** en el menú o [http://localhost:5173/test/pir-usb](http://localhost:5173/test/pir-usb).
 La ruta usa un servicio (`services/pirSerial.ts`), un hook (`hooks/usePirSerial.ts`) y los componentes Glass existentes.
 Lee directamente desde la computadora mediante [Web Serial nativo](https://developer.chrome.com/docs/capabilities/serial), sin nuevas dependencias.
-La lectura en vivo no necesita backend ni broker y no se incorpora a las métricas ni a la telemetría mock/MQTT.
+La lectura en vivo no necesita backend ni broker y no se incorpora a las métricas ni a la telemetría MQTT.
 El botón **Guardar lecturas en la base** permite guardar manualmente hasta los últimos 50 mensajes en SQLite.
 Para guardar y consultar el historial, iniciá el backend con `./start.sh` desde la raíz del proyecto.
 Los registros se almacenan en la tabla separada `pir_usb_readings`; al recargar se consulta nuevamente el historial guardado.

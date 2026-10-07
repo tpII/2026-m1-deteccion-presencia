@@ -22,6 +22,10 @@ export const SignalProcessingPipeline: React.FC<SignalProcessingPipelineProps> =
   presence,
   score,
 }) => {
+  if (rawPoints.length === 0) {
+    return <p style={{ color: 'var(--text-muted)' }}>Esperando muestras CSI del hardware.</p>;
+  }
+
   return (
     <div className="pipeline-flow-wrapper">
       {/* Etapa 1: Señal Cruda */}

@@ -4,7 +4,7 @@ import { CaseCurrentStatus, CaseTelemetryPayload, FilterMetadata } from '../type
 import { CaseMetrics, SystemComparison, Trial } from '../types/metrics';
 import { CaseStudyDetail } from '../types/cases';
 
-import { SystemNodesConfig, ScenarioDetail, CHeaderResponse } from '../types/config';
+import { SystemNodesConfig, CHeaderResponse } from '../types/config';
 
 class ApiService {
   private async get<T>(url: string): Promise<T> {
@@ -45,7 +45,7 @@ class ApiService {
 
   // Health
   async getHealth() {
-    return this.get<{ status: string; data_source: string; active_ws_clients: number }>(ENDPOINTS.HEALTH);
+    return this.get<{ status: string; version: string; data_source: string; mqtt_connected: boolean | null; active_ws_clients: number }>(ENDPOINTS.HEALTH);
   }
 
   // Telemetry
@@ -94,15 +94,6 @@ class ApiService {
     return this.get<CaseStudyDetail>(ENDPOINTS.CASE_DETAIL(caseId));
   }
 
-  // Control de Simulación
-  async toggleSimulation(): Promise<{ paused: boolean }> {
-    return this.post<{ paused: boolean }>(ENDPOINTS.SIMULATION_TOGGLE, {});
-  }
-
-  async getSimulationStatus(): Promise<{ paused: boolean }> {
-    return this.get<{ paused: boolean }>(ENDPOINTS.SIMULATION_STATUS);
-  }
-
   // Configuración de Nodos ESP32
   async getNodesConfig(): Promise<SystemNodesConfig> {
     return this.get<SystemNodesConfig>(ENDPOINTS.CONFIG_NODES);
@@ -116,25 +107,6 @@ class ApiService {
     return this.get<CHeaderResponse>(ENDPOINTS.CONFIG_HEADER(nodeId));
   }
 
-  // Escenarios Experimentales (Objetos vs. Personas)
-  async getScenarios(): Promise<ScenarioDetail[]> {
-    return this.get<ScenarioDetail[]>(ENDPOINTS.CONFIG_SCENARIOS);
-  }
-
-  async getCurrentScenario(): Promise<{ active_scenario: string; detail: ScenarioDetail | null }> {
-    return this.get<{ active_scenario: string; detail: ScenarioDetail | null }>(ENDPOINTS.CONFIG_SCENARIO_CURRENT);
-  }
-
-  async setScenario(scenario: string): Promise<{ status: string; active_scenario: string; detail: ScenarioDetail }> {
-    return this.post<{ status: string; active_scenario: string; detail: ScenarioDetail }>(
-      ENDPOINTS.CONFIG_SCENARIO_SET,
-      { scenario }
-    );
-  }
-
-  async resetScenario(): Promise<{ status: string; active_scenario: string }> {
-    return this.post<{ status: string; active_scenario: string }>(ENDPOINTS.CONFIG_SCENARIO_RESET, {});
-  }
 }
 
 export const api = new ApiService();

@@ -3,17 +3,14 @@
 import asyncio
 import time
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
-from app.core.config import settings
-from app.core.constants import CaseId, DataSourceType
+from typing import Any, Optional
+from app.core.constants import CaseId
 from app.data_sources.base import DataSource
-from app.data_sources.mock_source import MockDataSource
 from app.data_sources.mqtt_source import MQTTDataSource
 from app.signal_processing.pipeline import CsiSignalPipeline
 from app.repositories.telemetry_repository import telemetry_repo
 from app.services.websocket_manager import ws_manager
-from app.schemas.telemetry import SignalPoint, TelemetrySample, CsiRawSample
-from app.schemas.websocket import WebSocketMessage, BatchUpdatePayload
+from app.schemas.telemetry import SignalPoint, TelemetrySample
 from app.core.logging import logger
 
 
@@ -41,19 +38,11 @@ class TelemetryService:
         )
         self._broadcast_task: Optional[asyncio.Task] = None
         self._running = False
-        self._forced_scenario: Optional[str] = None
 
     async def initialize(self):
-        """Inicializa la fuente de datos (Mock o MQTT) y el bucle de difusión WebSocket."""
-        if settings.DATA_SOURCE.lower() == DataSourceType.MQTT.value:
-            logger.info("Inicializando DataSource en modo MQTT (hardware)...")
-            self.data_source = MQTTDataSource()
-        else:
-            logger.info("Inicializando DataSource en modo MOCK (simulación interna)...")
-            self.data_source = MockDataSource(sampling_rate_hz=10.0)
-
-        if self._forced_scenario and isinstance(self.data_source, MockDataSource):
-            self.data_source.set_scenario(self._forced_scenario)
+        """Conecta MQTT y comienza la difusión de lecturas del hardware."""
+        logger.info("Inicializando DataSource MQTT (hardware)...")
+        self.data_source = MQTTDataSource()
 
         self.data_source.set_sample_handler(self.handle_incoming_sample)
         await self.data_source.start()
@@ -74,30 +63,6 @@ class TelemetryService:
                 pass
         # Vaciar cualquier muestra pendiente en SQLite
         await telemetry_repo.flush_persisted()
-
-    def pause_simulation(self):
-        if isinstance(self.data_source, MockDataSource):
-            self.data_source.pause()
-
-    def resume_simulation(self):
-        if isinstance(self.data_source, MockDataSource):
-            self.data_source.resume()
-
-    @property
-    def is_simulation_paused(self) -> bool:
-        if isinstance(self.data_source, MockDataSource):
-            return self.data_source.is_paused
-        return False
-
-    def set_simulation_scenario(self, scenario: Optional[str]):
-        """Establece el escenario activo de experimentación (Objetos vs Personas)."""
-        self._forced_scenario = scenario
-        if isinstance(self.data_source, MockDataSource):
-            self.data_source.set_scenario(scenario)
-
-    def get_simulation_scenario(self) -> Optional[str]:
-        """Retorna el escenario activo si está forzado."""
-        return self._forced_scenario
 
     async def handle_incoming_sample(self, case_id: str, sample: Any):
         """

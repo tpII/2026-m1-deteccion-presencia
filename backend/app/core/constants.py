@@ -9,11 +9,6 @@ class CaseId(str, Enum):
     CSI_DEDICATED = "csi_dedicated"
 
 
-class DataSourceType(str, Enum):
-    MOCK = "mock"
-    MQTT = "mqtt"
-
-
 class ConnectionState(str, Enum):
     ONLINE = "online"
     RECONNECTING = "reconnecting"
@@ -31,5 +26,5 @@ class SystemTopics:
 
 # Parámetros del buffer en memoria
 MAX_SERIES_POINTS = 500  # Puntos máximos para series temporales en memoria
-DEFAULT_CSI_SUBCARRIERS = 30  # Cantidad estándar de subportadoras OFDM simuladas
-DEFAULT_SAMPLING_RATE_HZ = 10  # Frecuencia de muestreo simulada
+DEFAULT_CSI_SUBCARRIERS = 30  # Cantidad estándar de subportadoras OFDM
+DEFAULT_SAMPLING_RATE_HZ = 10  # Frecuencia de referencia de muestreo

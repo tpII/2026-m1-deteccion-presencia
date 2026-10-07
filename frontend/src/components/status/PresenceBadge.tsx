@@ -3,10 +3,11 @@ import { UserCheck, UserX } from 'lucide-react';
 
 interface PresenceBadgeProps {
   presence: boolean;
+  connected?: boolean;
   size?: 'sm' | 'md' | 'lg';
 }
 
-export const PresenceBadge: React.FC<PresenceBadgeProps> = ({ presence, size = 'md' }) => {
+export const PresenceBadge: React.FC<PresenceBadgeProps> = ({ presence, connected = true, size = 'md' }) => {
   const iconSize = size === 'lg' ? 18 : size === 'sm' ? 12 : 14;
 
   const styleBySize = {
@@ -14,6 +15,10 @@ export const PresenceBadge: React.FC<PresenceBadgeProps> = ({ presence, size = '
     md: { padding: '0.35rem 0.8rem', fontSize: '0.82rem' },
     lg: { padding: '0.55rem 1.1rem', fontSize: '0.95rem' },
   }[size];
+
+  if (!connected) {
+    return <span className="glass-badge" style={{ ...styleBySize, color: 'var(--text-muted)' }}>SIN LECTURA</span>;
+  }
 
   if (presence) {
     return (

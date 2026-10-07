@@ -23,6 +23,10 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({ metrics, loading = fal
     );
   }
 
+  if (metrics.total_tests === 0) {
+    return <p style={{ color: 'var(--text-muted)' }}>Sin ensayos registrados. Las métricas se calcularán con las observaciones del hardware.</p>;
+  }
+
   return (
     <div className="grid-4">
       <MetricCard

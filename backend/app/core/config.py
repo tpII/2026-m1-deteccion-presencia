@@ -1,14 +1,14 @@
 """Configuración global de la aplicación basada en Pydantic Settings."""
 
-from typing import List
-from pydantic import field_validator
+from typing import List, Literal
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from app.core.constants import DataSourceType
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        # Misma configuracion al iniciar desde la raiz o desde backend/.
+        env_file=(Path(__file__).resolve().parents[3] / ".env", Path(__file__).resolve().parents[2] / ".env"),
         env_file_encoding="utf-8",
         extra="ignore"
     )
@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = False
 
-    # Modo de ingestión: 'mock' o 'mqtt'
-    DATA_SOURCE: str = DataSourceType.MOCK.value
+    # Telemetría recibida de los nodos físicos por MQTT.
+    DATA_SOURCE: Literal["mqtt"] = "mqtt"
 
     # Broker MQTT
     MQTT_HOST: str = "localhost"
@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     MQTT_CLIENT_ID: str = "presence_backend_service"
 
     # Base de Datos SQLite Asíncrona
-    DATABASE_URL: str = "sqlite+aiosqlite:///./presence.db"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./presence-hardware.db"
 
     # CORS
     CORS_ORIGINS: str | List[str] = [

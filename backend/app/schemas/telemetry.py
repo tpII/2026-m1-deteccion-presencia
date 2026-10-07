@@ -34,7 +34,7 @@ class TelemetrySample(BaseModel):
     """Muestra básica de telemetría (caso PIR o estado general)."""
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat(), description="ISO timestamp UTC")
     case_id: CaseId = Field(..., description="Identificador del método experimental")
-    source: str = Field("hardware", description="'mock' o identificador de hardware ESP32")
+    source: str = Field("hardware", description="Identificador del hardware ESP32")
     presence: bool = Field(..., description="Estado de presencia detectado")
     raw_value: float = Field(..., description="Valor numérico (0/1 para PIR, magnitud para CSI)")
     latency_ms: float = Field(0.0, description="Latencia medida en milisegundos")
@@ -42,7 +42,7 @@ class TelemetrySample(BaseModel):
 
 
 class CsiRawSample(BaseModel):
-    """Muestra cruda de CSI recibida por MQTT o Mock."""
+    """Muestra cruda de CSI recibida por MQTT."""
     timestamp: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     case_id: CaseId
     source: str = "esp32"

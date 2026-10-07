@@ -1,32 +1,39 @@
-# Configuración de Mosquitto Broker
+# Broker Mosquitto
 
-Este directorio contiene la configuración para el broker MQTT Eclipse Mosquitto.
+El broker recibe mensajes MQTT de los ESP32.
+FastAPI se suscribe por TCP; React recibe datos desde FastAPI por WebSocket.
 
-## Puertos Configurados
+## Ejecución nativa (macOS/Linux)
 
-- `1883`: Puerto MQTT estándar (TCP) para conexión de los microcontroladores ESP32 y el backend de FastAPI.
-- `9001`: Puerto WebSockets (opcional) para utilidades de inspección.
-
-## Ejecución Local
-
-Si se dispone de Mosquitto instalado nativamente en el sistema:
+La guía principal está en [README.md](../../README.md). Después de instalar Mosquitto:
 
 ```bash
-# macOS (Homebrew)
-brew services start mosquitto
-
-# Linux (Debian/Ubuntu)
-sudo systemctl start mosquitto
+./start.sh
 ```
 
-O bien ejecutando con el archivo de configuración provisto:
+El script usa `mosquitto.local.conf`, con listener TCP 1883 en todas las interfaces,
+conexiones anónimas de laboratorio y sin persistencia del broker. Si ya hay un broker,
+lo reutiliza sin detenerlo al salir. Comprobá que acepte conexiones desde la LAN;
+los servicios predeterminados pueden permitir únicamente localhost.
+
+Para iniciar solo el broker desde la raíz:
 
 ```bash
-mosquitto -c infrastructure/mosquitto/mosquitto.conf -v
+mosquitto -c infrastructure/mosquitto/mosquitto.local.conf -v
 ```
 
-## Ejecución con Docker
+Para observar el PIR:
 
 ```bash
-docker run -d --name mosquitto -p 1883:1883 -v $(pwd)/infrastructure/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf eclipse-mosquitto:2.0
+mosquitto_sub -h localhost -p 1883 -t presence/pir/telemetry -v
 ```
+
+La ESP32 usa la IP LAN de la computadora como dirección del broker.
+No exponer este listener sin autenticación a Internet.
+
+## Docker
+
+`docker-compose.yml` usa `mosquitto.conf`: listener TCP 1883 y listener WebSocket 9001
+opcional para otras herramientas. La persistencia del broker queda en su volumen Docker.
+Para hardware: `docker compose up --build` desde la raíz.
+Nuestra web utiliza `/ws/telemetry` de FastAPI, no el puerto 9001.

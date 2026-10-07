@@ -114,28 +114,12 @@ class MetricsRepository:
             tp = row["tp"] or 0
             avg_latency = row["avg_latency"] or 0.0
 
-            # Valores por defecto académicos en caso de no haber suficientes ensayos reales
-            defaults = {
-                CaseId.PIR.value: {"rate": 97.0, "fp": 2, "fn": 3, "latency": 150.0},
-                CaseId.CSI_ROUTER.value: {"rate": 94.0, "fp": 4, "fn": 6, "latency": 320.0},
-                CaseId.CSI_DEDICATED.value: {"rate": 91.0, "fp": 6, "fn": 9, "latency": 400.0},
-            }
-
-            if total < 5 and case_id in defaults:
-                d = defaults[case_id]
-                detection_rate = d["rate"]
-                false_positives = d["fp"]
-                false_negatives = d["fn"]
-                average_latency = d["latency"]
-                total_tests = 100
-                correct_detections = int(total_tests * (detection_rate / 100.0))
-            else:
-                detection_rate = round((correct / total) * 100.0, 1) if total > 0 else 0.0
-                false_positives = fp
-                false_negatives = fn
-                average_latency = round(float(avg_latency), 1)
-                total_tests = total
-                correct_detections = correct
+            detection_rate = round((correct / total) * 100.0, 1) if total > 0 else 0.0
+            false_positives = fp
+            false_negatives = fn
+            average_latency = round(float(avg_latency), 1)
+            total_tests = total
+            correct_detections = correct
 
             precision = round(tp / (tp + fp), 3) if (tp + fp) > 0 else None
             recall = round(tp / (tp + fn), 3) if (tp + fn) > 0 else None
@@ -168,9 +152,9 @@ class MetricsRepository:
             ComparisonTableEntry(
                 metric="Tasa de detección",
                 unit="%",
-                pir=f"{pir_metrics.detection_rate} %",
-                csi_router=f"{router_metrics.detection_rate} %",
-                csi_dedicated=f"{dedicated_metrics.detection_rate} %",
+                pir=f"{pir_metrics.detection_rate} %" if pir_metrics.total_tests else "Sin ensayos",
+                csi_router=f"{router_metrics.detection_rate} %" if router_metrics.total_tests else "Sin ensayos",
+                csi_dedicated=f"{dedicated_metrics.detection_rate} %" if dedicated_metrics.total_tests else "Sin ensayos",
             ),
             ComparisonTableEntry(
                 metric="Falsos positivos",
@@ -189,9 +173,9 @@ class MetricsRepository:
             ComparisonTableEntry(
                 metric="Latencia media",
                 unit="ms",
-                pir=f"{pir_metrics.average_latency_ms} ms",
-                csi_router=f"{router_metrics.average_latency_ms} ms",
-                csi_dedicated=f"{dedicated_metrics.average_latency_ms} ms",
+                pir=f"{pir_metrics.average_latency_ms} ms" if pir_metrics.total_tests else "Sin ensayos",
+                csi_router=f"{router_metrics.average_latency_ms} ms" if router_metrics.total_tests else "Sin ensayos",
+                csi_dedicated=f"{dedicated_metrics.average_latency_ms} ms" if dedicated_metrics.total_tests else "Sin ensayos",
             ),
             ComparisonTableEntry(
                 metric="Ensayos evaluados",

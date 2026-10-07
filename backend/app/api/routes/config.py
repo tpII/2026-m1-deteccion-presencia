@@ -1,70 +1,17 @@
-"""Rutas REST para configuración de nodos ESP32 y escenarios de experimentación de objetos vs. personas."""
+"""Rutas REST para configuración de nodos ESP32."""
 
 import json
-from typing import Dict, Any, List
-from fastapi import APIRouter, HTTPException, Depends
+from typing import Dict, Any
+from fastapi import APIRouter, HTTPException
 from app.schemas.config import (
     SystemNodesConfig,
-    PirNodeConfig,
-    CsiRouterConfig,
-    CsiDedicatedConfig,
-    SimulationScenario,
-    ScenarioChangeRequest,
-    ScenarioDetail,
-    channel_to_mhz,
 )
-from app.services.telemetry_service import TelemetryService
-from app.api.dependencies import get_telemetry_service
 from app.core.logging import logger
 
 router = APIRouter(prefix="/config", tags=["Configuración y Calibración"])
 
 # Estado de configuración en memoria (editable en tiempo de ejecución)
 _current_config = SystemNodesConfig()
-
-SCENARIOS_CATALOG: Dict[SimulationScenario, ScenarioDetail] = {
-    SimulationScenario.HUMAN_ACTIVE: ScenarioDetail(
-        scenario=SimulationScenario.HUMAN_ACTIVE,
-        name="Persona en Movimiento (Caminando / Activa)",
-        description="El cuerpo humano (~70% agua) dispersa los haces multitrayecto de forma aperiódica y emite radiación térmica continua al cruzar zonas Fresnel.",
-        pir_behavior="DETECTA (Nivel lógico 1 activo por conmutación piroeléctrica).",
-        csi_behavior="DETECTA (Alta varianza aperiódica en subportadoras OFDM con absorción y reflexiones difusas).",
-        target_classification="person_active",
-    ),
-    SimulationScenario.HUMAN_STATIC: ScenarioDetail(
-        scenario=SimulationScenario.HUMAN_STATIC,
-        name="Persona en Reposo / Sentada (Respiración)",
-        description="Persona sin desplazamiento físico notable. No hay emisión infrarroja diferencial pero la caja torácica induce micro-Doppler respiratorio (0.2 a 0.35 Hz).",
-        pir_behavior="REPOSO (Nivel 0: el PIR no detecta personas inmóviles sin gradiente térmico dinámico).",
-        csi_behavior="DETECTA (Micro-Doppler respiratorio detectable en el análisis espectral de baja frecuencia).",
-        target_classification="person_static",
-    ),
-    SimulationScenario.OBJECT_FAN: ScenarioDetail(
-        scenario=SimulationScenario.OBJECT_FAN,
-        name="Objeto Periódico (Ventilador en Marcha)",
-        description="Aspas plásticas o metálicas girando a velocidad constante a temperatura ambiente. Genera perturbación de RF estricta y puramente armónica.",
-        pir_behavior="REPOSO (Nivel 0: objeto a temperatura ambiente, sin emisión infrarroja de cuerpo negro).",
-        csi_behavior="PERTURBACIÓN ARMÓNICA (Pico espectral dominante único y estrecho en FFT; discriminado como objeto rotativo).",
-        target_classification="object_fan",
-    ),
-    SimulationScenario.OBJECT_MOVED: ScenarioDetail(
-        scenario=SimulationScenario.OBJECT_MOVED,
-        name="Objeto / Mueble Desplazado (Escalón Estático)",
-        description="Mueble, puerta o caja desplazada de lugar. Modifica la geometría fija del multitrayecto de forma permanente sin generar variaciones dinámicas posteriores.",
-        pir_behavior="REPOSO (Nivel 0: sin radiación térmica humana).",
-        csi_behavior="SALTO DE CONTINUA (Shift abrupto en el nivel de continua DC de subportadoras que se estabiliza con varianza nula).",
-        target_classification="object_moved",
-    ),
-    SimulationScenario.EMPTY_ROOM: ScenarioDetail(
-        scenario=SimulationScenario.EMPTY_ROOM,
-        name="Habitación Vacía (Ruido de Fondo)",
-        description="Canal de propagación libre sin objetos móviles ni presencia humana. Solo ruido térmico gaussiano y multitrayecto estático de paredes.",
-        pir_behavior="REPOSO (Nivel 0 constante).",
-        csi_behavior="REPOSO (Línea de base plana con ruido térmico estándar; varianza y score mínimos).",
-        target_classification="empty",
-    ),
-}
-
 
 @router.get("/nodes", response_model=Dict[str, Any])
 async def get_nodes_configuration():
@@ -88,7 +35,7 @@ async def get_nodes_configuration():
 async def update_nodes_configuration(config_update: SystemNodesConfig):
     """
     Actualiza la configuración de los nodos microcontroladores en memoria.
-    Si se opera con broker MQTT, despacha los parámetros a los tópicos de control de los ESP32.
+    Despacha los parámetros a los tópicos de control de los ESP32.
     """
     global _current_config
     _current_config = config_update
@@ -96,29 +43,26 @@ async def update_nodes_configuration(config_update: SystemNodesConfig):
 
     # Intentar publicar por MQTT a los tópicos de control de los nodos si hay cliente activo
     try:
-        from app.core.config import settings
-        from app.core.constants import DataSourceType
-        if settings.DATA_SOURCE.lower() == DataSourceType.MQTT.value:
-            import paho.mqtt.publish as publish
-            msgs = [
-                {
-                    "topic": "presence/nodes/pir/config",
-                    "payload": json.dumps(_current_config.pir.model_dump()),
-                    "qos": 1,
-                },
-                {
-                    "topic": "presence/nodes/csi_router/config",
-                    "payload": json.dumps(_current_config.csi_router.model_dump()),
-                    "qos": 1,
-                },
-                {
-                    "topic": "presence/nodes/csi_dedicated/config",
-                    "payload": json.dumps(_current_config.csi_dedicated.model_dump()),
-                    "qos": 1,
-                },
-            ]
-            publish.multiple(msgs, hostname=_current_config.broker_host, port=_current_config.broker_port)
-            logger.info("Comandos de configuración despachados vía MQTT a los ESP32.")
+        import paho.mqtt.publish as publish
+        msgs = [
+            {
+                "topic": "presence/nodes/pir/config",
+                "payload": json.dumps(_current_config.pir.model_dump()),
+                "qos": 1,
+            },
+            {
+                "topic": "presence/nodes/csi_router/config",
+                "payload": json.dumps(_current_config.csi_router.model_dump()),
+                "qos": 1,
+            },
+            {
+                "topic": "presence/nodes/csi_dedicated/config",
+                "payload": json.dumps(_current_config.csi_dedicated.model_dump()),
+                "qos": 1,
+            },
+        ]
+        publish.multiple(msgs, hostname=_current_config.broker_host, port=_current_config.broker_port)
+        logger.info("Comandos de configuración despachados vía MQTT a los ESP32.")
     except Exception as e:
         logger.warning(f"No se pudieron enviar comandos MQTT a los nodos físicos: {e}")
 
@@ -237,60 +181,3 @@ async def generate_c_header(node_id: str):
             status_code=404,
             detail=f"Nodo '{node_id}' desconocido. Opciones válidas: 'pir', 'csi_router', 'csi_dedicated'.",
         )
-
-
-@router.get("/scenarios", response_model=List[ScenarioDetail])
-async def list_scenarios():
-    """Retorna el catálogo completo de escenarios experimentales (Objetos vs. Personas)."""
-    return list(SCENARIOS_CATALOG.values())
-
-
-@router.get("/scenario/current", response_model=Dict[str, Any])
-async def get_current_scenario(
-    telemetry_svc: TelemetryService = Depends(get_telemetry_service),
-):
-    """Retorna el escenario activo de experimentación."""
-    curr = telemetry_svc.get_simulation_scenario()
-    if curr:
-        try:
-            sc_enum = SimulationScenario(curr)
-            detail = SCENARIOS_CATALOG.get(sc_enum)
-            return {"active_scenario": curr, "detail": detail.model_dump() if detail else None}
-        except ValueError:
-            pass
-    return {
-        "active_scenario": "automatic",
-        "detail": {
-            "name": "Simulación Dinámica Automática",
-            "description": "Ciclo continuo de alternancia entre presencia humana y ausencia ambiental.",
-            "pir_behavior": "Alterna periódicamente entre 0 y 1.",
-            "csi_behavior": "Alterna entre fluctuaciones de movimiento y reposo con ruido térmico.",
-            "target_classification": "dynamic",
-        },
-    }
-
-
-@router.post("/scenario", response_model=Dict[str, Any])
-async def set_active_scenario(
-    req: ScenarioChangeRequest,
-    telemetry_svc: TelemetryService = Depends(get_telemetry_service),
-):
-    """Establece un escenario de prueba físico forzado para comprobar la respuesta en tiempo real."""
-    telemetry_svc.set_simulation_scenario(req.scenario.value)
-    detail = SCENARIOS_CATALOG.get(req.scenario)
-    logger.info(f"Escenario experimental activado: {req.scenario.value}")
-    return {
-        "status": "scenario_applied",
-        "active_scenario": req.scenario.value,
-        "detail": detail.model_dump() if detail else None,
-    }
-
-
-@router.post("/scenario/reset", response_model=Dict[str, Any])
-async def reset_scenario(
-    telemetry_svc: TelemetryService = Depends(get_telemetry_service),
-):
-    """Restaura el modo de simulación automático estándar."""
-    telemetry_svc.set_simulation_scenario(None)
-    logger.info("Escenario de simulación restablecido a modo automático.")
-    return {"status": "reset", "active_scenario": "automatic"}

@@ -24,10 +24,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATA_SOURCE=mock
+      - DATA_SOURCE=${DATA_SOURCE:-mqtt}
       - MQTT_HOST=mosquitto
       - MQTT_PORT=1883
-      - DATABASE_URL=sqlite+aiosqlite:////data/presence.db
+      - DATABASE_URL=sqlite+aiosqlite:////data/presence-hardware.db
       - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
       - LOG_LEVEL=INFO
     volumes:

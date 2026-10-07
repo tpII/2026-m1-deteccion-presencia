@@ -1,17 +1,7 @@
-"""Esquemas de configuración para nodos ESP32 y escenarios de discriminación de objetivos."""
+"""Esquemas de configuración para nodos ESP32."""
 
-from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, Field, field_validator
-
-
-class SimulationScenario(str, Enum):
-    """Escenarios experimentales de validación física."""
-    HUMAN_ACTIVE = "human_active"
-    HUMAN_STATIC = "human_static"
-    OBJECT_FAN = "object_fan"
-    OBJECT_MOVED = "object_moved"
-    EMPTY_ROOM = "empty_room"
 
 
 def channel_to_mhz(channel: int) -> int:
@@ -22,7 +12,7 @@ def channel_to_mhz(channel: int) -> int:
 class PirNodeConfig(BaseModel):
     """Configuración del nodo ESP32 #1 (Sensor PIR)."""
     node_id: str = "esp32_pir_node_01"
-    gpio_pin: int = Field(13, ge=0, le=39, description="Pin GPIO donde se conecta la salida OUT del PIR")
+    gpio_pin: int = Field(27, ge=0, le=39, description="Pin GPIO donde se conecta la salida OUT del PIR")
     trigger_mode: str = Field("RISING", description="Modo de interrupción: RISING, FALLING o CHANGE")
     debounce_ms: int = Field(3000, ge=100, le=30000, description="Tiempo de retención en ms para evitar rebotes")
     sample_interval_ms: int = Field(200, ge=20, le=5000, description="Intervalo de sondeo o reporte periódico")
@@ -73,18 +63,3 @@ class SystemNodesConfig(BaseModel):
     pir: PirNodeConfig = Field(default_factory=PirNodeConfig)
     csi_router: CsiRouterConfig = Field(default_factory=CsiRouterConfig)
     csi_dedicated: CsiDedicatedConfig = Field(default_factory=CsiDedicatedConfig)
-
-
-class ScenarioChangeRequest(BaseModel):
-    """Solicitud para cambiar el escenario de simulación/ingesta."""
-    scenario: SimulationScenario
-
-
-class ScenarioDetail(BaseModel):
-    """Detalle de un escenario de prueba física."""
-    scenario: SimulationScenario
-    name: str
-    description: str
-    pir_behavior: str
-    csi_behavior: str
-    target_classification: str

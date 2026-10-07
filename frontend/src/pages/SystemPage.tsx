@@ -5,7 +5,6 @@ import { SectionHeader } from '../components/common/SectionHeader';
 import { api } from '../services/api';
 import { Settings, Server, Cpu, Database, Send, CheckCircle2 } from 'lucide-react';
 import { Esp32ConfigPanel } from '../components/system/Esp32ConfigPanel';
-import { ScenarioSelector } from '../components/system/ScenarioSelector';
 
 export const SystemPage: React.FC = () => {
   const [health, setHealth] = useState<any>(null);
@@ -14,7 +13,7 @@ export const SystemPage: React.FC = () => {
   const [selectedCase, setSelectedCase] = useState<string>('pir');
   const [groundTruth, setGroundTruth] = useState<boolean>(true);
   const [detectedPresence, setDetectedPresence] = useState<boolean>(true);
-  const [latencyMs, setLatencyMs] = useState<number>(150);
+  const [latencyMs, setLatencyMs] = useState<string>('');
   const [trialNote, setTrialNote] = useState<string>('Ensayo manual desde panel');
   const [trialSuccessMsg, setTrialSuccessMsg] = useState<string | null>(null);
 
@@ -56,13 +55,8 @@ export const SystemPage: React.FC = () => {
           icon={<Settings size={18} />}
         />
         <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-          Este panel centraliza la configuración de bajo nivel de la red de microcontroladores ESP32, el generador de firmware C/C++, la modulación de escenarios físicos para experimentación y el monitoreo de los servicios del backend.
+          Este panel centraliza la configuración de bajo nivel de la red de microcontroladores ESP32, el generador de firmware C/C++, el registro de ensayos físicos y el monitoreo de los servicios del backend.
         </p>
-      </GlassPanel>
-
-      {/* 1. Selector de Escenarios: Objetos vs. Personas */}
-      <GlassPanel>
-        <ScenarioSelector />
       </GlassPanel>
 
       {/* 2. Configuración de Radiofrecuencia y Nodos ESP32 */}
@@ -104,16 +98,16 @@ export const SystemPage: React.FC = () => {
             <div>
               <span style={{ color: 'var(--text-muted)' }}>Modo activo: </span>
               <strong style={{ textTransform: 'uppercase', color: 'var(--accent-blue)' }}>
-                {health?.data_source || 'MOCK'}
+                {health?.data_source || 'SIN CONEXIÓN'}
               </strong>
             </div>
             <div>
-              <span style={{ color: 'var(--text-muted)' }}>Variable de entorno: </span>
-              <code>DATA_SOURCE=mock</code>
+              <span style={{ color: 'var(--text-muted)' }}>Origen: </span>
+              <strong>Nodos físicos ESP32</strong>
             </div>
             <div>
-              <span style={{ color: 'var(--text-muted)' }}>Modo alternativo: </span>
-              <code>DATA_SOURCE=mqtt</code>
+              <span style={{ color: 'var(--text-muted)' }}>Conexión MQTT: </span>
+              <strong>{health?.mqtt_connected ? 'Conectado' : 'Desconectado'}</strong>
             </div>
           </div>
         </GlassCard>
@@ -251,8 +245,12 @@ export const SystemPage: React.FC = () => {
             </label>
             <input
               type="number"
+              required
+              min="0"
+              step="any"
+              placeholder="Ingresá la latencia medida"
               value={latencyMs}
-              onChange={(e) => setLatencyMs(Number(e.target.value))}
+              onChange={(e) => setLatencyMs(e.target.value)}
               style={{
                 width: '100%',
                 padding: '0.55rem 0.75rem',

@@ -70,8 +70,8 @@ export const OverviewPage: React.FC = () => {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Muestreo en tiempo real</span>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <span className="glass-badge status-live">
-                <span className="pulse-dot pulsing" /> 10 Hz Streaming
+              <span className="glass-badge">
+                {statuses.some((status) => status.is_connected) ? 'Recibiendo hardware' : 'Esperando hardware'}
               </span>
             </div>
           </div>
@@ -126,7 +126,7 @@ export const OverviewPage: React.FC = () => {
                       <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{c.subtitle}</p>
                     </div>
                   </div>
-                  <PresenceBadge presence={presence} size="md" />
+                  <PresenceBadge presence={presence} connected={c.status?.is_connected ?? false} size="md" />
                 </div>
 
                 <div
@@ -145,7 +145,7 @@ export const OverviewPage: React.FC = () => {
                       Latencia
                     </span>
                     <strong style={{ fontSize: '1.1rem', fontFamily: 'var(--font-mono)' }}>
-                      {latency} <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ms</span>
+                      {latency > 0 ? `${latency} ms` : 'Sin medir'}
                     </strong>
                   </div>
                   <div>

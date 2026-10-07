@@ -1,4 +1,4 @@
-"""Pruebas unitarias para la configuración de nodos ESP32 y control de escenarios."""
+"""Pruebas unitarias para la configuración de nodos ESP32."""
 
 import pytest
 from httpx import AsyncClient, ASGITransport
@@ -30,7 +30,8 @@ async def test_get_nodes_config_endpoint():
 
 
 @pytest.mark.asyncio
-async def test_update_nodes_config_endpoint():
+async def test_update_nodes_config_endpoint(monkeypatch):
+    monkeypatch.setattr("paho.mqtt.publish.multiple", lambda *args, **kwargs: None)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         payload = {
@@ -97,32 +98,3 @@ async def test_c_header_generation_endpoint():
         data = res.json()
         assert "config_csi_dedicated.h" in data["filename"]
         assert "#define DEDICATED_WIFI_CHANNEL" in data["content"]
-
-
-@pytest.mark.asyncio
-async def test_scenarios_endpoints():
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        # Listar catálogo de escenarios
-        res = await client.get("/api/v1/config/scenarios")
-        assert res.status_code == 200
-        scenarios = res.json()
-        assert len(scenarios) == 5
-        keys = [s["scenario"] for s in scenarios]
-        assert "human_active" in keys
-        assert "object_fan" in keys
-
-        # Establecer escenario ventilador (objeto periódico)
-        res = await client.post("/api/v1/config/scenario", json={"scenario": "object_fan"})
-        assert res.status_code == 200
-        assert res.json()["active_scenario"] == "object_fan"
-
-        # Verificar escenario activo
-        res = await client.get("/api/v1/config/scenario/current")
-        assert res.status_code == 200
-        assert res.json()["active_scenario"] == "object_fan"
-
-        # Restablecer a automático
-        res = await client.post("/api/v1/config/scenario/reset")
-        assert res.status_code == 200
-        assert res.json()["active_scenario"] == "automatic"
