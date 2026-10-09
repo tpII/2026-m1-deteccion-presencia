@@ -86,9 +86,9 @@ Investigación y especificaciones del sensor PIR:
 
 - El sensor continuó informando movimiento durante las pruebas. Se revisaron las conexiones y se propusieron pruebas de ubicación, estabilización y lectura de GPIO27 conectado a GND. **No quedó confirmada la causa ni validado el cambio entre movimiento y ausencia de movimiento.**
 
-## 9/10 - Primera prueba de obtención de señal CSI con ESP32 y router WIFI
+## 9/10 — Primera prueba de obtención de señal CSI con ESP32 y router WIFI
 
-se desarrolló un programa para el ESP32 (PlatformIO, framework Arduino) que conecta la placa como cliente a la red Wi-Fi del router (2,4 GHz).
+Se desarrolló un programa para el ESP32 (PlatformIO, framework Arduino) que conecta la placa como cliente a la red Wi-Fi del router (2,4 GHz).
 Para asegurar un flujo constante, el programa envía un ping al router cada 100 ms, y cada respuesta genera un paquete CSI. Se conservan solo los paquetes cuyo origen es la MAC del router. Cada paquete se envía por el puerto serie a la computadora en una línea de texto, con los metadatos de recepción y los valores del CSI. 
 El código se encuentra disponible en la carpeta "Prueba_CSI".
 
