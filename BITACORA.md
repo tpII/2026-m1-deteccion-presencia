@@ -85,3 +85,24 @@ Investigación y especificaciones del sensor PIR:
 ### Dificultad pendiente
 
 - El sensor continuó informando movimiento durante las pruebas. Se revisaron las conexiones y se propusieron pruebas de ubicación, estabilización y lectura de GPIO27 conectado a GND. **No quedó confirmada la causa ni validado el cambio entre movimiento y ausencia de movimiento.**
+
+## 9/10 - Primera prueba de obtención de señal CSI con ESP32 y router WIFI
+
+se desarrolló un programa para el ESP32 (PlatformIO, framework Arduino) que conecta la placa como cliente a la red Wi-Fi del router (2,4 GHz).
+Para asegurar un flujo constante, el programa envía un ping al router cada 100 ms, y cada respuesta genera un paquete CSI. Se conservan solo los paquetes cuyo origen es la MAC del router. Cada paquete se envía por el puerto serie a la computadora en una línea de texto, con los metadatos de recepción y los valores del CSI. 
+El código se encuentra disponible en la carpeta "Prueba_CSI".
+
+Dificultades: Durante las primeras pruebas, la conexión falló por baja señal y se resolvió acercando la placa al router.
+
+Se adjunta imagen del paquete CSI obtenido:
+
+<img width="916" height="221" alt="image" src="https://github.com/user-attachments/assets/78a991af-40a5-4e60-816d-f1a7476c4bf1" />
+
+se logró recibir unos 10 paquetes por segundo, en coincidencia con la frecuencia del ping de 100ms.
+Cada paquete CSI tiene dos partes:
+Metadatos de recepción: datos que el ESP32 agrega sobre cómo recibió el paquete. Entre ellos están la MAC del router (que permite descartar paquetes de otros dispositivos), el RSSI y una marca de tiempo en microsegundos. No se usan para detectar presencia, pero sirven para filtrar y ordenar las muestras.
+CSI propiamente dicho: es la parte que se procesará para detectar presencia. Contiene un valor complejo por cada subportadora, guardado como dos bytes (parte imaginaria y parte real). Cada valor indica cuánto se atenuó y desfasó la señal en esa frecuencia al recorrer el ambiente, por lo que cambia cuando una persona se mueve entre el router y el ESP32.
+
+Queda pendiente comenzar a investigar y aplicar el procesamiento de la señal CSI para obtener resultados de detección de presencia.
+
+
