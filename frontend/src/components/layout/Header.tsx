@@ -3,9 +3,15 @@ import { ConnectionStatus } from '../status/ConnectionStatus';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { useTheme } from '../../hooks/useTheme';
 import { api } from '../../services/api';
-import { Cpu, Radio, Sun, Moon } from 'lucide-react';
+import { Cpu, Radio, Sun, Moon, Menu, X } from 'lucide-react';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  menuOpen: boolean;
+  onToggleMenu: () => void;
+  menuButtonRef: React.RefObject<HTMLButtonElement>;
+}
+
+export const Header: React.FC<HeaderProps> = ({ menuOpen, onToggleMenu, menuButtonRef }) => {
   const { connectionState } = useWebSocket();
   const { theme, toggleTheme } = useTheme();
   const [timeStr, setTimeStr] = useState<string>('');
@@ -35,28 +41,25 @@ export const Header: React.FC = () => {
   }, []);
 
   return (
-    <header
-      style={{
-        background: 'var(--glass-bg)',
-        backdropFilter: 'var(--glass-blur)',
-        WebkitBackdropFilter: 'var(--glass-blur)',
-        borderBottom: '1px solid var(--glass-border-subtle)',
-        padding: '0.85rem 2rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-        transition: 'background var(--transition-normal), border-color var(--transition-normal)',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+    <header className="app-header">
+      <div className="header-brand">
+        <button
+          ref={menuButtonRef}
+          type="button"
+          className="mobile-menu-toggle"
+          aria-label={menuOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
+          aria-expanded={menuOpen}
+          aria-controls="primary-navigation"
+          onClick={onToggleMenu}
+        >
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            flexShrink: 0,
             width: '40px',
             height: '40px',
             borderRadius: 'var(--radius-md)',
@@ -71,23 +74,22 @@ export const Header: React.FC = () => {
           <h1 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
             Detección de Presencia
           </h1>
-          <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
+          <p className="header-subtitle" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0 }}>
             Análisis comparativo de PIR y Channel State Information (CSI) — Grupo M1
           </p>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+      <div className="header-controls">
         {/* Conmutador de Modo Oscuro / Claro */}
         <button
+          className="theme-toggle"
           onClick={toggleTheme}
           title={theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '36px',
-            height: '36px',
             borderRadius: 'var(--radius-full)',
             background: 'var(--surface-subtle)',
             border: '1px solid var(--glass-border-subtle)',
@@ -122,7 +124,7 @@ export const Header: React.FC = () => {
           <span>{dataSource?.toUpperCase() ?? 'SIN CONEXIÓN'}</span>
         </div>
 
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+        <div className="header-clock" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
           {timeStr}
         </div>
 

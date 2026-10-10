@@ -29,10 +29,11 @@ export const ComparisonBarChart: React.FC<ComparisonBarChartProps> = ({
     const handleResize = () => {
       chartInstance.current?.resize();
     };
-    window.addEventListener('resize', handleResize);
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(chartRef.current);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       chartInstance.current?.dispose();
       chartInstance.current = null;
     };

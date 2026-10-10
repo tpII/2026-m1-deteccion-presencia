@@ -26,10 +26,11 @@ export const DigitalSignalChart: React.FC<DigitalSignalChartProps> = ({
     const handleResize = () => {
       chartInstance.current?.resize();
     };
-    window.addEventListener('resize', handleResize);
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(chartRef.current);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       chartInstance.current?.dispose();
       chartInstance.current = null;
     };

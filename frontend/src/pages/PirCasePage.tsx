@@ -30,6 +30,7 @@ export const PirCasePage: React.FC = () => {
             height={260}
           />
           <div
+            className="signal-details"
             style={{
               display: 'flex',
               alignItems: 'center',

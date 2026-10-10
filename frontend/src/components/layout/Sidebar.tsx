@@ -11,7 +11,12 @@ import {
   Usb,
 } from 'lucide-react';
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  menuOpen: boolean;
+  onNavigate: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ menuOpen, onNavigate }) => {
   const navItems = [
     { to: '/', label: 'Resumen General', icon: <LayoutDashboard size={18} /> },
     { to: '/case/pir', label: 'Caso 1 — PIR', icon: <Radio size={18} /> },
@@ -23,20 +28,7 @@ export const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside
-      style={{
-        width: '240px',
-        flexShrink: 0,
-        background: 'var(--glass-bg)',
-        backdropFilter: 'var(--glass-blur)',
-        WebkitBackdropFilter: 'var(--glass-blur)',
-        borderRight: '1px solid var(--glass-border-subtle)',
-        padding: '1.25rem 0.85rem',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.4rem',
-      }}
-    >
+    <aside id="primary-navigation" className={`app-sidebar${menuOpen ? ' is-open' : ''}`}>
       <div
         style={{
           padding: '0.4rem 0.75rem 0.85rem 0.75rem',
@@ -54,11 +46,12 @@ export const Sidebar: React.FC = () => {
         <span>Navegación</span>
       </div>
 
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+      <nav aria-label="Navegación principal" style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
+            onClick={onNavigate}
             style={({ isActive }) => ({
               display: 'flex',
               alignItems: 'center',
@@ -80,6 +73,7 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       <div
+        className="sidebar-footer"
         style={{
           marginTop: 'auto',
           padding: '0.85rem',

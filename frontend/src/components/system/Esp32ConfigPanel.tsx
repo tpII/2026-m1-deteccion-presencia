@@ -209,7 +209,7 @@ export const Esp32ConfigPanel: React.FC = () => {
         <GlassCard>
           {/* TAB 1: CSI Router */}
           {activeTab === 'csi_router' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
                   Canal Wi-Fi (Banda 2.4 GHz)
@@ -330,7 +330,7 @@ export const Esp32ConfigPanel: React.FC = () => {
 
           {/* TAB 2: CSI Dedicated */}
           {activeTab === 'csi_dedicated' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
                   Canal Wi-Fi Fijo (Enlace Punto a Punto)
@@ -454,7 +454,7 @@ export const Esp32ConfigPanel: React.FC = () => {
 
           {/* TAB 3: PIR */}
           {activeTab === 'pir' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
                   Pin GPIO de Entrada PIR
@@ -572,7 +572,7 @@ export const Esp32ConfigPanel: React.FC = () => {
 
           {/* TAB 4: Broker */}
           {activeTab === 'broker' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(220px, 100%), 1fr))', gap: '1rem' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
                   Host / IP del Broker Mosquitto

@@ -26,6 +26,14 @@ npm run dev
 
 La aplicación se abrirá en [http://localhost:5173](http://localhost:5173).
 
+## Diseño adaptable a móviles
+
+La navegación lateral se convierte en un menú desplegable hasta 1024 px. En pantallas
+pequeñas, las tarjetas y formularios se apilan, el pipeline se presenta verticalmente y
+las tablas se desplazan horizontalmente dentro de su panel. Los gráficos ajustan su tamaño
+cuando cambia el contenedor. El generador de cabeceras permite desplazarse por el código
+sin salir del cuadro.
+
 ## Prueba mínima del PIR por USB
 
 Abrí **Prueba PIR — USB** en el menú o [http://localhost:5173/test/pir-usb](http://localhost:5173/test/pir-usb).

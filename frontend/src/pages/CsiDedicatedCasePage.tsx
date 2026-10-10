@@ -33,6 +33,7 @@ export const CsiDedicatedCasePage: React.FC = () => {
             yAxisName="Amplitud (dB)"
           />
           <div
+            className="signal-details"
             style={{
               display: 'flex',
               alignItems: 'center',

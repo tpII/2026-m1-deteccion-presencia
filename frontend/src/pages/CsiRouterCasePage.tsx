@@ -33,6 +33,7 @@ export const CsiRouterCasePage: React.FC = () => {
             yAxisName="Amplitud (dB)"
           />
           <div
+            className="signal-details"
             style={{
               display: 'flex',
               alignItems: 'center',

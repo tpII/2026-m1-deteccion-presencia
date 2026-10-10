@@ -15,6 +15,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
 }) => {
   return (
     <div
+      className="section-header"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -24,13 +25,14 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
         gap: '0.75rem',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+      <div className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
         {icon && (
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
               width: '36px',
               height: '36px',
               borderRadius: 'var(--radius-sm)',

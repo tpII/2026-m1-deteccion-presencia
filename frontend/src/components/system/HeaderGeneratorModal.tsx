@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { api } from '../../services/api';
 import { CHeaderResponse } from '../../types/config';
 import { X, Copy, Check, Download, FileCode, Cpu } from 'lucide-react';
@@ -14,6 +15,37 @@ export const HeaderGeneratorModal: React.FC<Props> = ({ isOpen, onClose, initial
   const [headerData, setHeaderData] = useState<CHeaderResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    dialogRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Tab') return;
+      const buttons = dialogRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)');
+      if (!buttons?.length) return;
+      const first = buttons[0];
+      const last = buttons[buttons.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
+    };
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     if (initialNodeId) {
@@ -67,8 +99,9 @@ export const HeaderGeneratorModal: React.FC<Props> = ({ isOpen, onClose, initial
     URL.revokeObjectURL(url);
   };
 
-  return (
+  return createPortal(
     <div
+      className="header-modal-backdrop"
       style={{
         position: 'fixed',
         top: 0,
@@ -86,6 +119,11 @@ export const HeaderGeneratorModal: React.FC<Props> = ({ isOpen, onClose, initial
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
+        className="header-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="header-modal-title"
         style={{
           background: 'var(--glass-bg)',
           border: '1px solid var(--glass-border)',
@@ -113,7 +151,7 @@ export const HeaderGeneratorModal: React.FC<Props> = ({ isOpen, onClose, initial
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
             <FileCode size={22} style={{ color: 'var(--accent-blue)' }} />
             <div>
-              <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
+              <h2 id="header-modal-title" style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
                 Generador de Firmware C/C++ (<code>config.h</code>)
               </h2>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
@@ -122,6 +160,7 @@ export const HeaderGeneratorModal: React.FC<Props> = ({ isOpen, onClose, initial
             </div>
           </div>
           <button
+            aria-label="Cerrar generador de cabecera"
             onClick={onClose}
             style={{
               background: 'transparent',
@@ -141,6 +180,7 @@ export const HeaderGeneratorModal: React.FC<Props> = ({ isOpen, onClose, initial
           style={{
             display: 'flex',
             gap: '0.5rem',
+            flexWrap: 'wrap',
             padding: '1rem 1.5rem',
             borderBottom: '1px solid var(--border-color)',
             background: 'var(--header-bg)',
@@ -177,7 +217,7 @@ export const HeaderGeneratorModal: React.FC<Props> = ({ isOpen, onClose, initial
         </div>
 
         {/* Visor de Código */}
-        <div style={{ padding: '1.2rem 1.5rem', flex: 1, overflowY: 'auto' }}>
+        <div className="header-modal-code" style={{ padding: '1.2rem 1.5rem', flex: 1, overflowY: 'auto' }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
               Generando archivo de cabecera...
@@ -224,6 +264,7 @@ export const HeaderGeneratorModal: React.FC<Props> = ({ isOpen, onClose, initial
             borderTop: '1px solid var(--border-color)',
             display: 'flex',
             justifyContent: 'flex-end',
+            flexWrap: 'wrap',
             gap: '0.75rem',
           }}
         >
@@ -270,6 +311,7 @@ export const HeaderGeneratorModal: React.FC<Props> = ({ isOpen, onClose, initial
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

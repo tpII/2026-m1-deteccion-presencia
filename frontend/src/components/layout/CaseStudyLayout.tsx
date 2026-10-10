@@ -45,7 +45,7 @@ export const CaseStudyLayout: React.FC<CaseStudyLayoutProps> = ({
       <GlassPanel>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+            <div className="case-heading" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
               <h1 style={{ fontSize: '1.6rem', fontWeight: 700 }}>{title}</h1>
               <span
                 style={{
