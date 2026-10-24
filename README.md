@@ -3,11 +3,12 @@
 Proyecto de Taller de Proyecto II para comparar tres métodos: sensor PIR, CSI con router y CSI entre dos ESP32.
 
 ```text
-ESP32 → MQTT / Mosquitto → FastAPI → SQLite → React
-                              └── REST y WebSocket ──┘
+ESP32 → MQTT / Mosquitto → FastAPI
+                            ├── Estado en memoria → WebSocket / REST → React
+                            └── SQLite → REST de historial y métricas → React
 ```
 
-El firmware PIR está incluido. Los dos métodos CSI tienen recepción, procesamiento y pantallas, pero **todavía falta su firmware de captura**. Sin hardware publicando, las pantallas esperan muestras.
+El firmware PIR de `firmware/pir/` publica por MQTT. `prueba_CSI/` ya captura CSI del router y lo imprime por Serial, pero todavía no convierte ni publica esas capturas en MQTT. El caso CSI dedicado no tiene firmware. Ambos casos CSI tienen recepción de amplitudes, procesamiento y pantallas preparados en el backend; sin mensajes MQTT, esas pantallas esperan muestras.
 
 ## Instalar y ejecutar
 
@@ -27,7 +28,7 @@ Para instalar Mosquitto: `brew install mosquitto` en macOS o `sudo apt install m
 - API y sus endpoints: http://localhost:8000/docs
 - Detener: `Ctrl+C`.
 
-`start.sh` inicia Mosquitto si no hay un broker en el puerto configurado, y luego inicia backend y frontend. Reutiliza el broker si ya estaba activo. Funciona en macOS/Linux; en Windows se puede usar WSL o la [ejecución manual](docs/pruebas.md#8-ejecución-manual).
+`start.sh` inicia Mosquitto si el broker configurado es `localhost` o `127.0.0.1` en el puerto `1883` y no responde; después inicia backend y frontend. Reutiliza el broker si ya responde. Para otro host o puerto, el broker debe iniciarse por separado. Funciona en macOS/Linux; en Windows se puede usar WSL o la [ejecución manual](docs/pruebas.md#8-ejecución-manual).
 
 ## Dónde está cada cosa
 
@@ -46,6 +47,7 @@ Para instalar Mosquitto: `brew install mosquitto` en macOS o `sudo apt install m
 | `frontend/src/types/` | Tipos TypeScript de los datos. |
 | `frontend/src/context/`, `config/`, `styles/` | Telemetría compartida, tema claro/oscuro, configuración y estilos. |
 | `firmware/pir/` | Proyecto PlatformIO del PIR, basado en la rama `bernardo`, con salida USB y publicación MQTT. |
+| `prueba_CSI/` | Captura CSI del router por Serial, separada de la ingesta MQTT. |
 | `mosquitto/` | Configuración del broker MQTT. |
 | `tests/` | Pruebas automáticas del backend, USB y arranque. |
 | `docs/` | Guías técnicas e informes del trabajo en `informes/`. |
@@ -82,7 +84,7 @@ npm --prefix frontend test
 npm --prefix frontend run build
 ```
 
-Prueba opcional del arranque completo, con los puertos 1883, 8000 y 5173 libres:
+Pruebas opcionales con procesos reales, con los puertos 1883, 8000 y 5173 libres. Los mensajes los publican los tests; no requieren ESP32 ni validan la detección física:
 
 ```bash
 RUN_MQTT_INTEGRATION=1 backend/.venv/bin/python -m pytest tests/integration

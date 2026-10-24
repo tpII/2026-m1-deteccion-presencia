@@ -6,7 +6,7 @@ import { useApiQuery } from '../hooks/useApiQuery';
 import { api } from '../services/api';
 
 const charts = [
-  { metricKey: 'detection_rate', title: 'Tasa de detección', unit: '%' },
+  { metricKey: 'detection_rate', title: 'Exactitud', unit: '%' },
   { metricKey: 'average_latency_ms', title: 'Latencia media', unit: 'ms' },
   { metricKey: 'false_positives', title: 'Falsos positivos', unit: 'ensayos' },
   { metricKey: 'false_negatives', title: 'Falsos negativos', unit: 'ensayos' },

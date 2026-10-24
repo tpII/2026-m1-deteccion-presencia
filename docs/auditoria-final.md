@@ -1,5 +1,7 @@
 # Auditoría final — 24 de octubre de 2026
 
+> **Registro histórico.** Los resultados, conteos y pendientes corresponden a las etapas auditadas, no se actualizan como si se hubieran medido otra vez. La rama actual también incluye `prueba_CSI/`, incorporado desde `main`: captura CSI del router por Serial, pero no publica MQTT. El estado vigente está en [architecture.md](architecture.md) y [mqtt-topics.md](mqtt-topics.md).
+
 ## Resultado
 
 El software comprobado funciona en los escenarios ensayados y su recorrido principal es legible. No corresponde afirmar que el proyecto experimental está terminado: faltan los firmware CSI y la validación física, y no se pudo realizar una revisión visual en navegador real.

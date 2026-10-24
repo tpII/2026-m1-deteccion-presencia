@@ -1,5 +1,7 @@
 # Auditoría y limpieza — 15 de octubre de 2026
 
+> **Registro histórico.** Los resultados, conteos y pendientes corresponden a las etapas auditadas, no se actualizan como si se hubieran medido otra vez. La rama actual también incluye `prueba_CSI/`, incorporado desde `main`: captura CSI del router por Serial, pero no publica MQTT. El estado vigente está en [architecture.md](architecture.md) y [mqtt-topics.md](mqtt-topics.md).
+
 El proyecto conserva el recorrido ESP32 → MQTT → FastAPI → SQLite → React. La limpieza reduce carpetas, código sin consumidores y documentación que describía funciones inexistentes.
 
 ## Resultado

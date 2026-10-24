@@ -40,3 +40,5 @@ firmware/**/.pio/
 # Archivos temporales de informes y exportaciones
 tmp/
 output/
+
+.agents/skills/formato-entregas/

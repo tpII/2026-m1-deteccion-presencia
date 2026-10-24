@@ -106,3 +106,10 @@ CSI propiamente dicho: es la parte que se procesará para detectar presencia. Co
 Queda pendiente comenzar a investigar y aplicar el procesamiento de la señal CSI para obtener resultados de detección de presencia.
 
 
+## 24/10 — Reorganización del código y mejoras del sistema
+
+- Se reorganizó y simplificó el código del backend y del dashboard, eliminando partes que ya no se utilizaban.
+- Se mejoró la visualización en distintas pantallas y se corrigieron errores en los gráficos y el registro de ensayos.
+- Se adaptó el proyecto PlatformIO de Bernardo para enviar las lecturas del PIR por Wi-Fi y MQTT, manteniendo la conexión USB.
+- Se mejoraron la reconexión y el guardado de datos, y se realizaron pruebas automáticas del sistema con resultados satisfactorios.
+- Queda pendiente probar el funcionamiento completo con la ESP32 y el sensor PIR físicos.

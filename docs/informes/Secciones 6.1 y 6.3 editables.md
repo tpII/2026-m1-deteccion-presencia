@@ -1,3 +1,5 @@
+> **Texto histórico del avance I.** Describe una versión anterior al refactor del 24/10: incluye el firmware anterior, muestreo de 200 ms y referencias a Arduino IDE. No es la guía del código actual. Para el estado vigente, consultar [arquitectura](../architecture.md), [firmware PIR](../../firmware/pir/README.md) y [contrato MQTT](../mqtt-topics.md). Las afirmaciones de pruebas físicas pertenecen al informe y no constituyen una nueva verificación de hardware.
+
 ## 6.1 Firmware desarrollado para prueba del sensor PIR
 
 El firmware se desarrolló en C++ para ESP32 con el framework Arduino. Se utilizó el sensor PIR HW-416-B: VCC a VIN/5 V, GND a GND y OUT a GPIO27. La placa se alimenta por USB. El modelo HC-SR501 de la tabla de partes es una referencia; el módulo utilizado en esta prueba fue el HW-416-B.

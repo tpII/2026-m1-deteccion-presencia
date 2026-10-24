@@ -26,6 +26,8 @@ Empezá por el README para ejecutarlo y después seguí una muestra PIR. No hace
 | Lectura USB | Puerto serial de esta computadora | Tabla `pir_usb_readings`, al guardar manualmente | Diagnóstico del PIR. |
 | Ensayo | Formulario con presencia observada | Tabla `trials` | Exactitud, errores y comparación. |
 
+El firmware CSI con router de `prueba_CSI/` usa un recorrido separado: ESP32 → Serial/CSV. No llama al backend ni alimenta las páginas CSI; falta integrar la conversión a amplitudes y su envío por MQTT.
+
 Guardar muchas muestras no crea ensayos. Para calcular precisión hace falta saber, de manera independiente, si había una persona.
 
 ## Dónde cambiar algo

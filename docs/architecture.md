@@ -3,11 +3,12 @@
 El recorrido normal es:
 
 ```text
-ESP32 → Mosquitto → mqtt.py → telemetry.py → repositories/
-                                ↓              ↓
-                      signal_processing/     SQLite
-                                               ↓
-                                       api/ → React
+ESP32 → Mosquitto → mqtt.py → telemetry.py
+                               ├── signal_processing/ (CSI)
+                               ├── telemetry_state.py → REST / WebSocket → React
+                               └── repositories/ → SQLite → REST de historial / métricas → React
+
+Captura actual del router: prueba_CSI/ → Serial / CSV (sin conexión a MQTT)
 ```
 
 ## Backend
@@ -51,7 +52,11 @@ El tema claro/oscuro vive en `context/ThemeContext.tsx`. Los estilos están en `
 
 El firmware incluido se configura en `firmware/pir/include/config.h`. El proyecto PlatformIO vive en `firmware/pir/`, basado en `PRUEBA_PIR` de la rama `bernardo`. `src/main.cpp` lee el sensor y escribe por Serial; `src/network.cpp` mantiene Wi-Fi/MQTT y publica el mismo estado. Cambiar la configuración requiere recompilar y cargar la ESP32 con PlatformIO. No hay un panel web de calibración remota: el firmware actual no recibe esos comandos.
 
-Los firmware CSI todavía están pendientes. La [guía de pruebas](pruebas.md) explica qué se puede verificar hoy y qué requiere implementar esos programas.
+## Estado de integración CSI
+
+`prueba_CSI/` incluye un proyecto PlatformIO que captura CSI del router y escribe CSV por Serial. No publica MQTT ni alimenta el dashboard. Falta convertir la captura en amplitudes y publicarlas con el contrato de [mqtt-topics.md](mqtt-topics.md). El backend procesa sólo la primera amplitud de cada mensaje, no el vector completo ni los bytes CSI originales.
+
+El caso dedicado todavía no tiene firmware del emisor AP ni del receptor Station. La [guía de pruebas](pruebas.md) distingue la captura existente, la integración pendiente y la validación física. Las pruebas automáticas usan publicadores controlados, no los ESP32.
 
 ## Validación de la API
 

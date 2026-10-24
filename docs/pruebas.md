@@ -4,12 +4,12 @@ Los comandos se ejecutan desde la raíz del repositorio, salvo que se indique ot
 
 ## 1. Pruebas con hardware
 
-Todas las pruebas experimentales utilizan dispositivos físicos. La web espera las lecturas de los ESP32; no genera señales ni precarga resultados.
+Las pruebas experimentales requieren dispositivos físicos. La web espera mensajes MQTT; no genera señales ni precarga resultados. Las pruebas automáticas de integración publican mensajes controlados y no comprueban hardware ni exactitud física.
 
 | Caso | Hardware | Estado y vista |
 | --- | --- | --- |
 | 1 — PIR por MQTT | ESP32, PIR HW-416-B y Wi-Fi de 2.4 GHz | Firmware incluido. Vista `/case/pir`; guía en sección 4 |
-| 2 — CSI con router | ESP32 receptor y router comercial | Backend y vista `/case/csi_router` disponibles; falta firmware de captura CSI |
+| 2 — CSI con router | ESP32 receptor y router comercial | `prueba_CSI/` captura por Serial; falta integrar amplitudes por MQTT con `/case/csi_router` |
 | 3 — CSI dedicado | Dos ESP32, emisor AP y receptor Station | Backend y vista `/case/csi_dedicated` disponibles; faltan firmware de ambos nodos |
 | Diagnóstico PIR por USB | ESP32 y PIR con firmware que emite mensajes Serial | Vista `/test/pir-usb`; guía en sección 7 |
 
@@ -70,7 +70,7 @@ sudo apt update
 sudo apt install mosquitto mosquitto-clients
 ```
 
-No hace falta iniciar un servicio permanente: `start.sh` levanta el broker local si el puerto 1883 está libre. Si ya hay un broker, lo reutiliza.
+No hace falta iniciar un servicio permanente: `start.sh` levanta el broker si está configurado en `localhost` o `127.0.0.1`, puerto 1883, y no responde. Si el broker configurado ya responde, lo reutiliza. Para otro host o puerto hay que iniciar el broker por separado; `.env` configura al cliente del backend, no modifica `mosquitto.conf`.
 La configuración es `mosquitto/mosquitto.conf`; permite conexiones de la ESP32 desde la red local.
 El broker de laboratorio permite conexiones sin contraseña. Usalo en una red de laboratorio; no publiques el puerto 1883 en Internet.
 
@@ -194,7 +194,7 @@ Debe llegar JSON como:
 ```
 
 El identificador `source` es único por placa. El firmware no envía una hora sin sincronizar ni inventa ground truth o latencia: el backend asigna su hora de recepción; `latency_ms=0` significa que no se midió la latencia física.
-Verificá además **http://localhost:8000/api/v1/telemetry/status**: `pir.total_samples` debe aumentar, y el gráfico de `/case/pir` debe alternar cuando OUT cambie entre 0 y 1.
+Verificá además **http://localhost:8000/api/v1/telemetry/status**: en la lista, el elemento con `case_id: "pir"` debe aumentar su `total_samples`, y el gráfico de `/case/pir` debe alternar cuando OUT cambie entre 0 y 1.
 
 ### E. Comprobar el sensor y guardar resultados
 
@@ -203,7 +203,7 @@ El tiempo que permanece en alto depende de los ajustes del módulo. `SIN MOVIMIE
 
 En modo MQTT, FastAPI guarda automáticamente las muestras en SQLite por lotes, aproximadamente cada dos segundos. No se usa el botón de guardado de la página USB.
 Consultá **http://localhost:8000/api/v1/telemetry/pir/history?limit=50**.
-Las lecturas quedan en `backend/presence-hardware.db` y se conservan al detener o reiniciar el servidor.
+Con el `DATABASE_URL` predeterminado y `start.sh`, las lecturas quedan en `backend/presence-hardware.db` y se conservan al detener o reiniciar el servidor. Si cambiaste la configuración, consultá ese otro archivo.
 Para comprobarlas, consultá el historial REST; podés inspeccionar el mismo archivo con una herramienta SQLite.
 Conservá la base para analizar los datos adquiridos después.
 
@@ -213,11 +213,11 @@ Guardar telemetría no genera por sí solo ensayos ni permite conocer la precisi
 
 ## 5. Caso 2: CSI con router comercial
 
-**Pendiente: el repositorio todavía no incluye firmware de captura CSI para este caso.**
-El firmware PIR no obtiene CSI. Antes de realizar el ensayo hay que implementar y cargar el programa del receptor.
-El contrato del mensaje está en [mqtt-topics.md](mqtt-topics.md); la captura puede basarse en [ESP-CSI de Espressif](https://github.com/espressif/esp-csi).
+El proyecto [prueba_CSI/](../prueba_CSI/README.md) ya conecta un ESP32 al router, captura CSI y lo escribe por Serial. Se compila y carga por separado del firmware PIR. El monitor CSI funciona a **921600 baud**, no a los 115200 del PIR. Su salida CSV continua se activa con `c`.
 
-Cuando ese firmware esté disponible:
+**Pendiente: integrar esa captura con MQTT.** El backend no lee el puerto Serial CSI ni convierte su CSV. Hay que seleccionar los datos de la captura, convertirlos a amplitudes y publicarlos según [mqtt-topics.md](mqtt-topics.md). No hay un adaptador incluido.
+
+Cuando esa integración esté implementada:
 
 1. Programá el ESP32 receptor para conectarse al router comercial, capturar CSI de paquetes Wi-Fi y publicar amplitudes reales en `presence/csi/router/raw`, con `case_id: "csi_router"`.
 2. Configurá la IP LAN del broker y verificá que el router permita comunicar el receptor con el servidor.
@@ -226,7 +226,7 @@ Cuando ese firmware esté disponible:
 5. Verificá registros en **http://localhost:8000/api/v1/telemetry/csi_router/history?limit=50**.
 6. Registrá posición del router/receptor, canal, tráfico, distancia y personas presentes; conservá esos datos para evaluar la detección.
 
-Encender el router por sí solo no envía muestras a la página. Sin el receptor programado, la vista espera datos.
+Encender el router o ejecutar la captura Serial por sí solos no envía muestras a la página. La vista espera mensajes MQTT con amplitudes; ver datos CSV en el monitor no demuestra recepción en el backend.
 
 ## 6. Caso 3: CSI en red dedicada ESP32–ESP32
 
@@ -289,14 +289,14 @@ En Windows, activá `backend/.venv/Scripts/Activate.ps1` en PowerShell y usá `$
 | No aparece puerto USB | Reconectar la placa, usar cable de datos y usar `pio device list` e indicar el puerto a PlatformIO. |
 | Puerto ocupado | Cerrar Serial Monitor y desconectar la prueba USB de la web antes de subir firmware. |
 | Carga falla a 921600 | Configurar `upload_speed = 115200`; probar otro cable o puerto USB. |
-| Símbolos ilegibles por Serial | Monitor a 115200 baud; es un ajuste distinto de Upload Speed. |
+| Símbolos ilegibles por Serial | Monitor PIR a 115200 baud; monitor de `prueba_CSI/` a 921600. Es un ajuste distinto de Upload Speed. |
 | `config.h: No such file` / `PubSubClient.h: No such file` | Copiar `include/config.example.h` a `include/config.h`; compilar con PlatformIO para que instale `lib_deps`. |
 | No llega a `MQTT conectado` | Revisar Wi-Fi 2.4 GHz, clave, IP LAN, broker iniciado, firewall y aislamiento de clientes. |
 | Serial muestra movimiento pero web no cambia | Verificar primero `mosquitto_sub`, luego `mqtt_connected`, `total_samples` y conexión WebSocket. |
 | Configuración rechazada al iniciar | Usar `DATA_SOURCE=mqtt` en los archivos `.env`; revisar dirección y puerto del broker. |
 | Puertos 8000 o 5173 ocupados | Detener la ejecución anterior. El script no mata procesos ajenos ni cambia de puerto silenciosamente. |
 | Siempre muestra movimiento | Revisar VCC/GND/OUT, D27, estabilización, ajustes TIME/sensibilidad y campo de visión. No invertir la lógica del código para ocultarlo. |
-| CSI no recibe puntos | Confirmar que el nodo físico captura y publica CSI para ese caso. El firmware CSI físico todavía no está incluido. |
+| CSI no recibe puntos | `prueba_CSI/` sólo imprime por Serial; falta su conversión y publicación MQTT. El caso dedicado no tiene firmware. Comprobar el tópico antes del dashboard. |
 | LIVE pero un caso desconectado | LIVE es el WebSocket del navegador. Un caso se considera conectado si recibió una muestra en los últimos 10 segundos. |
 
 Cuando **Ctrl+C** detiene `start.sh`, se cierran solo el backend, Vite y broker que ese script inició. Un broker previamente activo permanece abierto. El firmware de la placa no se detiene con ese comando.

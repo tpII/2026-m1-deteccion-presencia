@@ -46,4 +46,6 @@ cp -n firmware/pir/include/config.example.h firmware/pir/include/config.h
 pio run --project-dir firmware/pir
 ```
 
+Estos comandos compilan únicamente el firmware PIR. La captura CSI por Serial se encuentra en [prueba_CSI/](../prueba_CSI/README.md) y tiene su propio proyecto PlatformIO; las pruebas MQTT no ejecutan ese firmware.
+
 Compilar no carga la placa ni demuestra que el sensor o la red física funcionen. La comprobación física está en [pruebas.md](pruebas.md).

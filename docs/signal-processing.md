@@ -26,4 +26,10 @@ El pipeline también calcula periodicidad mediante FFT y asigna etiquetas heurí
 
 Estas reglas no están validadas con ensayos físicos del proyecto. Las etiquetas no prueban que se pueda distinguir una persona de un objeto o detectar respiración. La decisión binaria actual depende de la varianza; la etiqueta es información adicional.
 
-Todavía faltan los firmware de captura CSI. Para evaluar el método hay que recibir datos físicos, calibrar los umbrales y comparar la detección con presencia observada independientemente.
+## Captura e integración pendientes
+
+`prueba_CSI/` ya captura paquetes CSI del router y los imprime por Serial como CSV. La disección calcula amplitud y fase para mostrar cada par imaginario-real, pero no publica amplitudes al backend. No existe un adaptador Serial → MQTT en el repositorio.
+
+La salida conserva los bytes capturados y el indicador `first_word_invalid`; no es el vector `amplitudes` del contrato MQTT. La selección de campos e índices y la conversión a amplitudes tienen que resolverse al integrar esa captura. El pipeline del backend no interpreta esos bytes ni hace ese descarte.
+
+Para el caso dedicado faltan los firmware del emisor y del receptor. La captura por Serial y la presencia de filtros en el backend no demuestran una detección integrada con CSI real: hay que conectar ambos recorridos, calibrar y contrastar los resultados con presencia observada independientemente.

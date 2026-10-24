@@ -1,3 +1,5 @@
+> **Texto histórico del avance I.** Describe una versión anterior al refactor del 24/10: incluye el firmware anterior, muestreo de 200 ms y referencias a Arduino IDE. No es la guía del código actual. Para el estado vigente, consultar [arquitectura](../architecture.md), [firmware PIR](../../firmware/pir/README.md) y [contrato MQTT](../mqtt-topics.md). Las afirmaciones de pruebas físicas pertenecen al informe y no constituyen una nueva verificación de hardware.
+
 ## 6.1 Firmware desarrollado para prueba del sensor PIR
 
 Se programó el ESP32 en C++ con el entorno Arduino para leer el sensor PIR y enviar sus lecturas a la computadora. En la prueba se utilizó el módulo HW-416-B, conectado de la siguiente manera:
