@@ -35,7 +35,6 @@ export function usePirSerial() {
     if (supportError || connectionState !== 'disconnected') return;
     setError(null);
     setReadings([]);
-    // requestPort() se ejecuta desde el clic para conservar el gesto del usuario.
     connectionRef.current?.connect();
   };
 

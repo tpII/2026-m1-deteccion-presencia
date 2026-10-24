@@ -1,7 +1,7 @@
 """Aislar las comprobaciones de software de las bases con mediciones reales."""
 
 import pytest
-from app.core.config import settings
+from app.config import settings
 
 
 @pytest.fixture(autouse=True)

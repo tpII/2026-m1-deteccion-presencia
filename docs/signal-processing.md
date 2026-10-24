@@ -1,75 +1,29 @@
-# Procesamiento de Señal — Detección por CSI Wi-Fi y PIR
+# Procesamiento de señal
 
-Este documento describe la base teórica y la implementación del pipeline de señal utilizado para discernir presencia humana en interiores.
+El código está en `backend/app/signal_processing/`. Solo hay dos archivos: `filters.py` y `pipeline.py`.
 
----
+## PIR
 
-## 1. Fundamentos Físicos
+El firmware PlatformIO lee GPIO27 con `INPUT_PULLDOWN` cada 500 ms nominales y envía su nivel digital. El backend lo guarda y lo muestra sin filtros CSI. Una salida baja indica que el sensor no detectó movimiento; no demuestra que el ambiente esté vacío.
 
-### Sensor PIR
-El sensor piroeléctrico capta radiación infrarroja centrada en $\approx 10\,\mu\text{m}$ (longitud de onda emitida por la temperatura corporal humana $\approx 37^\circ\text{C}$). 
-La lente de Fresnel divide el campo de visión en conos alternados; cuando una persona se desplaza, la diferencia de irradiación entre los dos elementos piroeléctricos genera un pulso de voltaje analógico que un comparador digitaliza a nivel alto ($1$).
-- **Limitación intrínseca**: Si la persona se detiene por completo o duerme, $\frac{\mathrm{d}T}{\mathrm{d}t} \to 0$ y la señal cae a ausencia ($0$).
+## CSI
 
-### Wi-Fi Channel State Information (CSI)
-Los estándares 802.11n utilizan modulación OFDM (Orthogonal Frequency Division Multiplexing). A diferencia del RSSI (que es un único escalar grosero de potencia agregada), el CSI describe la respuesta al impulso del canal radioeléctrico en el dominio de la frecuencia para cada subportadora:
+El backend toma la **primera amplitud** de cada mensaje MQTT y reúne hasta 30 muestras recientes de ese método. Cada ventana pasa por estas etapas:
 
-$$H(f, t) = |H(f, t)| e^{j \angle H(f, t)}$$
+1. **Hampel:** ventana centrada de 7 muestras. Reemplaza valores que se alejan de la mediana más de `3 × 1.4826 × MAD`, donde MAD es la mediana de las desviaciones absolutas.
+2. **Media móvil:** promedio centrado de 5 muestras, extendiendo los bordes para conservar la longitud.
+3. **Características:** varianza y energía media cuadrática de los últimos 20 valores filtrados, o los disponibles si hay menos.
+4. **Score:** función sigmoide de la diferencia entre varianza y umbral, con pendiente 1.2 y diferencia limitada entre −10 y 10.
+5. **Detección:** presencia cuando la varianza alcanza el umbral. El score de 0.5 corresponde a ese mismo límite.
 
-Donde $|H|$ es la amplitud y $\angle H$ es la fase de la subportadora.
-El cuerpo humano, compuesto en un 70% de agua salina, actúa como un reflector y dispersor dieléctrico de ondas de radio a 2.4 GHz. Cualquier movimiento o respiración altera los trayectos multicamino (*multi-path reflections*), modulando constructiva y destructivamente la amplitud y fase de las subportadoras.
+Los umbrales iniciales son 2.2 para router y 1.8 para el enlace dedicado. Se ajustan al crear los pipelines en `backend/app/telemetry.py`; requieren calibración con mediciones reales.
 
----
+Los metadatos del filtro se envían a la web junto con la señal cruda y filtrada. Los buffers conservan hasta 500 puntos; cada actualización muestra los últimos 100.
 
-## 2. Etapas del Pipeline de Señal (`SignalProcessingPipeline`)
+## Clasificación experimental
 
-```
-[ Señal Cruda ]
-       │
-       ▼
-[ Filtro de Hampel ] (Ventana = 7, 3σ)  ──► Elimina picos impulsivos / outliers de RF
-       │
-       ▼
-[ Media Móvil ] (Ventana = 5)           ──► Suprime ruido térmico de alta frecuencia
-       │
-       ▼
-[ Extracción de Características ]       ──► Varianza temporal y Energía de la señal
-       │
-       ▼
-[ Función de Score & Umbral ]          ──► Sigmoide normalizada (0 a 1) y Decisión
-       │
-       ▼
-[ PRESENCIA / AUSENCIA ]
-```
+El pipeline también calcula periodicidad mediante FFT y asigna etiquetas heurísticas: `empty`, `object_fan`, `object_moved`, `person_active` o `person_static`.
 
-### Etapa 1: Filtro de Hampel
-Reemplaza los valores anómalos transitorios producidos por ruidos de canal o paquetes corruptos por la mediana local, utilizando la Desviación Absoluta de la Mediana (MAD):
+Estas reglas no están validadas con ensayos físicos del proyecto. Las etiquetas no prueban que se pueda distinguir una persona de un objeto o detectar respiración. La decisión binaria actual depende de la varianza; la etiqueta es información adicional.
 
-$$\text{MAD} = \text{median}(|x_i - \tilde{x}|)$$
-$$\text{Umbral} = 3 \times 1.4826 \times \text{MAD}$$
-
-Si $|x_i - \tilde{x}| > \text{Umbral}$, se reemplaza $x_i$ por $\tilde{x}$.
-
-### Etapa 2: Filtro de Media Móvil (Moving Average)
-Suaviza las pequeñas perturbaciones térmicas preservando las envolventes inducidas por desplazamientos corporales:
-
-$$y[n] = \frac{1}{M} \sum_{k=0}^{M-1} x[n-k]$$
-
-### Etapa 3: Extracción de Características
-- **Varianza Temporal ($\sigma^2$)**:
-  Se calcula sobre las amplitudes capturadas. Los umbrales iniciales del pipeline deben calibrarse con mediciones del ambiente; no constituyen resultados experimentales.
-- **Energía de la Señal ($E$)**:
-  Energía cuadrática media normalizada en ventana deslizante.
-
-### Etapa 4: Clasificador y Función de Score
-Se calcula un puntaje continuo mediante función logística acotada:
-
-$$\text{Score} = \frac{1}{1 + e^{-k \cdot (\sigma^2 - \text{Umbral})}}$$
-
-Si $\text{Score} \ge 0.5$, se emite el estado **PRESENCIA**; de lo contrario, **AUSENCIA**.
-
----
-
-## 3. Adquisición desde hardware
-
-- **Ingesta de hardware (MQTT)**: El backend recibe amplitudes reales por MQTT según el contrato de `mqtt-topics.md`. Todavía falta implementar los firmware CSI de los casos 2 y 3. Sin esos nodos publicando, no se generan muestras.
+Todavía faltan los firmware de captura CSI. Para evaluar el método hay que recibir datos físicos, calibrar los umbrales y comparar la detección con presencia observada independientemente.

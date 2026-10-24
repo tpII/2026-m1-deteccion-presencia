@@ -1,8 +1,23 @@
 """Tests de serialización y validación de esquemas Pydantic."""
 
-from app.core.constants import CaseId
+from app.constants import CaseId
 from app.schemas.telemetry import TelemetrySample, CsiRawSample, SignalPoint
 from app.schemas.metrics import ComparisonTableEntry
+from app.schemas.metrics import RecordTrialRequest
+import pytest
+from pydantic import ValidationError
+
+
+@pytest.mark.parametrize("amplitudes", [[], [float("nan")], [float("inf")]])
+def test_csi_rejects_empty_or_non_finite_amplitudes(amplitudes):
+    with pytest.raises(ValidationError):
+        CsiRawSample(case_id="csi_router", amplitudes=amplitudes)
+
+
+@pytest.mark.parametrize("latency", [-1, float("nan"), float("inf")])
+def test_trial_rejects_invalid_latency(latency):
+    with pytest.raises(ValidationError):
+        RecordTrialRequest(case_id="pir", ground_truth=True, detected_presence=True, latency_ms=latency)
 
 
 def test_telemetry_sample_schema():

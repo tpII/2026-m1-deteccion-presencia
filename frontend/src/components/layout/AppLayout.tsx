@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 
-export const AppLayout: React.FC = () => {
+export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const { pathname } = useLocation();
@@ -37,4 +37,4 @@ export const AppLayout: React.FC = () => {
       </div>
     </div>
   );
-};
+}

@@ -1,0 +1,185 @@
+.page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.page-heading, .overview-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.page-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--accent-blue);
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.muted { color: var(--text-muted); }
+
+.primary-button, .secondary-button {
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.primary-button {
+  background: var(--accent-blue);
+  color: var(--text-inverse);
+}
+
+.secondary-button {
+  background: var(--surface-subtle);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border-subtle);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.signal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.signal-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--surface-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.detail-list, .pipeline-values {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 0.6rem;
+  font-size: 0.82rem;
+}
+
+.detail-list dt, .pipeline-values dt { color: var(--text-secondary); }
+.detail-list dd, .pipeline-values dd { font-weight: 600; }
+
+.pipeline-values {
+  padding: 0.75rem;
+  background: var(--surface-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.pipeline-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.system-status h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+}
+
+.system-status h3 svg { color: var(--accent-blue); }
+
+.trial-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+.trial-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.trial-form input, .trial-form select {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  color: var(--input-text);
+  font-size: 0.85rem;
+}
+
+.form-error, .form-notice { margin-top: 1rem; }
+.form-error { color: var(--state-error-text); }
+.form-notice { color: var(--state-presence-text); }
+
+.method-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.5rem;
+  color: var(--text-primary);
+}
+
+.method-heading { display: flex; align-items: center; gap: 0.75rem; }
+.method-heading h3 { font-size: 1.05rem; }
+.method-heading p { font-size: 0.78rem; color: var(--text-secondary); }
+.method-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+}
+
+.method-readings {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  padding: 0.85rem;
+  background: var(--surface-subtle);
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: var(--radius-sm);
+}
+.method-readings dt { font-size: 0.72rem; color: var(--text-secondary); }
+.method-readings dd { font-size: 1.1rem; font-family: var(--font-mono); font-weight: 600; }
+.method-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--accent-blue);
+  font-weight: 600;
+  margin-top: auto;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin-icon { animation: spin 1s linear infinite; }
+
+.case-heading { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem; }
+.case-heading h1 { font-size: 1.6rem; }
+.case-technology { padding: 0.2rem 0.6rem; border-radius: var(--radius-full); background: var(--accent-blue-light); color: var(--accent-blue-dark); font-size: 0.72rem; }
+.case-subtitle { font-size: 0.84rem; color: var(--accent-blue); margin-bottom: 0.4rem; }
+.case-description { max-width: 800px; font-size: 0.92rem; }
+.case-live-state { display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.78rem; color: var(--text-secondary); }

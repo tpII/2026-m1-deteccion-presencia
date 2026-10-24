@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -16,7 +15,7 @@ interface SidebarProps {
   onNavigate: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ menuOpen, onNavigate }) => {
+export function Sidebar({ menuOpen, onNavigate }: SidebarProps) {
   const navItems = [
     { to: '/', label: 'Resumen General', icon: <LayoutDashboard size={18} /> },
     { to: '/case/pir', label: 'Caso 1 — PIR', icon: <Radio size={18} /> },
@@ -91,4 +90,4 @@ export const Sidebar: React.FC<SidebarProps> = ({ menuOpen, onNavigate }) => {
       </div>
     </aside>
   );
-};
+}

@@ -6,8 +6,8 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import Mock
 import pytest
-from app.data_sources.mqtt_source import MQTTDataSource
-from app.repositories.telemetry_repository import InMemoryTelemetryRepository
+from app.mqtt import MQTTDataSource
+from app.telemetry_state import TelemetryState
 
 
 def test_broker_rejection_does_not_mark_connected_or_subscribe():
@@ -62,7 +62,7 @@ def test_invalid_message_is_not_forwarded(payload):
 
 
 def test_case_is_connected_only_after_recent_samples():
-    repo = InMemoryTelemetryRepository()
+    repo = TelemetryState()
     assert all(not status.is_connected for status in repo.get_all_statuses())
     repo.update_case_state("pir", presence=True, latency_ms=0)
     statuses = {status.case_id.value: status for status in repo.get_all_statuses()}

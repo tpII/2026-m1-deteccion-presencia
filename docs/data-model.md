@@ -1,55 +1,37 @@
-# Modelo de Datos y Persistencia
+# Datos y métricas
 
-## 1. Esquema Relacional SQLite (`presence-hardware.db`)
+SQLite guarda tres tipos de datos. Las tablas se crean en `backend/app/database.py` sin insertar ejemplos.
 
-### Tabla: `trials`
-Registra cada ensayo experimental individual evaluado contra Ground Truth.
+| Tabla | Qué guarda | Quién la usa |
+| --- | --- | --- |
+| `telemetry` | Método, hora UTC de recepción, presencia, señal cruda, latencia y score. | Recepción MQTT y consulta `/api/v1/telemetry/{case_id}/history`. |
+| `trials` | Método, hora UTC, presencia observada, detección, acierto, latencia, score opcional y notas. | Formulario de ensayos y comparación de métodos. |
+| `pir_usb_readings` | Hora de recepción y salida digital leída por USB. | Diagnóstico USB y su guardado manual. |
 
-| Columna | Tipo | Descripción |
-|---|---|---|
-| `id` | INTEGER PRIMARY KEY AUTOINCREMENT | Identificador unívoco del ensayo |
-| `case_id` | TEXT NOT NULL | Método evaluado: `'pir'`, `'csi_router'`, `'csi_dedicated'` |
-| `timestamp` | TEXT NOT NULL | Fecha y hora en formato ISO 8601 UTC |
-| `ground_truth` | INTEGER NOT NULL | Condición real: 1 = Presencia, 0 = Ausencia |
-| `detected_presence` | INTEGER NOT NULL | Detección del método: 1 = Presencia, 0 = Ausencia |
-| `is_correct` | INTEGER NOT NULL | 1 si `ground_truth == detected_presence`, sino 0 |
-| `latency_ms` | REAL NOT NULL | Tiempo de latencia registrado en milisegundos |
-| `score` | REAL | Puntuación continua del clasificador (0.0 a 1.0) |
-| `notes` | TEXT | Anotaciones experimentales del operador |
+Cada tabla tiene un `id` autoincremental. Los métodos válidos son `pir`, `csi_router` y `csi_dedicated`. Los booleanos se guardan como 0 o 1. Una lectura USB con la misma hora y salida no se inserta dos veces.
 
-### Tabla: `experiments`
-Agrupa campañas o sesiones experimentales en laboratorio.
+Las bases anteriores pueden contener una tabla `experiments`: no tiene consumidores en la aplicación. Ya no se crea en bases nuevas; no se borra de bases existentes.
 
-| Columna | Tipo | Descripción |
-|---|---|---|
-| `id` | INTEGER PRIMARY KEY AUTOINCREMENT | ID del experimento |
-| `name` | TEXT NOT NULL | Nombre descriptivo (ej. "Ensayos Sala Laboratorio M1") |
-| `case_id` | TEXT NOT NULL | Caso asignado |
-| `started_at` | TEXT NOT NULL | Inicio de sesión ISO |
-| `ended_at` | TEXT | Finalización ISO |
-| `environment` | TEXT | Condiciones ambientales (ej. "Línea de visión libre, 1 persona") |
-| `notes` | TEXT | Observaciones |
+## Memoria y persistencia
 
----
+`telemetry_state.py` conserva hasta 500 puntos por método en memoria y envía los últimos 100 por WebSocket. Al reiniciar, esos buffers y los contadores comienzan vacíos; las muestras SQLite permanecen disponibles en el historial REST.
 
-## 2. Esquemas de Memoria Volátil (Streaming O(1))
+El repositorio de telemetría escribe por lotes. Sólo retira de la cola las muestras confirmadas por SQLite; un fallo conserva el lote pendiente. El guardado periódico es independiente del envío WebSocket.
 
-Para evitar latencias de I/O en disco durante la graficación en tiempo real, el backend utiliza un buffer circular implementado con `collections.deque(maxlen=500)`:
+La prueba USB conserva hasta 50 lecturas en el navegador y las guarda cuando se pulsa el botón. Es independiente del flujo MQTT.
 
-- `_raw_buffers[case_id]`: Array FIFO de `SignalPoint { timestamp, value }`.
-- `_filtered_buffers[case_id]`: Array FIFO de `SignalPoint` tras el pipeline de filtrado.
-- `_current_statuses[case_id]`: Snapshot instantáneo del estado de conexión, presencia y latencia.
+## Métricas
 
----
+Las métricas salen únicamente de `trials`, comparando la detección con una observación independiente:
 
-## 3. Modelo de Métricas de Evaluación
+- **TP:** detectó presencia y había una persona.
+- **TN:** detectó ausencia y el ambiente estaba vacío.
+- **FP:** detectó presencia con el ambiente vacío.
+- **FN:** detectó ausencia cuando había una persona.
+- **Tasa de detección (exactitud):** `(TP + TN) / total × 100`.
+- **Precisión:** `TP / (TP + FP)`.
+- **Recall:** `TP / (TP + FN)`.
+- **F1:** `2 × TP / (2 × TP + FP + FN)`, calculado antes de redondear. Vale cero cuando hay errores y ningún TP; es nulo si el denominador es cero.
+- **Latencia media:** promedio de las latencias registradas en los ensayos.
 
-Para cada caso se calcula:
-
-- **Total de ensayos ($N$)**: $\text{TP} + \text{TN} + \text{FP} + \text{FN}$
-- **Detecciones Correctas**: $\text{TP} + \text{TN}$
-- **Tasa de Detección (Accuracy)**:
-  $$\text{Tasa} = \frac{\text{TP} + \text{TN}}{N} \times 100\%$$
-- **Falsos Positivos (FP)**: Presencia detectada cuando la habitación estaba vacía.
-- **Falsos Negativos (FN)**: Ausencia indicada habiendo presencia humana real.
-- **Latencia Media**: Media aritmética del tiempo de reacción extremo a extremo.
+Sin ensayos, la web muestra «Sin ensayos». Guardar telemetría no permite calcular exactitud por sí solo. En el firmware PIR, `latency_ms=0` indica que no se midió la latencia física.

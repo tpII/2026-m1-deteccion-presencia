@@ -16,7 +16,6 @@ export function getPirSerialSupportError(): string | null {
   return null;
 }
 
-/** Una conexión local: no publica datos en MQTT, WebSocket ni en la base de datos. */
 export class PirSerialConnection {
   private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   private task: Promise<void> | null = null;
@@ -39,7 +38,6 @@ export class PirSerialConnection {
     if (!this.task) return;
     this.handlers.onStateChange('disconnecting');
     try {
-      // Desbloquea read() aunque la ESP32 no esté enviando datos.
       await this.reader?.cancel();
     } finally {
       await this.task;
@@ -56,7 +54,6 @@ export class PirSerialConnection {
       try {
         selectedPort = await serial.requestPort();
       } catch (error) {
-        // Cancelar el selector de puertos no es un fallo de conexión.
         if (error instanceof DOMException && error.name === 'NotFoundError') return;
         throw error;
       }
@@ -69,48 +66,12 @@ export class PirSerialConnection {
 
       this.reader = port.readable.getReader();
       this.handlers.onStateChange('connected');
-      const decoder = new TextDecoder();
-      let pending = '';
-      let discardingLine = false;
-
-      while (!this.stopped) {
-        const { value, done } = await this.reader.read();
-        if (done) {
-          if (!this.stopped) throw new Error('La ESP32 se desconectó o cerró el puerto serial.');
-          break;
-        }
-        if (this.stopped) break;
-
-        // Un mensaje puede llegar dividido entre varias lecturas USB.
-        const lines = (pending + decoder.decode(value, { stream: true })).split('\n');
-        pending = lines.pop() ?? '';
-        for (const line of lines) {
-          if (discardingLine) {
-            discardingLine = false;
-            continue;
-          }
-          if (line.length > 256) continue;
-          const message = line.trim();
-          // Comparación exacta: SIN MOVIMIENTO también contiene MOVIMIENTO.
-          if (message === 'MOVIMIENTO' || message === 'SIN MOVIMIENTO') {
-            this.handlers.onReading({
-              message,
-              motion: message === 'MOVIMIENTO',
-              receivedAt: Date.now(),
-            });
-          }
-        }
-        // Limita el buffer si el firmware envía texto sin saltos de línea.
-        if (pending.length > 256) {
-          pending = '';
-          discardingLine = true;
-        }
-      }
+      await this.readMessages(this.reader);
     } catch (error) {
       if (!this.stopped) {
         this.handlers.onError(
           `No se pudo leer la ESP32: ${error instanceof Error ? error.message : String(error)}. ` +
-          'Revisá el USB y cerrá el monitor serial de Arduino u otra aplicación que use el puerto.',
+          'Revisá el USB y cerrá el monitor serial de PlatformIO u otra aplicación que use el puerto.',
         );
       }
     } finally {
@@ -122,6 +83,42 @@ export class PirSerialConnection {
         } catch (error) {
           this.handlers.onError(`No se pudo cerrar el puerto: ${error instanceof Error ? error.message : String(error)}`);
         }
+      }
+    }
+  }
+
+  private async readMessages(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<void> {
+    const decoder = new TextDecoder();
+    let pending = '';
+    let discardingLine = false;
+
+    while (!this.stopped) {
+      const { value, done } = await reader.read();
+      if (done) {
+        if (!this.stopped) throw new Error('La ESP32 se desconectó o cerró el puerto serial.');
+        break;
+      }
+      if (this.stopped) break;
+      const lines = (pending + decoder.decode(value, { stream: true })).split('\n');
+      pending = lines.pop() ?? '';
+      for (const line of lines) {
+        if (discardingLine) {
+          discardingLine = false;
+          continue;
+        }
+        if (line.length > 256) continue;
+        const message = line.trim();
+        if (message === 'MOVIMIENTO' || message === 'SIN MOVIMIENTO') {
+          this.handlers.onReading({
+            message,
+            motion: message === 'MOVIMIENTO',
+            receivedAt: Date.now(),
+          });
+        }
+      }
+      if (pending.length > 256) {
+        pending = '';
+        discardingLine = true;
       }
     }
   }

@@ -1,5 +1,5 @@
-import React from 'react';
-import { GlassCard } from '../common/GlassCard';
+import type React from 'react';
+import { GlassCard } from '../ui/GlassCard';
 
 interface MetricCardProps {
   label: string;
@@ -10,14 +10,14 @@ interface MetricCardProps {
   accentColor?: string;
 }
 
-export const MetricCard: React.FC<MetricCardProps> = ({
+export function MetricCard({
   label,
   value,
   unit,
   subtitle,
   icon,
   accentColor,
-}) => {
+}: MetricCardProps) {
   return (
     <GlassCard>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -51,4 +51,4 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       )}
     </GlassCard>
   );
-};
+}

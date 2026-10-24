@@ -1,7 +1,5 @@
-"""Persistencia aislada de lecturas recibidas desde Web Serial."""
-
 from datetime import timezone
-from app.database.connection import get_db_connection
+from app.database import get_db_connection
 from app.schemas.pir_usb import PirUsbReading, PirUsbRecord
 
 

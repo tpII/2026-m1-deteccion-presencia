@@ -1,1 +1,0 @@
-"""Presence Detection Backend Package."""

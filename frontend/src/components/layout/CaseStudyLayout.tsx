@@ -1,15 +1,14 @@
-import React from 'react';
-import { GlassPanel } from '../common/GlassPanel';
-import { SectionHeader } from '../common/SectionHeader';
-import { PresenceBadge } from '../status/PresenceBadge';
+import type { ReactNode } from 'react';
+import { Activity, History, Layers } from 'lucide-react';
+import { GlassPanel } from '../ui/GlassPanel';
+import { SectionHeader } from '../ui/SectionHeader';
+import { PresenceBadge } from '../ui/PresenceBadge';
 import { MetricsGrid } from '../metrics/MetricsGrid';
-import { TrialsTable } from '../trials/TrialsTable';
-import { CaseMetrics, Trial } from '../../types/metrics';
-import { CaseCurrentStatus } from '../../types/telemetry';
-import { Layers, Activity, History } from 'lucide-react';
+import { TrialsTable } from '../metrics/TrialsTable';
+import type { CaseMetrics, Trial } from '../../types/metrics';
+import type { CaseCurrentStatus } from '../../types/telemetry';
 
 interface CaseStudyLayoutProps {
-  caseId: string;
   title: string;
   subtitle: string;
   description: string;
@@ -18,113 +17,48 @@ interface CaseStudyLayoutProps {
   metrics: CaseMetrics | null;
   trials: Trial[];
   metricsLoading?: boolean;
-  trialsLoading?: boolean;
-  chartContent: React.ReactNode;
-  pipelineContent?: React.ReactNode;
+  error?: string | null;
+  chartContent: ReactNode;
+  pipelineContent?: ReactNode;
 }
 
-export const CaseStudyLayout: React.FC<CaseStudyLayoutProps> = ({
-  title,
-  subtitle,
-  description,
-  technology,
-  status,
-  metrics,
-  trials,
-  metricsLoading = false,
-  trialsLoading = false,
-  chartContent,
-  pipelineContent,
-}) => {
-  const presence = status?.presence ?? false;
+export function CaseStudyLayout({ title, subtitle, description, technology, status, metrics, trials,
+  metricsLoading = false, error, chartContent, pipelineContent }: CaseStudyLayoutProps) {
   const latency = status?.current_latency_ms ?? 0;
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-      {/* 1. ENCABEZADO DEL CASO */}
+    <div className="page-stack">
       <GlassPanel>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+        <div className="page-heading">
           <div>
-            <div className="case-heading" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
-              <h1 style={{ fontSize: '1.6rem', fontWeight: 700 }}>{title}</h1>
-              <span
-                style={{
-                  fontSize: '0.72rem',
-                  padding: '0.2rem 0.6rem',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'var(--accent-blue-light)',
-                  color: 'var(--accent-blue-dark)',
-                  fontWeight: 600,
-                }}
-              >
-                {technology}
-              </span>
-            </div>
-            {subtitle && (
-              <p style={{ fontSize: '0.84rem', color: 'var(--accent-blue)', fontWeight: 500, marginBottom: '0.4rem' }}>
-                {subtitle}
-              </p>
-            )}
-            <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', maxWidth: '800px', lineHeight: 1.5 }}>
-              {description}
-            </p>
+            <div className="case-heading"><h1>{title}</h1><span className="case-technology">{technology}</span></div>
+            <p className="case-subtitle">{subtitle}</p>
+            <p className="case-description">{description}</p>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Estado en Vivo:</span>
-              <PresenceBadge presence={presence} connected={status?.is_connected ?? false} size="lg" />
-            </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-              Latencia actual: <strong>{latency > 0 ? `${latency} ms` : 'Sin medir'}</strong>
-            </div>
+          <div className="case-live-state">
+            <PresenceBadge presence={status?.presence ?? false} connected={status?.is_connected ?? false} size="lg" />
+            <span>Latencia: <strong>{latency > 0 ? `${latency} ms` : 'Sin medir'}</strong></span>
           </div>
         </div>
       </GlassPanel>
-
-      {/* 2. MÉTRICAS EXPERIMENTALES */}
-      <div>
-        <SectionHeader
-          title="Métricas de Precisión y Rendimiento"
-          subtitle="Resultados acumulados de ensayos experimentales vs Ground Truth"
-          icon={<Layers size={18} />}
-        />
+      {error && <p role="alert" className="form-error">{error}</p>}
+      <section>
+        <SectionHeader title="Métricas experimentales" subtitle="Ensayos registrados frente a la presencia observada" icon={<Layers size={18} />} />
         <MetricsGrid metrics={metrics} loading={metricsLoading} />
-      </div>
-
-      {/* 3. VISUALIZACIÓN DE SEÑALES EN TIEMPO REAL */}
-      <div>
-        <SectionHeader
-          title="Telemetría y Procesamiento en Vivo"
-          subtitle="Monitoreo continuo de señales temporales transmitidas por el sensor"
-          icon={<Activity size={18} />}
-        />
-        <GlassPanel style={{ padding: '1.25rem' }}>
-          {chartContent}
-        </GlassPanel>
-      </div>
-
-      {/* 4. PIPELINE DE SEÑAL (OPCIONAL SEGÚN EL CASO) */}
+      </section>
+      <section>
+        <SectionHeader title="Telemetría en vivo" subtitle="Señales recibidas del sensor" icon={<Activity size={18} />} />
+        <GlassPanel>{chartContent}</GlassPanel>
+      </section>
       {pipelineContent && (
-        <div>
-          <SectionHeader
-            title="Etapas de Transformación de Señal"
-            subtitle="Pipeline secuencial: Señal Cruda → Filtro → Señal Filtrada → Descriptores → Detección"
-            icon={<Activity size={18} />}
-          />
+        <section>
+          <SectionHeader title="Procesamiento de señal" subtitle="Señal cruda → Filtros → Características → Detección" icon={<Activity size={18} />} />
           {pipelineContent}
-        </div>
+        </section>
       )}
-
-      {/* 5. TABLA DE ENSAYOS EXPERIMENTALES */}
-      <div>
-        <SectionHeader
-          title="Historial de Ensayos Registrados"
-          subtitle="Validación experimental confrontada con Ground Truth (presencia humana real)"
-          icon={<History size={18} />}
-        />
-        <TrialsTable trials={trials} loading={trialsLoading} />
-      </div>
+      <section>
+        <SectionHeader title="Historial de ensayos" subtitle="Validación frente a la presencia observada" icon={<History size={18} />} />
+        <TrialsTable trials={trials} loading={metricsLoading} />
+      </section>
     </div>
   );
-};
+}

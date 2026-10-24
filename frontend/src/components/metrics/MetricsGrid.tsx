@@ -1,4 +1,3 @@
-import React from 'react';
 import { MetricCard } from './MetricCard';
 import { CaseMetrics } from '../../types/metrics';
 import { Target, AlertTriangle, Clock } from 'lucide-react';
@@ -8,8 +7,8 @@ interface MetricsGridProps {
   loading?: boolean;
 }
 
-export const MetricsGrid: React.FC<MetricsGridProps> = ({ metrics, loading = false }) => {
-  if (loading || !metrics) {
+export function MetricsGrid({ metrics, loading = false }: MetricsGridProps) {
+  if (loading) {
     return (
       <div className="grid-4">
         {[1, 2, 3, 4].map((i) => (
@@ -22,6 +21,8 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({ metrics, loading = fal
       </div>
     );
   }
+
+  if (!metrics) return <p>No se pudieron cargar las métricas.</p>;
 
   if (metrics.total_tests === 0) {
     return <p style={{ color: 'var(--text-muted)' }}>Sin ensayos registrados. Las métricas se calcularán con las observaciones del hardware.</p>;
@@ -66,4 +67,4 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({ metrics, loading = fal
       />
     </div>
   );
-};
+}

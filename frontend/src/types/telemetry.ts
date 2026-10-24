@@ -9,7 +9,12 @@ export interface FilterMetadata {
   name: string;
   window_size: number;
   threshold?: number;
-  parameters: Record<string, any>;
+  parameters: {
+    hampel_window?: number;
+    hampel_sigmas?: string;
+    moving_average_window?: number;
+    variance_threshold?: number;
+  };
 }
 
 export interface FeatureMetrics {
@@ -18,7 +23,7 @@ export interface FeatureMetrics {
   detection_score: number;
   threshold_applied: number;
   periodicity_ratio?: number;
-  target_type?: string;
+  target_type?: string | null;
 }
 
 export interface CaseCurrentStatus {
@@ -29,29 +34,29 @@ export interface CaseCurrentStatus {
   current_latency_ms: number;
   last_updated: string;
   total_samples: number;
-  target_type?: string;
+  target_type?: string | null;
 }
 
 export interface CaseTelemetryPayload {
-  case_id: string;
+  case_id: CaseId;
   presence: boolean;
   latency_ms: number;
   raw_points: SignalPoint[];
-  filtered_points?: SignalPoint[];
-  filter_metadata?: FilterMetadata;
-  features?: FeatureMetrics;
-  current_score?: number;
-  ground_truth?: boolean;
-  target_type?: string;
+  filtered_points?: SignalPoint[] | null;
+  filter_metadata?: FilterMetadata | null;
+  features?: FeatureMetrics | null;
+  current_score?: number | null;
+  ground_truth?: boolean | null;
+  target_type?: string | null;
 }
 
 export type ConnectionState = 'LIVE' | 'RECONNECTING' | 'OFFLINE';
 
 export interface WebSocketMessage {
-  type: 'initial_state' | 'telemetry_batch' | 'heartbeat';
+  type: 'initial_state' | 'telemetry_batch';
   timestamp: string;
   data: {
     statuses: CaseCurrentStatus[];
-    cases: Record<string, CaseTelemetryPayload>;
+    cases: Partial<Record<CaseId, CaseTelemetryPayload>>;
   };
 }

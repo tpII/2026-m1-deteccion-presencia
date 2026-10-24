@@ -10,6 +10,8 @@ import subprocess
 import time
 import urllib.request
 import pytest
+from paho.mqtt.publish import multiple
+from websockets.sync.client import connect
 
 ROOT = Path(__file__).resolve().parents[2]
 pytestmark = pytest.mark.skipif(
@@ -44,7 +46,7 @@ def test_startup_mode_and_cleanup(args, tmp_path):
     ports = [8000, 5173, 1883]
     if any(open_port(port) for port in ports):
         pytest.skip("Hay servicios del usuario activos en los puertos de la prueba")
-    env = dict(os.environ, DEBUG="false", MQTT_HOST="127.0.0.1", MQTT_PORT="1883",
+    env = dict(os.environ, APP_DEBUG="false", MQTT_HOST="127.0.0.1", MQTT_PORT="1883",
                DATABASE_URL=f"sqlite+aiosqlite:///{tmp_path / 'telemetry.db'}")
     with (tmp_path / "startup.log").open("w") as output:
         process = subprocess.Popen(["bash", "start.sh", *args], cwd=ROOT, env=env, stdout=output, stderr=subprocess.STDOUT)
@@ -71,6 +73,26 @@ def test_startup_mode_and_cleanup(args, tmp_path):
             assert all(row["total_samples"] == 0 and not row["is_connected"] for row in statuses)
             with urllib.request.urlopen("http://127.0.0.1:8000/api/v1/metrics/pir", timeout=1) as response:
                 assert json.load(response)["total_tests"] == 0
+            samples = [
+                ("presence/pir/telemetry", {"case_id": "pir", "presence": True, "raw_value": 1}),
+                ("presence/csi/router/raw", {"case_id": "csi_router", "amplitudes": [23, 99]}),
+                ("presence/csi/dedicated/raw", {"case_id": "csi_dedicated", "amplitudes": [21, 99]}),
+            ]
+            with connect("ws://127.0.0.1:8000/ws/telemetry") as websocket:
+                assert json.loads(websocket.recv(timeout=2))["type"] == "initial_state"
+                multiple([{"topic": topic, "payload": json.dumps(sample), "qos": 1} for topic, sample in samples], hostname="127.0.0.1")
+                deadline = time.monotonic() + 5
+                while time.monotonic() < deadline:
+                    message = json.loads(websocket.recv(timeout=2))
+                    if all(status["total_samples"] == 1 for status in message["data"]["statuses"]):
+                        break
+                else:
+                    pytest.fail("Las muestras MQTT no llegaron al WebSocket")
+                assert message["data"]["cases"]["pir"]["presence"] is True
+                assert message["data"]["cases"]["csi_router"]["raw_points"][-1]["value"] == 23
+            for _, sample in samples:
+                with urllib.request.urlopen(f"http://127.0.0.1:8000/api/v1/telemetry/{sample['case_id']}/history", timeout=2) as response:
+                    assert len(json.load(response)) == 1
         finally:
             process.send_signal(signal.SIGTERM)
             try:

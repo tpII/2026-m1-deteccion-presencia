@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Desarrollo local: Mosquitto, FastAPI y web para recibir telemetria del hardware.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -17,7 +16,7 @@ for executable in node curl; do
   command -v "$executable" >/dev/null || { echo "Falta instalar $executable." >&2; exit 1; }
 done
 if [[ ! -x backend/.venv/bin/python || ! -f frontend/node_modules/vite/bin/vite.js ]]; then
-  echo "Instala primero las dependencias siguiendo README.md, seccion 2." >&2
+  echo "Instala primero las dependencias siguiendo README.md." >&2
   exit 1
 fi
 
@@ -25,7 +24,6 @@ pids=()
 cleanup() {
   trap - EXIT INT TERM
   echo "Deteniendo los procesos iniciados por este script..."
-  # Bash 3.2 de macOS considera una expansion de array vacio como no definida.
   if [[ ${#pids[@]} -gt 0 ]]; then
     for pid in "${pids[@]}"; do kill "$pid" 2>/dev/null || true; done
     for pid in "${pids[@]}"; do wait "$pid" 2>/dev/null || true; done
@@ -55,14 +53,14 @@ for port in 8000 5173; do
 done
 
 export DATA_SOURCE=mqtt
-read -r broker_host broker_port < <(cd backend && .venv/bin/python -c 'from app.core.config import settings; print(settings.MQTT_HOST, settings.MQTT_PORT)')
+read -r broker_host broker_port < <(cd backend && .venv/bin/python -c 'from app.config import settings; print(settings.MQTT_HOST, settings.MQTT_PORT)')
 if ! port_is_open "$broker_host" "$broker_port"; then
   if [[ "$broker_host" != "localhost" && "$broker_host" != "127.0.0.1" ]] || [[ "$broker_port" != "1883" ]]; then
     echo "El broker configurado en $broker_host:$broker_port no responde. Inicialo primero." >&2
     exit 1
   fi
   command -v mosquitto >/dev/null || { echo "Falta Mosquitto. Instala el broker siguiendo README.md." >&2; exit 1; }
-  mosquitto -c infrastructure/mosquitto/mosquitto.local.conf &
+  mosquitto -c mosquitto/mosquitto.conf &
   pids+=("$!")
   broker_ready=false
   for attempt in {1..15}; do
@@ -84,7 +82,6 @@ for attempt in {1..20}; do
 done
 if [[ "$backend_ready" != "true" ]]; then echo "El backend no respondio a tiempo." >&2; exit 1; fi
 
-# Comprobar MQTT, no solamente que el puerto TCP este abierto.
 (cd backend && .venv/bin/python - <<'PYTHON'
 import json
 import time
@@ -105,7 +102,6 @@ echo "Modo: $mode"
 echo "Dashboard: http://localhost:5173"
 echo "API: http://localhost:8000/docs"
 echo "Ctrl+C detiene los procesos iniciados por este script."
-# Detectar caidas y apagar los otros procesos en vez de dejar una prueba parcial.
 while true; do
   for pid in "${pids[@]}"; do
     if ! kill -0 "$pid" 2>/dev/null; then

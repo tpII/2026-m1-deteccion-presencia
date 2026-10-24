@@ -9,9 +9,9 @@ export interface CaseMetrics {
   false_positives: number;
   false_negatives: number;
   average_latency_ms: number;
-  precision?: number;
-  recall?: number;
-  f1_score?: number;
+  precision: number | null;
+  recall: number | null;
+  f1_score: number | null;
 }
 
 export interface Trial {
@@ -22,8 +22,8 @@ export interface Trial {
   detected_presence: boolean;
   is_correct: boolean;
   latency_ms: number;
-  score?: number;
-  notes?: string;
+  score?: number | null;
+  notes?: string | null;
 }
 
 export interface ComparisonTableEntry {
@@ -38,4 +38,13 @@ export interface SystemComparison {
   metrics: CaseMetrics[];
   table: ComparisonTableEntry[];
   last_updated: string;
+}
+
+export interface TrialInput {
+  case_id: CaseId;
+  ground_truth: boolean;
+  detected_presence: boolean;
+  latency_ms: number;
+  score?: number;
+  notes?: string;
 }

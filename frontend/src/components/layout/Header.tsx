@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ConnectionStatus } from '../status/ConnectionStatus';
-import { useWebSocket } from '../../hooks/useWebSocket';
-import { useTheme } from '../../hooks/useTheme';
+import { ConnectionStatus } from '../ui/ConnectionStatus';
+import { useTelemetry } from '../../hooks/useTelemetry';
+import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api';
 import { Cpu, Radio, Sun, Moon, Menu, X } from 'lucide-react';
 
@@ -11,8 +11,8 @@ interface HeaderProps {
   menuButtonRef: React.RefObject<HTMLButtonElement>;
 }
 
-export const Header: React.FC<HeaderProps> = ({ menuOpen, onToggleMenu, menuButtonRef }) => {
-  const { connectionState } = useWebSocket();
+export function Header({ menuOpen, onToggleMenu, menuButtonRef }: HeaderProps) {
+  const { connectionState } = useTelemetry();
   const { theme, toggleTheme } = useTheme();
   const [timeStr, setTimeStr] = useState<string>('');
   const [dataSource, setDataSource] = useState<string | null>(null);
@@ -81,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({ menuOpen, onToggleMenu, menuButt
       </div>
 
       <div className="header-controls">
-        {/* Conmutador de Modo Oscuro / Claro */}
+
         <button
           className="theme-toggle"
           onClick={toggleTheme}
@@ -132,4 +132,4 @@ export const Header: React.FC<HeaderProps> = ({ menuOpen, onToggleMenu, menuButt
       </div>
     </header>
   );
-};
+}

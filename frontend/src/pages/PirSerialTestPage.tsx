@@ -1,8 +1,8 @@
 import React from 'react';
 import { Usb } from 'lucide-react';
-import { GlassPanel } from '../components/common/GlassPanel';
-import { SectionHeader } from '../components/common/SectionHeader';
-import { StatusBadge } from '../components/common/StatusBadge';
+import { GlassPanel } from '../components/ui/GlassPanel';
+import { SectionHeader } from '../components/ui/SectionHeader';
+import { StatusBadge } from '../components/ui/StatusBadge';
 import { usePirSerial } from '../hooks/usePirSerial';
 import { usePirUsbHistory } from '../hooks/usePirUsbHistory';
 
@@ -37,7 +37,7 @@ export const PirSerialTestPage: React.FC = () => {
           corresponden al backend; el estado USB se muestra aquí. Podés guardar manualmente los últimos 50 mensajes en la base de datos.
         </p>
         <p style={{ marginBottom: '1rem', fontSize: '0.86rem' }}>
-          Cerrá el monitor serial de Arduino, presioná Conectar ESP32 y seleccioná su puerto USB.
+          Cerrá el monitor serial de PlatformIO, presioná Conectar ESP32 y seleccioná su puerto USB.
           El firmware debe terminar cada mensaje con un salto de línea (Serial.println).
         </p>
         <button
