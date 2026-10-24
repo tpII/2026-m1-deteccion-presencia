@@ -1,8 +1,8 @@
 """Tests para filtros y pipeline de procesamiento de señal."""
 
 import numpy as np
-from app.signal_processing.filters.moving_average import MovingAverageFilter
-from app.signal_processing.filters.hampel import HampelFilter
+from app.signal_processing.filters import MovingAverageFilter
+from app.signal_processing.filters import HampelFilter
 from app.signal_processing.pipeline import CsiSignalPipeline
 
 

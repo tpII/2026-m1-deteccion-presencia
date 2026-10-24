@@ -1,5 +1,3 @@
-"""Lecturas reales de la prueba PIR USB, independientes de la telemetría general."""
-
 from datetime import datetime
 from pydantic import AwareDatetime, BaseModel, Field, StrictBool
 

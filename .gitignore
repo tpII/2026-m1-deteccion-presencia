@@ -9,13 +9,10 @@ frontend/yarn-error.log*
 
 # Python / Backend
 backend/.venv/
-backend/__pycache__/
-backend/*/__pycache__/
-backend/*/*/__pycache__/
-backend/*/*/*/__pycache__/
+__pycache__/
 *.py[cod]
 *$py.class
-backend/.pytest_cache/
+.pytest_cache/
 backend/.coverage
 backend/htmlcov/
 backend/*.db
@@ -24,9 +21,14 @@ backend/*.sqlite
 *.db
 *.sqlite3
 *.sqlite
+*.db-*
+*.sqlite3-*
+*.sqlite-*
 
 # Environment variables
 .env
+firmware/pir/include/config.h
+firmware/**/.pio/
 
 # IDE / OS
 .DS_Store
@@ -35,15 +37,6 @@ backend/*.sqlite
 *.swp
 *.swo
 
-# Mosquitto local data
-infrastructure/mosquitto/data/
-infrastructure/mosquitto/log/
-
-# Docker
-.docker/
-docker-compose.override.yml
-docker-compose*.local.yml
-*.docker.log
-backend_data/
-mosquitto_data/
-mosquitto_log/
+# Archivos temporales de informes y exportaciones
+tmp/
+output/

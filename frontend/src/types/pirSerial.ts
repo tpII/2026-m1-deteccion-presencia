@@ -5,8 +5,6 @@ export interface PirReading {
   motion: boolean;
   receivedAt: number;
 }
-
-// TypeScript no incluye Web Serial en sus tipos DOM actuales.
 export interface PirSerialPort {
   readable: ReadableStream<Uint8Array> | null;
   open(options: { baudRate: number }): Promise<void>;

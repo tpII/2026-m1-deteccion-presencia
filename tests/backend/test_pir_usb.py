@@ -2,8 +2,8 @@
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from app.core.config import settings
-from app.database.connection import get_db_connection, init_db
+from app.config import settings
+from app.database import get_db_connection, init_db
 from app.main import app
 
 

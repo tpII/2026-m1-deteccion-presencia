@@ -2,53 +2,42 @@ import React from 'react';
 import { CaseStudyLayout } from '../components/layout/CaseStudyLayout';
 import { DigitalSignalChart } from '../components/charts/DigitalSignalChart';
 import { useTelemetry } from '../hooks/useTelemetry';
-import { useMetrics } from '../hooks/useMetrics';
+import { useCaseMetrics } from '../hooks/useCaseMetrics';
 
 export const PirCasePage: React.FC = () => {
   const { getCaseStatus, getCaseData } = useTelemetry();
-  const { metrics, trials, loading: metricsLoading } = useMetrics('pir');
+  const { metrics, trials, loading: metricsLoading, error } = useCaseMetrics('pir');
 
   const status = getCaseStatus('pir');
   const caseData = getCaseData('pir');
 
   return (
     <CaseStudyLayout
-      caseId="pir"
       title="Caso 1 — Sensor Infrarrojo Pasivo (PIR)"
       subtitle="Detección Piroeléctrica Térmica"
-      description="El sensor PIR capta las variaciones de radiación infrarroja térmica emitidas por cuerpos vivos al desplazarse a través de las diferentes zonas de su lente de Fresnel. Produce una salida lógica digital activa en alto (0: Ausencia / 1: Presencia) con latencia de disparo casi instantánea."
-      technology="Hardware: ESP32 + HC-SR501"
+      description="El sensor PIR capta las variaciones de radiación infrarroja térmica emitidas por cuerpos vivos al desplazarse a través de las diferentes zonas de su lente de Fresnel. Produce una salida lógica digital activa en alto (0: Sin movimiento / 1: Movimiento). El ensayo debe registrar también la presencia observada independientemente del sensor."
+      technology="Hardware: ESP32 + HW-416-B"
       status={status}
       metrics={metrics}
       trials={trials}
       metricsLoading={metricsLoading}
+      error={error}
       chartContent={
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="signal-content">
           <DigitalSignalChart
             points={caseData?.raw_points || []}
-            title="Línea Temporal Binaria de Salida GPIO (0: Ausencia / 1: Detección)"
+            title="Línea Temporal Binaria de Salida GPIO (0: Sin movimiento / 1: Movimiento)"
             height={260}
           />
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0.75rem 1rem',
-              background: 'var(--surface-subtle)',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.8rem',
-              color: 'var(--text-secondary)',
-            }}
-          >
+          <div className="signal-details">
             <span>
               Tipo de señal: <strong>Digital Discreta (Active High)</strong>
             </span>
             <span>
-              Muestreo: <strong>Interrupción física / 10 Hz Polling</strong>
+              Muestreo nominal: <strong>GPIO27 / cada 500 ms (2 Hz)</strong>
             </span>
             <span>
-              Retardo de mantenimiento: <strong>~3 - 5 segundos</strong>
+              Retención de salida: <strong>Según ajuste del sensor</strong>
             </span>
           </div>
         </div>

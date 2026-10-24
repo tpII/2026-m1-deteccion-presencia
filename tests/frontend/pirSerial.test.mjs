@@ -1,19 +1,8 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 import test from 'node:test';
+import { loadFrontendModule } from './loadModule.mjs';
 
-// Usa TypeScript ya instalado en el frontend y el runner nativo de Node.
-// Transpila en memoria: no genera archivos temporales ni necesita un navegador.
-const require = createRequire(new URL('../../frontend/package.json', import.meta.url));
-const ts = require('typescript');
-const source = await readFile(new URL('../../frontend/src/services/pirSerial.ts', import.meta.url), 'utf8');
-const { outputText } = ts.transpileModule(source, {
-  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2020 },
-});
-const { PirSerialConnection, getPirSerialSupportError } = await import(
-  `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`
-);
+const { PirSerialConnection, getPirSerialSupportError } = await loadFrontendModule('services/pirSerial.ts');
 
 function setup(t, options = {}) {
   const previousNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator');

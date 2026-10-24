@@ -1,5 +1,6 @@
-import React from 'react';
-import { GlassCard } from '../common/GlassCard';
+import type React from 'react';
+import { ChevronRight } from 'lucide-react';
+import { GlassCard } from '../ui/GlassCard';
 
 interface PipelineStageProps {
   stepNumber: number;
@@ -9,14 +10,16 @@ interface PipelineStageProps {
   icon?: React.ReactNode;
 }
 
-export const PipelineStage: React.FC<PipelineStageProps> = ({
+export function PipelineStage({
   stepNumber,
   title,
   subtitle,
   children,
   icon,
-}) => {
+}: PipelineStageProps) {
   return (
+    <>
+    {stepNumber > 1 && <div className="pipeline-arrow"><ChevronRight size={22} /></div>}
     <GlassCard className="pipeline-stage-card">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
@@ -49,5 +52,6 @@ export const PipelineStage: React.FC<PipelineStageProps> = ({
 
       <div style={{ flex: 1, marginTop: '0.4rem' }}>{children}</div>
     </GlassCard>
+    </>
   );
-};
+}

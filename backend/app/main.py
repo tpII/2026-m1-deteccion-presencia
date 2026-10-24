@@ -1,46 +1,28 @@
-"""Punto de entrada principal para el backend FastAPI."""
-
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
-from app.core.logging import setup_logging, logger
-from app.database.connection import init_db
-from app.services.telemetry_service import telemetry_service
+from app.config import settings
+from app.logging_config import setup_logging, logger
+from app.database import init_db
+from app.telemetry import telemetry_service
 
-# Routers
-from app.api.routes.health import router as health_router
-from app.api.routes.telemetry import router as telemetry_router
-from app.api.routes.metrics import router as metrics_router
-from app.api.routes.cases import router as cases_router
-from app.api.routes.websocket import router as ws_router
-from app.api.routes.config import router as config_router
-from app.api.routes.pir_usb import router as pir_usb_router
-
-# Inicializar logging
-setup_logging()
+from app.api.health import router as health_router
+from app.api.telemetry import router as telemetry_router
+from app.api.metrics import router as metrics_router
+from app.api.websocket import router as ws_router
+from app.api.pir_usb import router as pir_usb_router
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Ciclo de vida de la aplicación: arranque y apagado limpio."""
-    logger.info("==================================================")
-    logger.info(f"Iniciando {settings.APP_NAME} v{settings.APP_VERSION}")
-    logger.info(f"Modo de Fuente de Datos: {settings.DATA_SOURCE.upper()}")
-    logger.info("==================================================")
-
-    # 1. Inicializar base de datos SQLite y semillas
+async def lifespan(_app: FastAPI):
+    setup_logging()
+    logger.info("Iniciando %s v%s", settings.APP_NAME, settings.APP_VERSION)
     await init_db()
-
-    # 2. Inicializar servicio de telemetría y generador/suscriptor de datos
     await telemetry_service.initialize()
-
-    yield
-
-    # Apagado limpio
-    logger.info("Cerrando servicios de telemetría y conexiones...")
-    await telemetry_service.shutdown()
-    logger.info("Servicios detenidos correctamente.")
+    try:
+        yield
+    finally:
+        await telemetry_service.shutdown()
 
 
 app = FastAPI(
@@ -54,7 +36,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configuración de CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -63,19 +44,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Inclusión de Rutas
 app.include_router(health_router, prefix="/api/v1")
 app.include_router(telemetry_router, prefix="/api/v1")
 app.include_router(metrics_router, prefix="/api/v1")
-app.include_router(cases_router, prefix="/api/v1")
-app.include_router(config_router, prefix="/api/v1")
 app.include_router(pir_usb_router, prefix="/api/v1")
 app.include_router(ws_router)
 
 
 @app.get("/")
 async def root():
-    """Redirección o bienvenida."""
     return {
         "project": "Detección de Presencia mediante PIR y CSI Wi-Fi",
         "group": "Grupo M1 - Taller de Proyecto II 2026",
