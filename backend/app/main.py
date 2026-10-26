@@ -11,6 +11,7 @@ from app.api.telemetry import router as telemetry_router
 from app.api.metrics import router as metrics_router
 from app.api.websocket import router as ws_router
 from app.api.pir_usb import router as pir_usb_router
+from app.api.csi import router as csi_router
 
 
 @asynccontextmanager
@@ -48,6 +49,7 @@ app.include_router(health_router, prefix="/api/v1")
 app.include_router(telemetry_router, prefix="/api/v1")
 app.include_router(metrics_router, prefix="/api/v1")
 app.include_router(pir_usb_router, prefix="/api/v1")
+app.include_router(csi_router, prefix="/api/v1")
 app.include_router(ws_router)
 
 

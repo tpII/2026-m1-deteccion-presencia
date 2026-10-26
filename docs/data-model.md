@@ -37,7 +37,7 @@ Agrupa campañas o sesiones experimentales en laboratorio.
 Para evitar latencias de I/O en disco durante la graficación en tiempo real, el backend utiliza un buffer circular implementado con `collections.deque(maxlen=500)`:
 
 - `_raw_buffers[case_id]`: Array FIFO de `SignalPoint { timestamp, value }`.
-- `_filtered_buffers[case_id]`: Array FIFO de `SignalPoint` tras el pipeline de filtrado.
+- `_movement[case_id]` y `_shape[case_id]`: Arrays FIFO de `SignalPoint` con los indicadores de movimiento y forma del detector CSI.
 - `_current_statuses[case_id]`: Snapshot instantáneo del estado de conexión, presencia y latencia.
 
 ---

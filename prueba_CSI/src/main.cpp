@@ -156,7 +156,7 @@ static void printCsvLine(const CsiPacket &p) {
                 r.rx_state, p.len, p.firstWordInvalid);
   for (uint16_t i = 0; i < p.len; i++) {
     Serial.print((int)p.buf[i]);  // int8_t se imprimiria como caracter
-    if (i + 1 < p.len) Serial.print(' ');
+    if (i + 1 < p.len) Serial.print(',');  // comas: compatible con las herramientas de esp-csi
   }
   Serial.println("]\"");
 }
@@ -166,7 +166,7 @@ static void printCsvHeader() {
       "# CSV: type,seq,mac,rssi,rate,sig_mode,mcs,cwb,smoothing,not_sounding,aggregation,"
       "stbc,fec_coding,sgi,noise_floor,ampdu_cnt,channel,secondary_channel,local_timestamp,"
       "ant,sig_len,rx_state,len,first_word_invalid,data");
-  Serial.println("# data = [imag0 real0 imag1 real1 ...] (int8, 2 bytes por subportadora)");
+  Serial.println("# data = [imag0,real0,imag1,real1,...] (int8, 2 bytes por subportadora)");
 }
 
 static void dissect(const CsiPacket &p) {

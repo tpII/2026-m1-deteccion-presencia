@@ -1,6 +1,6 @@
 # Procesamiento de Señal — Detección por CSI Wi-Fi y PIR
 
-Este documento describe la base teórica y la implementación del pipeline de señal utilizado para discernir presencia humana en interiores.
+Este documento describe la base teórica y el algoritmo utilizado para detectar presencia humana en interiores.
 
 ---
 
@@ -21,57 +21,36 @@ El cuerpo humano, compuesto en un 70% de agua salina, actúa como un reflector y
 
 ---
 
-## 2. Etapas del Pipeline de Señal (`SignalProcessingPipeline`)
+## 2. Detector CSI (`backend/app/signal_processing/presence_detector.py`)
+
+El ESP32 (`firmware/csi_router`) publica por cada paquete del router la amplitud $|H(k)|$ de 55 subportadoras del campo HT-LTF ($k = -28 \dots 28$, sin $k = 0$ ni $k = 1$), unas 10 veces por segundo. El backend calcula dos indicadores sobre una ventana móvil de **4 s**:
 
 ```
-[ Señal Cruda ]
+[ Amplitudes |H(k)| de cada paquete ]
        │
        ▼
-[ Filtro de Hampel ] (Ventana = 7, 3σ)  ──► Elimina picos impulsivos / outliers de RF
+[ Normalización ] ──► se divide por la amplitud media del paquete (quita el ajuste de ganancia del chip)
+       │
+       ├──► Indicador de MOVIMIENTO: desvío, en la ventana, de la turbulencia (desvío / media entre subportadoras)
+       └──► Indicador de FORMA: distancia RMS entre el perfil del paquete y el perfil de la habitación vacía
        │
        ▼
-[ Media Móvil ] (Ventana = 5)           ──► Suprime ruido térmico de alta frecuencia
-       │
-       ▼
-[ Extracción de Características ]       ──► Varianza temporal y Energía de la señal
-       │
-       ▼
-[ Función de Score & Umbral ]          ──► Sigmoide normalizada (0 a 1) y Decisión
-       │
-       ▼
-[ PRESENCIA / AUSENCIA ]
+[ Umbrales calibrados en el lugar ] ──► PRESENCIA si cualquiera de los dos supera su umbral
 ```
 
-### Etapa 1: Filtro de Hampel
-Reemplaza los valores anómalos transitorios producidos por ruidos de canal o paquetes corruptos por la mediana local, utilizando la Desviación Absoluta de la Mediana (MAD):
+- **Movimiento** sube mucho cuando una persona camina.
+- **Forma** detecta también a una persona quieta: su cuerpo cambia los caminos de la señal aunque no se mueva.
 
-$$\text{MAD} = \text{median}(|x_i - \tilde{x}|)$$
-$$\text{Umbral} = 3 \times 1.4826 \times \text{MAD}$$
+### Calibración
 
-Si $|x_i - \tilde{x}| > \text{Umbral}$, se reemplaza $x_i$ por $\tilde{x}$.
+Los valores de CSI dependen del router, de las posiciones y de la habitación, así que los umbrales se fijan en el lugar:
 
-### Etapa 2: Filtro de Media Móvil (Moving Average)
-Suaviza las pequeñas perturbaciones térmicas preservando las envolventes inducidas por desplazamientos corporales:
+1. Desde la página del Caso 2 se presiona **Calibrar** (`POST /api/v1/csi/{case_id}/calibration`).
+2. Hay 10 s para salir de la habitación y luego se registran 30 s con la habitación vacía.
+3. Se guarda el perfil promedio del canal vacío y, para cada indicador, umbral = promedio + 3 desvíos de la línea base (como mínimo 1,3 veces el promedio).
 
-$$y[n] = \frac{1}{M} \sum_{k=0}^{M-1} x[n-k]$$
+Durante la calibración no debe haber nadie cerca: el CSI también percibe movimiento fuera de la habitación.
 
-### Etapa 3: Extracción de Características
-- **Varianza Temporal ($\sigma^2$)**:
-  En reposo (sala vacía), la señal oscila alrededor de una línea base con varianza mínima ($\sigma^2 \le 0.8\text{ dB}^2$).
-  Con presencia humana, las variaciones dinámicas elevan la varianza a $\sigma^2 \ge 2.2\text{ dB}^2$.
-- **Energía de la Señal ($E$)**:
-  Energía cuadrática media normalizada en ventana deslizante.
+### Validación con grabaciones reales
 
-### Etapa 4: Clasificador y Función de Score
-Se calcula un puntaje continuo mediante función logística acotada:
-
-$$\text{Score} = \frac{1}{1 + e^{-k \cdot (\sigma^2 - \text{Umbral})}}$$
-
-Si $\text{Score} \ge 0.5$, se emite el estado **PRESENCIA**; de lo contrario, **AUSENCIA**.
-
----
-
-## 3. Estado de Simulación y Transición a Hardware
-
-- **Modo Actual (MOCK)**: Modela las subportadoras mediante combinación de frecuencias fundamentales, ruido gaussiano de RF y ráfagas estocásticas cuando hay personas presentes.
-- **Modo Hardware (MQTT)**: Los nodos ESP32 con firmware `esp-csi` emitirán los vectores de bytes decodificados hacia los tópicos MQTT, ingresando al mismo pipeline exacto sin modificar el software de procesamiento ni la interfaz de usuario.
+El algoritmo se ajustó fuera de línea con grabaciones del ESP32 (`prueba_CSI/analisis`): con ventana de 4 s se obtuvo 0 % de falsas alarmas con la habitación vacía y 100 % de detección caminando y sentado quieto. Con ventana de 2 s, la detección de la persona quieta bajaba al 84 %.

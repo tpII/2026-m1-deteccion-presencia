@@ -199,10 +199,16 @@ test('el gráfico etiqueta el método que realmente tiene ensayos', async () => 
   assert.match(document.body.textContent, /73 %/);
 });
 
-test('la página CSI muestra señales y características recibidas por WebSocket', async () => {
+test('la página CSI muestra los indicadores, sus umbrales y el estado de calibración', async () => {
   window.history.replaceState(null, '', '/case/csi_router');
-  globalThis.fetch = async (url) => url.endsWith('/trials')
-    ? json([]) : url.endsWith('/health') ? json({ data_source: 'mqtt' }) : json({ total_tests: 0 });
+  const posts = [];
+  globalThis.fetch = async (url, options) => {
+    if (options?.method === 'POST') {
+      posts.push(url);
+      return json({ state: 'esperando', message: 'Salí de la habitación', progress: 0, seconds_remaining: 10 });
+    }
+    return url.endsWith('/trials') ? json([]) : url.endsWith('/health') ? json({ data_source: 'mqtt' }) : json({ total_tests: 0 });
+  };
   await mount(createElement(App));
   await act(async () => {
     const socket = FakeSocket.instances.at(-1);
@@ -210,23 +216,28 @@ test('la página CSI muestra señales y características recibidas por WebSocket
     socket.receive({
       type: 'telemetry_batch',
       data: {
-        statuses: [{ case_id: 'csi_router', is_connected: true, presence: false, current_latency_ms: 10 }],
+        statuses: [{ case_id: 'csi_router', is_connected: true, presence: true, current_latency_ms: 10 }],
         cases: {
           csi_router: {
-            case_id: 'csi_router', presence: false, current_score: 0.25,
+            case_id: 'csi_router', presence: true,
             raw_points: [{ timestamp: 1000, value: 20 }, { timestamp: 1500, value: 23 }],
-            filtered_points: [{ timestamp: 1000, value: 21 }, { timestamp: 1500, value: 22 }],
-            filter_metadata: { name: 'Hampel + Moving Average', parameters: { hampel_window: 7, moving_average_window: 5 } },
-            features: { variance: 1.234, energy: 23, detection_score: 0.25, threshold_applied: 2.2 },
+            movement_points: [{ timestamp: 1000, value: 0.01 }, { timestamp: 1500, value: 0.04 }],
+            shape_points: [{ timestamp: 1000, value: 0.05 }, { timestamp: 1500, value: 0.2 }],
+            features: { movement_index: 0.04, movement_threshold: 0.0165, shape_index: 0.2, shape_threshold: 0.0474, detection_ratio: 4.219 },
+            calibration: { state: 'calibrado', message: 'Calibrado con 300 paquetes de la habitación vacía.', progress: 1, seconds_remaining: 0 },
           },
         },
       },
     });
   });
   assert.equal(document.querySelectorAll('[_echarts_instance_] svg').length, 3);
-  assert.match(document.body.textContent, /1\.234/);
-  assert.match(document.body.textContent, /25\.0%/);
-  assert.match(document.body.textContent, /Hampel \+ Moving Average/);
+  assert.match(document.body.textContent, /umbral 0\.017/);
+  assert.match(document.body.textContent, /0\.0474/);
+  assert.match(document.body.textContent, /4\.22/);
+  assert.match(document.body.textContent, /Calibrado con 300 paquetes/);
+  const button = [...document.querySelectorAll('button')].find((element) => element.textContent.includes('Recalibrar'));
+  await act(async () => button.click());
+  assert.deepEqual(posts, ['http://localhost:8000/api/v1/csi/csi_router/calibration']);
 });
 
 for (const [path, heading] of [

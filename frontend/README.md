@@ -6,7 +6,7 @@ Dashboard interactivo en tiempo real desarrollado con **React**, **TypeScript**,
 
 - **Separación de Responsabilidades**: Los componentes visuales consumen hooks y servicios; no realizan `fetch` directo ni contienen URLs hardcodeadas.
 - **Apache ECharts en Canvas**: Gráficos de alta frecuencia con mínimo overhead de memoria (cronograma binario para PIR y curvas de amplitud continuo + umbrales para CSI).
-- **Pipeline Visual Interactivo**: Diagrama de bloques transparente animado con las 5 etapas del procesamiento: Señal Cruda → Filtro → Señal Filtrada → Descriptores (Varianza, Energía) → Decisión Final de Presencia.
+- **Pipeline Visual Interactivo**: Las 5 etapas del detector CSI: Señal Cruda → Normalización → Indicadores → Umbrales → Detección. La página de cada caso CSI incluye el botón **Calibrar**.
 - **Resiliencia WebSocket**: Reconexión automática exponencial e indicador de estado accesible de triple canal (texto + color + icono).
 - **Páginas**:
   - `OverviewPage`: Resumen general con 3 cards de métodos y pipeline CSI en vivo.

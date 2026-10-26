@@ -35,7 +35,7 @@ Mosquitto Broker
   ▼ paho-mqtt
 FastAPI Backend ◄──────────── [ MockDataSource ] (si DATA_SOURCE=mock)
   │
-  ├── Pipeline de Procesamiento de Señal (Hampel Filter + Moving Average + Varianza)
+  ├── Detector CSI (indicadores de movimiento y forma, calibrado en el lugar)
   ├── Persistencia Experimental (SQLite / aiosqlite)
   └── Buffer Circular en Memoria (500 muestras en tiempo real)
   │
@@ -65,7 +65,7 @@ WebSocket Manager              Endpoints HTTP               Documentación Inter
 ### Backend
 - **Framework**: Python 3.12+ (probado en 3.13) con FastAPI y Uvicorn.
 - **Validación & Configuración**: Pydantic v2 y Pydantic-Settings.
-- **Procesamiento de Señal & Científico**: NumPy y SciPy (Filtro Hampel por MAD, media móvil, varianza temporal).
+- **Procesamiento de Señal**: NumPy (indicadores de movimiento y forma del canal CSI, ver `docs/signal-processing.md`).
 - **Persistencia**: SQLite asíncrono con `aiosqlite`.
 - **Telemetría**: WebSockets nativos de FastAPI y cliente MQTT `paho-mqtt`.
 
@@ -99,7 +99,7 @@ tp2/
 │   │   ├── repositories/   # Buffers circulares en memoria y persistencia
 │   │   ├── schemas/        # Modelos de validación Pydantic
 │   │   ├── services/       # Orquestadores de telemetría y métricas
-│   │   └── signal_processing/ # Filtros (Hampel, MA, LowPass) y Pipeline modular
+│   │   └── signal_processing/ # Detector CSI con calibración
 │   ├── requirements.txt
 │   └── pyproject.toml
 │
@@ -108,6 +108,18 @@ tp2/
 ├── tests/                  # Tests unitarios y de integración de backend y frontend
 └── docs/                   # Documentación detallada (arquitectura, tópicos MQTT, modelos, señal)
 ```
+
+---
+
+## Inicio rápido en Windows
+
+Con Python 3.11+ y Node.js instalados, desde la carpeta del proyecto:
+
+```
+.\start.bat
+```
+
+La primera vez instala las dependencias del backend y del frontend, y Mosquitto con `winget` si falta. Después levanta el broker, el backend y la página web, y muestra la IP de la PC para configurar `MQTT_HOST` en el firmware. `Ctrl+C` detiene todo. (`start.sh` es el equivalente para Linux y macOS.)
 
 ---
 

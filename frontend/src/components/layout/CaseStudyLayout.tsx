@@ -51,7 +51,7 @@ export function CaseStudyLayout({ title, subtitle, description, technology, stat
       </section>
       {pipelineContent && (
         <section>
-          <SectionHeader title="Procesamiento de señal" subtitle="Señal cruda → Filtros → Características → Detección" icon={<Activity size={18} />} />
+          <SectionHeader title="Procesamiento de señal" subtitle="Señal cruda → Normalización → Indicadores → Umbrales → Detección" icon={<Activity size={18} />} />
           {pipelineContent}
         </section>
       )}

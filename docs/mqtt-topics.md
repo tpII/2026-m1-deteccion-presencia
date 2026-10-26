@@ -49,8 +49,8 @@ Publicado por el ESP32 receptor (Station) que captura tramas del router comercia
 ```
 
 ### Campos:
-- `amplitudes`: Vector numérico con la amplitud de las subportadoras OFDM analizadas (o la magnitud de la primera subportadora de referencia).
-- `latency_ms`: Latencia medida de captura y envío.
+- `amplitudes`: Amplitud |H(k)| de 55 subportadoras del campo HT-LTF (k = -28 … 28, sin k = 0 ni k = 1), en ese orden. La publica `firmware/csi_router` unas 10 veces por segundo (una por respuesta al ping).
+- `latency_ms`: Latencia medida de captura y envío (opcional).
 
 ---
 

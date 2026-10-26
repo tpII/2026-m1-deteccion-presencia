@@ -5,7 +5,7 @@ Servicio backend de alto rendimiento desarrollado con **FastAPI**, **Pydantic v2
 ## Características
 
 - **Arquitectura desacoplada**: Capa de ingesta (`DataSource`) intercambiable entre simulación sintética (`MockDataSource`) y hardware físico (`MQTTDataSource`) mediante configuración de entorno.
-- **Pipeline de Procesamiento de Señal**: Filtro de Hampel para eliminación de valores atípicos (*outliers*) basado en Desviación Absoluta de la Mediana (MAD), filtro de Media Móvil y extracción de varianza/energía temporal.
+- **Detector CSI**: Indicadores de movimiento y de forma del canal en ventanas de 4 s, con umbrales calibrados en el lugar (`POST /api/v1/csi/{case_id}/calibration`).
 - **Transmisión en Tiempo Real**: WebSocket `/ws/telemetry` con control de tasa de refresco (~8 Hz) y buffer circular en memoria para evitar latencia de base de datos.
 - **Persistencia Experimental**: Almacenamiento en SQLite para registro de ensayos con Ground Truth y cálculo de matrices de confusión (TP, TN, FP, FN, Tasa de detección, Latencia media).
 
@@ -24,7 +24,7 @@ backend/
 │   ├── repositories/       # Buffers circulares en memoria y consultas SQLite
 │   ├── schemas/            # Esquemas de validación Pydantic
 │   ├── services/           # Lógica de orquestación, telemetría y métricas
-│   ├── signal_processing/  # Filtros (Hampel, MA, LowPass) y Pipeline modular
+│   ├── signal_processing/  # Detector CSI con calibración
 │   └── main.py             # Instancia FastAPI y ciclo de vida (lifespan)
 ├── Dockerfile
 ├── pyproject.toml

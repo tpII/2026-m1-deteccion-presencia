@@ -5,25 +5,23 @@ export interface SignalPoint {
   value: number;
 }
 
-export interface FilterMetadata {
-  name: string;
-  window_size: number;
-  threshold?: number;
-  parameters: {
-    hampel_window?: number;
-    hampel_sigmas?: string;
-    moving_average_window?: number;
-    variance_threshold?: number;
-  };
+/** Indicadores del detector CSI (backend/app/signal_processing/presence_detector.py). */
+export interface FeatureMetrics {
+  movement_index: number | null;
+  movement_threshold: number | null;
+  shape_index: number | null;
+  shape_threshold: number | null;
+  /** Indicador / umbral del más alto de los dos; >= 1 significa presencia. */
+  detection_ratio: number;
 }
 
-export interface FeatureMetrics {
-  variance: number;
-  energy: number;
-  detection_score: number;
-  threshold_applied: number;
-  periodicity_ratio?: number;
-  target_type?: string | null;
+export type CalibrationState = 'sin_calibrar' | 'esperando' | 'calibrando' | 'calibrado';
+
+export interface CalibrationInfo {
+  state: CalibrationState;
+  message: string;
+  progress: number;
+  seconds_remaining: number;
 }
 
 export interface CaseCurrentStatus {
@@ -42,10 +40,10 @@ export interface CaseTelemetryPayload {
   presence: boolean;
   latency_ms: number;
   raw_points: SignalPoint[];
-  filtered_points?: SignalPoint[] | null;
-  filter_metadata?: FilterMetadata | null;
+  movement_points?: SignalPoint[] | null;
+  shape_points?: SignalPoint[] | null;
   features?: FeatureMetrics | null;
-  current_score?: number | null;
+  calibration?: CalibrationInfo | null;
   ground_truth?: boolean | null;
   target_type?: string | null;
 }

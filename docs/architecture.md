@@ -16,7 +16,7 @@ El sistema implementa una arquitectura desacoplada orientada a eventos para proc
         ▼ (paho-mqtt)
 [ Backend FastAPI ] ◄────── [ MockDataSource ] (si DATA_SOURCE=mock)
    ├── Ingesta & Validación (Pydantic)
-   ├── Pipeline de Señal (Hampel Filter + Moving Average + Varianza)
+   ├── Detector CSI (indicadores de movimiento y forma + calibración)
    ├── Persistencia Asíncrona (SQLite / aiosqlite)
    └── Repositorio en Memoria (Buffer Circular de 500 puntos)
         │
@@ -40,10 +40,7 @@ El sistema implementa una arquitectura desacoplada orientada a eventos para proc
 - **`MQTTDataSource`**: Se conecta al broker Mosquitto, se suscribe a los tópicos definidos y reinyecta datos al mismo pipeline sin alterar el backend ni el frontend.
 
 ### B. Capa de Procesamiento de Señal (`signal_processing/`)
-- **`HampelFilter`**: Suprime picos anómalos transitorios producidos por interferencia electromagnética mediante la Desviación Absoluta de la Mediana (MAD).
-- **`MovingAverageFilter`**: Suaviza el piso de ruido de alta frecuencia.
-- **`FeatureExtraction`**: Calcula varianza temporal móvil y energía cuadrática media. La varianza es el biomarcador principal para discernir presencia humana de un recinto estático.
-- **`DecisionLogic`**: Función sigmoide para computar un score de presencia normalizado ($0.0 \to 1.0$) y comparación con umbral calibrado.
+- **`CsiPresenceDetector`**: Calcula, en ventanas de 4 s, un indicador de movimiento (fluctuación del canal) y uno de forma (cambio respecto del canal vacío). Los umbrales se calibran en el lugar con la habitación vacía. Detalle en `docs/signal-processing.md`.
 
 ### C. Capa de Persistencia y Buffers (`repositories/`)
 - **`InMemoryTelemetryRepository`**: Colección `deque(maxlen=500)` para proveer consultas en tiempo $O(1)$ y alimentar los gráficos en tiempo real sin saturar la base de datos con escrituras por milisegundo.
