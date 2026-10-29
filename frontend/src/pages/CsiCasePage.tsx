@@ -1,5 +1,6 @@
 import { CaseStudyLayout } from '../components/layout/CaseStudyLayout';
-import { SignalChart } from '../components/charts/SignalChart';
+import { IndicatorChart } from '../components/charts/IndicatorChart';
+import { CalibrationPanel } from '../components/signal/CalibrationPanel';
 import { SignalProcessingPipeline } from '../components/signal/SignalProcessingPipeline';
 import { CSI_CASES } from '../config/cases';
 import { useTelemetry } from '../hooks/useTelemetry';
@@ -10,28 +11,37 @@ export function CsiCasePage({ caseId }: { caseId: Exclude<CaseId, 'pir'> }) {
   const { getCaseStatus, getCaseData } = useTelemetry();
   const { metrics, trials, loading, error } = useCaseMetrics(caseId);
   const data = getCaseData(caseId);
+  const status = getCaseStatus(caseId);
   const config = CSI_CASES[caseId];
+  const features = data?.features;
 
   return (
     <CaseStudyLayout
       {...config}
-      status={getCaseStatus(caseId)}
+      status={status}
       metrics={metrics}
       trials={trials}
       metricsLoading={loading}
       error={error}
       chartContent={
         <div className="signal-content">
-          <SignalChart
-            rawPoints={data?.raw_points ?? []}
-            filteredPoints={data?.filtered_points ?? []}
-            title="Amplitud CSI: señal cruda y filtrada"
-            height={300}
-          />
+          <CalibrationPanel caseId={caseId} calibration={data?.calibration} connected={status?.is_connected ?? false} />
+          <div className="indicator-charts">
+            <IndicatorChart
+              title="Indicador de movimiento (fluctuación del canal)"
+              points={data?.movement_points ?? []}
+              threshold={features?.movement_threshold}
+            />
+            <IndicatorChart
+              title="Indicador de forma (cambio respecto del canal vacío)"
+              points={data?.shape_points ?? []}
+              threshold={features?.shape_threshold}
+            />
+          </div>
           <div className="signal-details">
             <span>Enlace: <strong>{config.details}</strong></span>
-            <span>Procesamiento: <strong>Primera amplitud recibida</strong></span>
-            <span>Score: <strong>{data?.raw_points.length ? `${((data.current_score ?? 0) * 100).toFixed(1)}%` : 'Sin muestras'}</strong></span>
+            <span>Ventana: <strong>4 s</strong></span>
+            <span>Relación con el umbral: <strong>{features ? `${features.detection_ratio.toFixed(2)} (≥ 1 es presencia)` : 'Sin muestras'}</strong></span>
           </div>
         </div>
       }

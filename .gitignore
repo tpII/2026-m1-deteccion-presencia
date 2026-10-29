@@ -28,6 +28,8 @@ backend/*.sqlite
 # Environment variables
 .env
 firmware/pir/include/config.h
+firmware/csi_router/include/config.h
+prueba_CSI/include/wifi_secrets.h
 firmware/**/.pio/
 
 # IDE / OS

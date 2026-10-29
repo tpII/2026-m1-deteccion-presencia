@@ -14,11 +14,11 @@ Las bases anteriores pueden contener una tabla `experiments`: no tiene consumido
 
 ## Memoria y persistencia
 
-`telemetry_state.py` conserva hasta 500 puntos por método en memoria y envía los últimos 100 por WebSocket. Al reiniciar, esos buffers y los contadores comienzan vacíos; las muestras SQLite permanecen disponibles en el historial REST.
+`telemetry_state.py` conserva hasta 500 puntos por método en memoria y envía los últimos 100 puntos crudos y hasta 300 puntos de cada indicador CSI por WebSocket. La referencia del canal y los umbrales de calibración también viven en memoria y se pierden al reiniciar. Al reiniciar, esos buffers y los contadores comienzan vacíos; las muestras SQLite permanecen disponibles en el historial REST.
 
 El repositorio de telemetría escribe por lotes. Sólo retira de la cola las muestras confirmadas por SQLite; un fallo conserva el lote pendiente. El guardado periódico, aproximadamente cada 2 segundos, es independiente del envío WebSocket. Consultar el historial MQTT también vacía la cola; el cierre normal realiza un último guardado. Un cierre abrupto puede perder las filas todavía en memoria.
 
-El historial MQTT devuelve primero las filas más nuevas por `id`; los puntos en vivo conservan el orden de procesamiento. `timestamp` del nodo, `source` y `ground_truth` no se guardan en `telemetry`. El historial guarda una sola amplitud por mensaje CSI: la primera. Las marcas de tiempo y los campos ignorados están detallados en [mqtt-topics.md](mqtt-topics.md).
+El historial MQTT devuelve primero las filas más nuevas por `id`; los puntos en vivo conservan el orden de procesamiento. `timestamp` del nodo, `source` y `ground_truth` no se guardan en `telemetry`. El historial guarda un valor por mensaje CSI: la amplitud media del vector. El detector usa todas las subportadoras; los indicadores de movimiento y forma se conservan en memoria y se transmiten a la web, sin persistirse en SQLite. El score CSI es una relación indicador/umbral y puede superar 1; no es una probabilidad. Las marcas de tiempo y los campos ignorados están detallados en [mqtt-topics.md](mqtt-topics.md).
 
 La prueba USB conserva hasta 50 lecturas en el navegador y las guarda cuando se pulsa el botón. Es independiente del flujo MQTT.
 

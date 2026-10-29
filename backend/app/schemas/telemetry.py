@@ -1,6 +1,9 @@
 from datetime import datetime, timezone
+from typing import Literal
+
 from pydantic import BaseModel, Field, FiniteFloat
 from app.constants import CaseId
+from app.signal_processing.presence_detector import CALIBRATION_DELAY_SECONDS, CALIBRATION_SECONDS
 
 
 class SignalPoint(BaseModel):
@@ -8,20 +11,25 @@ class SignalPoint(BaseModel):
     value: float = Field(..., description="Valor numérico de amplitud o estado")
 
 
-class FilterMetadata(BaseModel):
-    name: str = Field(..., description="Nombre del filtro (ej. Hampel + Media Móvil)")
-    window_size: int = Field(..., description="Tamaño de la ventana de muestras")
-    threshold: float | None = Field(None, description="Umbral de rechazo de outliers (ej. 3 sigma)")
-    parameters: dict[str, int | float | str] = Field(default_factory=dict, description="Parámetros adicionales configurados")
-
-
 class FeatureMetrics(BaseModel):
-    variance: float = Field(..., description="Varianza de amplitud en la ventana temporal")
-    energy: float = Field(..., description="Energía normalizada de la señal")
-    detection_score: float = Field(..., description="Score continuo entre 0 y 1")
-    threshold_applied: float = Field(..., description="Umbral de decisión para presencia")
-    periodicity_ratio: float = Field(0.0, description="Grado de periodicidad armónica (alto en objetos rotativos como ventiladores)")
-    target_type: str = Field("empty", description="Clasificación del objetivo: empty, person_active, person_static, object_fan, object_moved")
+    """Indicadores del detector CSI (ver app/signal_processing/presence_detector.py)."""
+    movement_index: float | None = Field(None, description="Desvío de la turbulencia en la ventana")
+    movement_threshold: float | None = Field(None, description="Umbral calibrado del indicador de movimiento")
+    shape_index: float | None = Field(None, description="Distancia al perfil del canal vacío, promediada en la ventana")
+    shape_threshold: float | None = Field(None, description="Umbral calibrado del indicador de forma")
+    detection_ratio: float = Field(0.0, description="Indicador / umbral del más alto de los dos; >= 1 es presencia")
+
+
+class CalibrationInfo(BaseModel):
+    state: Literal["sin_calibrar", "esperando", "calibrando", "calibrado"]
+    message: str
+    progress: float = Field(..., ge=0, le=1, description="Avance de la etapa actual")
+    seconds_remaining: float = Field(..., ge=0)
+
+
+class CalibrationRequest(BaseModel):
+    delay_seconds: float = Field(CALIBRATION_DELAY_SECONDS, ge=0, le=120, description="Tiempo para salir de la habitación")
+    duration_seconds: float = Field(CALIBRATION_SECONDS, ge=10, le=300, description="Tiempo registrando la habitación vacía")
 
 
 class TelemetrySample(BaseModel):
@@ -59,10 +67,10 @@ class CaseTelemetryPayload(BaseModel):
     presence: bool
     latency_ms: float
     raw_points: list[SignalPoint]
-    filtered_points: list[SignalPoint] | None = None
-    filter_metadata: FilterMetadata | None = None
+    movement_points: list[SignalPoint] | None = None
+    shape_points: list[SignalPoint] | None = None
     features: FeatureMetrics | None = None
-    current_score: float | None = None
+    calibration: CalibrationInfo | None = None
     ground_truth: bool | None = None
     target_type: str | None = None
 

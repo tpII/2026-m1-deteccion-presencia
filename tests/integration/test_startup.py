@@ -89,7 +89,7 @@ def test_startup_mode_and_cleanup(args, tmp_path):
                 else:
                     pytest.fail("Las muestras MQTT no llegaron al WebSocket")
                 assert message["data"]["cases"]["pir"]["presence"] is True
-                assert message["data"]["cases"]["csi_router"]["raw_points"][-1]["value"] == 23
+                assert message["data"]["cases"]["csi_router"]["raw_points"][-1]["value"] == 61  # amplitud media de [23, 99]
             for _, sample in samples:
                 with urllib.request.urlopen(f"http://127.0.0.1:8000/api/v1/telemetry/{sample['case_id']}/history", timeout=2) as response:
                     assert len(json.load(response)) == 1

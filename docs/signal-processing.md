@@ -1,35 +1,61 @@
-# Procesamiento de señal
+# Procesamiento de Señal — Detección por CSI Wi-Fi y PIR
 
-El código está en `backend/app/signal_processing/`. Solo hay dos archivos: `filters.py` y `pipeline.py`.
+Este documento describe la base teórica y el algoritmo utilizado para detectar presencia humana en interiores.
 
-## PIR
+---
+
+## 1. Fundamentos Físicos
+
+### Sensor PIR
 
 El firmware PlatformIO lee GPIO27 con `INPUT_PULLDOWN` cada 500 ms nominales y envía su nivel digital. El backend lo guarda y lo muestra sin filtros CSI. Una salida baja indica que el sensor no detectó movimiento; no demuestra que el ambiente esté vacío.
 
-## CSI
+El sensor piroeléctrico capta radiación infrarroja centrada en $\approx 10\,\mu\text{m}$ (longitud de onda emitida por la temperatura corporal humana $\approx 37^\circ\text{C}$).
+La lente de Fresnel divide el campo de visión en conos alternados; cuando una persona se desplaza, la diferencia de irradiación entre los dos elementos piroeléctricos genera un pulso de voltaje analógico que un comparador digitaliza a nivel alto ($1$).
+- **Limitación intrínseca**: Si la persona se detiene por completo o duerme, $\frac{\mathrm{d}T}{\mathrm{d}t} \to 0$ y la señal cae a ausencia ($0$).
 
-El backend toma la **primera amplitud** de cada mensaje MQTT y reúne hasta 30 muestras recientes de ese método. Cada ventana pasa por estas etapas:
+### Wi-Fi Channel State Information (CSI)
+Los estándares 802.11n utilizan modulación OFDM (Orthogonal Frequency Division Multiplexing). A diferencia del RSSI (que es un único escalar grosero de potencia agregada), el CSI describe la respuesta al impulso del canal radioeléctrico en el dominio de la frecuencia para cada subportadora:
 
-1. **Hampel:** ventana centrada de 7 muestras. Reemplaza valores que se alejan de la mediana más de `3 × 1.4826 × MAD`, donde MAD es la mediana de las desviaciones absolutas.
-2. **Media móvil:** promedio centrado de 5 muestras, extendiendo los bordes para conservar la longitud.
-3. **Características:** varianza y energía media cuadrática de los últimos 20 valores filtrados, o los disponibles si hay menos.
-4. **Score:** función sigmoide de la diferencia entre varianza y umbral, con pendiente 1.2 y diferencia limitada entre −10 y 10.
-5. **Detección:** presencia cuando la varianza alcanza el umbral. El score de 0.5 corresponde a ese mismo límite.
+$$H(f, t) = |H(f, t)| e^{j \angle H(f, t)}$$
 
-Los umbrales iniciales son 2.2 para router y 1.8 para el enlace dedicado. Se ajustan al crear los pipelines en `backend/app/telemetry.py`; requieren calibración con mediciones reales.
+Donde $|H|$ es la amplitud y $\angle H$ es la fase de la subportadora.
+El cuerpo humano, compuesto en un 70% de agua salina, actúa como un reflector y dispersor dieléctrico de ondas de radio a 2.4 GHz. Cualquier movimiento o respiración altera los trayectos multicamino (*multi-path reflections*), modulando constructiva y destructivamente la amplitud y fase de las subportadoras.
 
-Los metadatos del filtro se envían a la web junto con la señal cruda y filtrada. Los buffers conservan hasta 500 puntos; cada actualización muestra los últimos 100.
+---
 
-## Clasificación experimental
+## 2. Detector CSI (`backend/app/signal_processing/presence_detector.py`)
 
-El pipeline también calcula periodicidad mediante FFT y asigna etiquetas heurísticas: `empty`, `object_fan`, `object_moved`, `person_active` o `person_static`.
+El ESP32 (`firmware/csi_router`) publica por cada paquete del router la amplitud $|H(k)|$ de 55 subportadoras del campo HT-LTF ($k = -28 \dots 28$, sin $k = 0$ ni $k = 1$), unas 10 veces por segundo. El backend calcula dos indicadores sobre una ventana móvil de **4 s**:
 
-Estas reglas no están validadas con ensayos físicos del proyecto. Las etiquetas no prueban que se pueda distinguir una persona de un objeto o detectar respiración. La decisión binaria actual depende de la varianza; la etiqueta es información adicional.
+```
+[ Amplitudes |H(k)| de cada paquete ]
+       │
+       ▼
+[ Normalización ] ──► se divide por la amplitud media del paquete (quita el ajuste de ganancia del chip)
+       │
+       ├──► Indicador de MOVIMIENTO: desvío, en la ventana, de la turbulencia (desvío / media entre subportadoras)
+       └──► Indicador de FORMA: distancia RMS entre el perfil del paquete y el perfil de la habitación vacía
+       │
+       ▼
+[ Umbrales calibrados en el lugar ] ──► PRESENCIA si cualquiera de los dos supera su umbral
+```
 
-## Captura e integración pendientes
+- **Movimiento** sube mucho cuando una persona camina.
+- **Forma** detecta también a una persona quieta: su cuerpo cambia los caminos de la señal aunque no se mueva.
 
-`prueba_CSI/` ya captura paquetes CSI del router y los imprime por Serial como CSV. La disección calcula amplitud y fase para mostrar cada par imaginario-real, pero no publica amplitudes al backend. No existe un adaptador Serial → MQTT en el repositorio.
+### Calibración
 
-La salida conserva los bytes capturados y el indicador `first_word_invalid`; no es el vector `amplitudes` del contrato MQTT. La selección de campos e índices y la conversión a amplitudes tienen que resolverse al integrar esa captura. El pipeline del backend no interpreta esos bytes ni hace ese descarte.
+Los valores de CSI dependen del router, de las posiciones y de la habitación, así que los umbrales se fijan en el lugar:
 
-Para el caso dedicado faltan los firmware del emisor y del receptor. La captura por Serial y la presencia de filtros en el backend no demuestran una detección integrada con CSI real: hay que conectar ambos recorridos, calibrar y contrastar los resultados con presencia observada independientemente.
+1. Desde la página del Caso 2 se presiona **Calibrar** (`POST /api/v1/csi/{case_id}/calibration`).
+2. Hay 10 s para salir de la habitación y luego se registran 30 s con la habitación vacía.
+3. Se guarda el perfil promedio del canal vacío y, para cada indicador, umbral = promedio + 3 desvíos de la línea base (como mínimo 1,3 veces el promedio).
+
+Durante la calibración no debe haber nadie cerca: el CSI también percibe movimiento fuera de la habitación.
+
+### Validación con grabaciones reales
+
+El algoritmo se ajustó fuera de línea con grabaciones del ESP32 (`prueba_CSI/analisis`): con ventana de 4 s se obtuvo 0 % de falsas alarmas con la habitación vacía y 100 % de detección caminando y sentado quieto. Con ventana de 2 s, la detección de la persona quieta bajaba al 84 %.
+
+Los resultados fuera de línea corresponden a esas grabaciones y no garantizan el mismo rendimiento en otros ambientes. El caso CSI dedicado aún requiere firmware y validación física. La calibración y sus umbrales se conservan en memoria del backend; hay que repetirla tras reiniciar.

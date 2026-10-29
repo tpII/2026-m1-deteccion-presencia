@@ -7,10 +7,10 @@ El contrato de entrada está definido en `backend/app/constants.py`, `backend/ap
 | Caso | Publicador disponible | Entrada del backend |
 | --- | --- | --- |
 | PIR | `firmware/pir/`: JSON por MQTT y texto de diagnóstico por Serial. | `presence/pir/telemetry` |
-| CSI con router | `prueba_CSI/`: captura por Wi-Fi y salida CSV por Serial; **no publica MQTT**. | `presence/csi/router/raw`, preparado para recibir amplitudes. |
+| CSI con router | `firmware/csi_router/`: captura Wi-Fi y publicación de amplitudes por MQTT. | `presence/csi/router/raw` |
 | CSI dedicado | No hay firmware del emisor AP ni del receptor Station. | `presence/csi/dedicated/raw`, preparado para recibir amplitudes. |
 
-El CSV de `prueba_CSI/` no es el JSON que acepta el backend. Todavía no hay un adaptador que transforme esa captura y la publique en MQTT. Encender ese receptor o abrir su monitor no alimenta el dashboard. Su funcionamiento está explicado en [prueba_CSI/README.md](../prueba_CSI/README.md).
+El CSV de `prueba_CSI/` no es el JSON que acepta el backend. Abrir su monitor no alimenta el dashboard. Para publicar en vivo se usa `firmware/csi_router/`; para reproducir una grabación se usa `prueba_CSI/analisis/reproducir_log_mqtt.py`. Su funcionamiento está explicado en [prueba_CSI/README.md](../prueba_CSI/README.md).
 
 ## Tópicos y validación
 
@@ -50,9 +50,9 @@ Ejemplo del formato aceptado para el caso con router; sus números ilustran el c
 
 Para el enlace dedicado se usa `case_id: "csi_dedicated"` en su tópico correspondiente.
 
-El backend toma **sólo `amplitudes[0]` de cada mensaje** y acumula esos valores en una serie temporal por caso. El resto del vector se valida, pero no se utiliza para decidir presencia ni se guarda en SQLite. El publicador debe mantener el significado y la escala de esa primera amplitud entre mensajes; no enviar los bytes imaginario-real del CSV como si ya fueran amplitudes.
+`firmware/csi_router/` publica aproximadamente 10 veces por segundo la amplitud de 55 subportadoras HT-LTF (k = −28 … 28, excluyendo 0 y 1). El backend usa el vector completo para calcular los indicadores de movimiento y forma. El gráfico crudo y SQLite guardan la amplitud media de cada paquete.
 
-La selección de datos de captura y su conversión a este formato siguen pendientes de integración. El backend no interpreta tramas `CSI_DATA`, no calcula amplitudes a partir de pares imaginario-real y no descarta bytes mediante `first_word_invalid`. Los filtros y umbrales que sí ejecuta están en [signal-processing.md](signal-processing.md).
+El firmware convierte los pares imaginario-real a amplitudes antes de publicar; el backend no interpreta tramas CSV `CSI_DATA` ni bytes CSI originales. El orden y la cantidad de subportadoras deben mantenerse entre mensajes; si cambia la cantidad después de calibrar, el detector invalida la calibración. Ver [signal-processing.md](signal-processing.md).
 
 ## Campos opcionales y uso real
 
@@ -69,12 +69,12 @@ El firmware PIR incluido no envía `timestamp`, `latency_ms` ni `ground_truth`. 
 
 ## Del backend a la web y a SQLite
 
-- El estado en memoria conserva hasta 500 puntos por caso; REST de telemetría en vivo y cada mensaje WebSocket incluyen los últimos 100.
+- El estado en memoria conserva hasta 500 puntos por caso; REST de telemetría en vivo y cada mensaje WebSocket incluyen los últimos 100 puntos crudos y hasta 300 puntos de cada indicador CSI.
 - `/ws/telemetry` envía `initial_state` al conectar y `telemetry_batch` aproximadamente cada 120 ms mientras haya clientes, aunque no hayan llegado muestras nuevas. La frecuencia de difusión no es la de adquisición.
 - `total_samples` cuenta mensajes procesados en la sesión; no es el total de filas histórico. Un caso se marca conectado si tiene muestras y la última actualización tiene menos de 10 segundos.
 - La cola SQLite se vacía aproximadamente cada 2 segundos, al consultar el historial de telemetría y durante el cierre normal. Difusión y escritura son independientes; no hace falta leer SQLite para actualizar el gráfico.
 - La API de historial es `/api/v1/telemetry/{case_id}/history`, con `limit` entre 1 y 500, predeterminado 50. Métricas y ensayos usan `/api/v1/metrics`.
-- El backend no publica resultados ni comandos por MQTT. El navegador no se suscribe a Mosquitto. No existe configuración remota del firmware desde la web.
+- El backend no publica resultados ni comandos por MQTT. El navegador no se suscribe a Mosquitto. La web inicia la calibración del detector CSI en el backend; no cambia la configuración del firmware.
 
 El formato de almacenamiento y las métricas están en [data-model.md](data-model.md). La prueba USB usa su tabla y guardado manual, separados del flujo MQTT.
 

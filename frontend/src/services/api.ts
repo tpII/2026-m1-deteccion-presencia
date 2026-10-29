@@ -1,6 +1,6 @@
 import { ENV } from '../config/env';
 import type { PirReading, PirUsbRecord } from '../types/pirSerial';
-import type { CaseId } from '../types/telemetry';
+import type { CalibrationInfo, CaseId } from '../types/telemetry';
 import type { CaseMetrics, SystemComparison, Trial, TrialInput } from '../types/metrics';
 import type { HealthStatus } from '../types/health';
 
@@ -28,6 +28,7 @@ export const api = {
     request<Trial[]>(`/metrics/${caseId}/trials`, { signal }),
   getSystemComparison: (signal?: AbortSignal) => request<SystemComparison>('/metrics/comparison', { signal }),
   recordTrial: (trial: TrialInput) => post<Trial>('/metrics/trial', trial),
+  startCsiCalibration: (caseId: Exclude<CaseId, 'pir'>) => post<CalibrationInfo>(`/csi/${caseId}/calibration`, {}),
   getPirUsbHistory: (signal?: AbortSignal) => request<PirUsbRecord[]>('/pir-usb/readings', { signal }),
   savePirUsbReadings: (readings: PirReading[]) => post<{ saved_count: number }>('/pir-usb/readings', {
     readings: readings.map((reading) => ({

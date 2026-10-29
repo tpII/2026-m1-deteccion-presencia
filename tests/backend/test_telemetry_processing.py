@@ -22,9 +22,11 @@ async def test_pir_and_csi_samples_reach_state_and_storage():
         for value in range(5):
             await service.handle_incoming_sample(case_id, CsiRawSample(case_id=case_id, amplitudes=[value, 99]))
         payload = state.get_payload(case_id)
-        assert [point.value for point in payload.raw_points] == [2, 3, 4]
-        assert len(payload.filtered_points) == 3
+        # raw_points guarda la amplitud media de cada paquete
+        assert [point.value for point in payload.raw_points] == [50.5, 51, 51.5]
+        assert len(payload.movement_points) == 1  # el indicador necesita 5 paquetes en la ventana
         assert payload.features is not None
+        assert payload.calibration.state == "sin_calibrar"
         assert len(await repository.get_history(case_id)) == 5
     assert state.get_payload("pir").presence is True
     assert (await repository.get_history("pir"))[0].score == 1

@@ -8,7 +8,7 @@ ESP32 → MQTT / Mosquitto → FastAPI
                             └── SQLite → REST de historial y métricas → React
 ```
 
-El firmware PIR de `firmware/pir/` publica por MQTT. `prueba_CSI/` ya captura CSI del router y lo imprime por Serial, pero todavía no convierte ni publica esas capturas en MQTT. El caso CSI dedicado no tiene firmware. Ambos casos CSI tienen recepción de amplitudes, procesamiento y pantallas preparados en el backend; sin mensajes MQTT, esas pantallas esperan muestras.
+El firmware PIR de `firmware/pir/` publica por MQTT. `firmware/csi_router/` captura CSI del router y publica amplitudes por MQTT; la pantalla del Caso 2 permite calibrar el detector con la habitación vacía. `prueba_CSI/` conserva la captura por Serial y agrega herramientas de análisis y reproducción de grabaciones por MQTT. El caso CSI dedicado todavía no tiene firmware; sin mensajes MQTT, su pantalla espera muestras.
 
 ## Instalar y ejecutar
 
@@ -28,7 +28,7 @@ Para instalar Mosquitto: `brew install mosquitto` en macOS o `sudo apt install m
 - API y sus endpoints: http://localhost:8000/docs
 - Detener: `Ctrl+C`.
 
-`start.sh` inicia Mosquitto si el broker configurado es `localhost` o `127.0.0.1` en el puerto `1883` y no responde; después inicia backend y frontend. Reutiliza el broker si ya responde. Para otro host o puerto, el broker debe iniciarse por separado. Funciona en macOS/Linux; en Windows se puede usar WSL o la [ejecución manual](docs/pruebas.md#8-ejecución-manual).
+`start.sh` inicia Mosquitto si el broker configurado es `localhost` o `127.0.0.1` en el puerto `1883` y no responde; después inicia backend y frontend. Reutiliza el broker si ya responde. Para otro host o puerto, el broker debe iniciarse por separado. Funciona en macOS/Linux; en Windows se puede ejecutar `.\start.bat`, que invoca `start.ps1` para instalar las dependencias e iniciar los servicios. También se puede usar WSL o la [ejecución manual](docs/pruebas.md#8-ejecución-manual).
 
 ## Dónde está cada cosa
 
@@ -39,7 +39,7 @@ Para instalar Mosquitto: `brew install mosquitto` en macOS o `sudo apt install m
 | `backend/app/telemetry_state.py` | Estado en vivo y buffers de las señales. |
 | `backend/app/repositories/` | Guardar y consultar muestras y ensayos en SQLite. |
 | `backend/app/schemas/` | Validar la forma de los datos con Pydantic. |
-| `backend/app/signal_processing/` | Filtros y detección CSI. |
+| `backend/app/signal_processing/` | Detector CSI con indicadores de movimiento, forma y calibración. |
 | `frontend/src/pages/` | Una pantalla por archivo. |
 | `frontend/src/components/` | Componentes agrupados en `charts/`, `layout/`, `metrics/`, `signal/`, `system/` y `ui/`. |
 | `frontend/src/hooks/` | Conectar los datos con las pantallas de React. |
@@ -47,7 +47,8 @@ Para instalar Mosquitto: `brew install mosquitto` en macOS o `sudo apt install m
 | `frontend/src/types/` | Tipos TypeScript de los datos. |
 | `frontend/src/context/`, `config/`, `styles/` | Telemetría compartida, tema claro/oscuro, configuración y estilos. |
 | `firmware/pir/` | Proyecto PlatformIO del PIR, basado en la rama `bernardo`, con salida USB y publicación MQTT. |
-| `prueba_CSI/` | Captura CSI del router por Serial, separada de la ingesta MQTT. |
+| `firmware/csi_router/` | Captura CSI del router y publicación de amplitudes por MQTT. |
+| `prueba_CSI/` | Captura por Serial, análisis y reproducción de grabaciones por MQTT. |
 | `mosquitto/` | Configuración del broker MQTT. |
 | `tests/` | Pruebas automáticas del backend, USB y arranque. |
 | `docs/` | Guías técnicas e informes del trabajo en `informes/`. |
@@ -59,6 +60,7 @@ Para instalar Mosquitto: `brew install mosquitto` en macOS o `sudo apt install m
 - **Backend:** `.env` en la raíz. Si existe `backend/.env`, tiene prioridad; las variables de la terminal tienen prioridad sobre ambos archivos.
 - **Depuración:** `APP_DEBUG=true` habilita los registros de acceso. La variable genérica `DEBUG` no configura este backend.
 - **ESP32 PIR:** copiar `firmware/pir/include/config.example.h` como `firmware/pir/include/config.h`, completar Wi-Fi e IP LAN del broker y compilar/cargar con PlatformIO. Ese archivo no se sube a Git.
+- **ESP32 CSI con router:** copiar `firmware/csi_router/include/config.example.h` como `config.h` en la misma carpeta, completar Wi-Fi y broker, y compilar/cargar con PlatformIO. Ver [su guía](firmware/csi_router/README.md).
 - **Frontend:** usa `localhost:8000`; se puede cambiar con `VITE_API_URL` y `VITE_WS_URL` en `frontend/.env.local`.
 - **Mediciones:** SQLite, normalmente `backend/presence-hardware.db` al iniciar con `start.sh`. Una ruta relativa en `DATABASE_URL` se resuelve desde la carpeta en que se ejecuta el backend.
 
@@ -99,7 +101,7 @@ Los tests usan bases temporales. La prueba física requiere conectar y programar
 - [Cómo leer y modificar el código, paso a paso](docs/recorrido-codigo.md).
 - [Qué comprueban las pruebas automáticas](docs/pruebas-automaticas.md).
 - [Tópicos y mensajes MQTT](docs/mqtt-topics.md).
-- [Filtros y detección CSI](docs/signal-processing.md).
+- [Detector y calibración CSI](docs/signal-processing.md).
 - [Datos y métricas](docs/data-model.md).
 - [Auditoría y limpieza del repositorio](docs/auditoria.md).
 - [Auditoría final y comprobaciones realizadas](docs/auditoria-final.md).
