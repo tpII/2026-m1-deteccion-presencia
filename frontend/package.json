@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "node --test ../tests/frontend/*.test.mjs",
-    "test:pir": "node --test ../tests/frontend/pirSerial.test.mjs"
+    "test": "node --test ../tests/frontend/*.test.mjs"
   },
   "dependencies": {
     "echarts": "^6.1.0",

@@ -1,5 +1,7 @@
 # Arquitectura y recorrido del código
 
+El arranque habitual es `./start.sh` o `.\start.bat`: instala herramientas y dependencias faltantes en los sistemas compatibles, prepara configuración y levanta broker, backend y frontend. Ver [arranque](arranque.md). `scripts/setup.sh` concentra la preparación Unix y `start.ps1` la de Windows.
+
 El recorrido normal es:
 
 ```text
@@ -19,7 +21,7 @@ Todo empieza en `backend/app/main.py`: crea FastAPI, registra las rutas, prepara
 | Archivo o carpeta en `backend/app/` | Responsabilidad |
 | --- | --- |
 | `config.py` | Leer `.env` y variables de entorno. |
-| `constants.py` | Identificadores de los tres métodos y tópicos MQTT. |
+| `constants.py` | PIR, CSI router y contrato dedicado histórico; el Caso 3 web reutiliza las dos fuentes activas. |
 | `logging_config.py` | Configurar los mensajes de consola. |
 | `mqtt.py` | Conectarse a Mosquitto, validar JSON y entregar muestras. |
 | `telemetry.py` | Procesar muestras y coordinar MQTT, estado, persistencia y difusión. |
@@ -42,9 +44,9 @@ Para agregar o modificar una ruta, entrar en `api/`. Para cambiar un cálculo CS
 
 `context/TelemetryContext.tsx` mantiene una conexión WebSocket y una suscripción compartida para todas las pantallas. Al caer la conexión, los sensores dejan de mostrarse conectados.
 
-`hooks/useApiQuery.ts` maneja carga, errores, actualización y cancelación de consultas REST. `hooks/useCaseMetrics.ts` reúne métricas y ensayos de un caso. `services/api.ts` consulta REST, `services/websocket.ts` recibe telemetría en vivo y `services/pirSerial.ts` lee el puerto USB. La conexión MQTT pertenece al backend.
+`hooks/useApiQuery.ts` maneja carga, errores, actualización y cancelación de consultas REST. `hooks/useCaseMetrics.ts` reúne métricas y ensayos de un caso. `services/api.ts` consulta REST y `services/websocket.ts` recibe telemetría en vivo. La pantalla de prueba PIR por USB se retiró. La conexión MQTT pertenece al backend.
 
-Las dos páginas CSI se resuelven con `pages/CsiCasePage.tsx` y las descripciones de `config/cases.ts`. Los componentes están agrupados por responsabilidad. `components/charts/Chart.tsx` administra creación, tamaño y cierre de ECharts; los otros gráficos definen sus opciones. `components/system/TrialForm.tsx` administra el registro manual de ensayos.
+El Caso 2 usa `pages/CsiCasePage.tsx`. El Caso 3 usa `pages/JointCasePage.tsx` para mostrar PIR y CSI con router en paralelo, con estados y gráficas propios. Reutiliza la misma telemetría y calibración del Caso 2, sin otra conexión ni decisión fusionada. Los componentes están agrupados por responsabilidad. `components/charts/Chart.tsx` administra creación, tamaño y cierre de ECharts; los otros gráficos definen sus opciones. `components/system/TrialForm.tsx` administra el registro manual de ensayos de PIR y CSI Router.
 
 El tema claro/oscuro vive en `context/ThemeContext.tsx`. Los estilos están en `styles/` y las direcciones del backend en `config/env.ts`.
 
@@ -58,7 +60,7 @@ El firmware incluido se configura en `firmware/pir/include/config.h`. El proyect
 
 `prueba_CSI/` conserva la captura CSV por Serial y herramientas de análisis fuera de línea y reproducción MQTT en `analisis/`. Ver [signal-processing.md](signal-processing.md) y [mqtt-topics.md](mqtt-topics.md).
 
-El caso dedicado todavía no tiene firmware del emisor AP ni del receptor Station. La validación física del enlace requiere compilar y cargar las placas, calibrar en el lugar y contrastar la detección con presencia observada. Las pruebas automáticas usan publicadores controlados, no los ESP32.
+El antiguo caso dedicado no tiene firmware del emisor AP ni del receptor Station y fue reemplazado en la web por la prueba conjunta PIR + CSI. Su contrato y registros históricos siguen disponibles en el backend por compatibilidad; no representan datos del caso conjunto. La validación física de los métodos requiere compilar y cargar las placas, calibrar en el lugar y contrastar la detección con presencia observada. Las pruebas automáticas usan publicadores controlados, no los ESP32.
 
 ## Validación de la API
 

@@ -7,7 +7,6 @@ import {
   BarChart3,
   Settings,
   Layers,
-  Usb,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -19,9 +18,8 @@ export function Sidebar({ menuOpen, onNavigate }: SidebarProps) {
   const navItems = [
     { to: '/', label: 'Resumen General', icon: <LayoutDashboard size={18} /> },
     { to: '/case/pir', label: 'Caso 1 — PIR', icon: <Radio size={18} /> },
-    { to: '/test/pir-usb', label: 'Prueba PIR — USB', icon: <Usb size={18} /> },
     { to: '/case/csi_router', label: 'Caso 2 — CSI + Router', icon: <Wifi size={18} /> },
-    { to: '/case/csi_dedicated', label: 'Caso 3 — CSI Dedicado', icon: <Share2 size={18} /> },
+    { to: '/case/combined', label: 'Caso 3 — PIR + CSI', icon: <Share2 size={18} /> },
     { to: '/comparison', label: 'Comparación', icon: <BarChart3 size={18} /> },
     { to: '/system', label: 'Sistema & Hardware', icon: <Settings size={18} /> },
   ];

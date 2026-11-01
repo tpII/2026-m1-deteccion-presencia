@@ -24,6 +24,17 @@
 
 .muted { color: var(--text-muted); }
 
+.joint-explanation { margin-top: 0.85rem; }
+.joint-sensors { align-items: start; }
+.joint-sensor .method-readings { margin-bottom: 1rem; }
+.joint-sensor .muted { font-size: 0.85rem; margin-top: 0.75rem; }
+.joint-sensor .calibration-panel { margin-bottom: 1rem; }
+.joint-card-states { display: flex; flex-direction: column; gap: 0.7rem; }
+.joint-card-states > div { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+.joint-card-states dt { color: var(--text-secondary); font-size: 0.85rem; }
+.joint-steps { padding-left: 1.25rem; margin-bottom: 1rem; }
+.joint-steps li + li { margin-top: 0.5rem; }
+
 .primary-button, .secondary-button {
   padding: 0.65rem 1rem;
   border-radius: var(--radius-sm);

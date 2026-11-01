@@ -25,7 +25,7 @@ En Windows, copiá y renombrá el archivo desde VS Code. No hace falta instalar 
 
 ## Cargar y comprobar
 
-Conectá la placa y cerrá cualquier monitor serial o conexión USB de la web:
+Conectá la placa y cerrá cualquier monitor serial que ocupe su puerto:
 
 ```bash
 pio device list
@@ -35,7 +35,7 @@ pio device monitor --project-dir firmware/pir --baud 115200
 
 PlatformIO detecta el puerto. Para elegir uno, agregá `--upload-port PUERTO` al comando de carga o `--port PUERTO` al monitor. No se fija `COM9` en el repositorio. La placa configurada es la misma que usaba Bernardo; para otro modelo, ajustá `board` en `platformio.ini`.
 
-Con `./start.sh` activo, las muestras llegan a `/case/pir` por MQTT. El tópico sigue siendo `presence/pir/telemetry`. Los mensajes `MOVIMIENTO` y `SIN MOVIMIENTO` también funcionan en `/test/pir-usb`; cerrá el monitor de PlatformIO para liberar el puerto antes de usar esa página.
+Iniciá todo con `./start.sh` o `.\start.bat`; instala las dependencias faltantes. Con el sistema activo, las muestras llegan a `/case/pir` por MQTT. El tópico sigue siendo `presence/pir/telemetry`. Los mensajes `MOVIMIENTO` y `SIN MOVIMIENTO` siguen disponibles en el monitor de PlatformIO. La pantalla `/test/pir-usb` se retiró. El Caso 3 en `/case/combined` permite observar PIR y CSI con router juntos, sin otro firmware.
 
 Sin Wi-Fi o broker, el firmware sigue mostrando lecturas por Serial y reintenta la conexión. Las muestras desconectadas no se almacenan ni se reenvían. El intervalo de 500 ms es nominal: los intentos de conexión pueden demorar la lectura. No se inventa una latencia física; el backend conserva el valor por defecto de cero.
 

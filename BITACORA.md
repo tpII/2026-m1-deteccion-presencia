@@ -113,3 +113,13 @@ Queda pendiente comenzar a investigar y aplicar el procesamiento de la señal CS
 - Se adaptó el proyecto PlatformIO de Bernardo para enviar las lecturas del PIR por Wi-Fi y MQTT, manteniendo la conexión USB.
 - Se mejoraron la reconexión y el guardado de datos, y se realizaron pruebas automáticas del sistema con resultados satisfactorios.
 - Queda pendiente probar el funcionamiento completo con la ESP32 y el sensor PIR físicos.
+
+
+## 31/10 — Caso conjunto y arranque automático
+
+- El Caso 3 de la web pasa a mostrar PIR y CSI con router juntos, con estados y gráficos separados, reutilizando la calibración del Caso 2. No se implementó una fusión de decisiones.
+- Se retiró la pantalla de prueba PIR por USB; se conservan el monitor Serial del firmware y los datos y endpoints históricos del backend.
+- El inicio se concentra en `./start.sh` o `.\start.bat`: preparación de herramientas soportadas, entorno Python, dependencias y configuración inicial; arranque y comprobación de broker, backend y frontend.
+- Se actualizó la documentación operativa y la guía de la muestra. Los informes y auditorías de fechas anteriores se conservan como registros históricos identificados.
+- La instalación de herramientas depende de Internet, permisos y disponibilidad de los gestores. La configuración y carga de los ESP32 y la validación física se realizan por separado.
+- Validación de software: 61 pruebas de backend, 22 de frontend y 2 de integración aprobadas; compilación del frontend correcta. Tres pruebas de arranque con puertos fijos se omitieron porque estaban ocupados por servicios existentes. Windows y la instalación desde un sistema sin herramientas quedan pendientes de verificación en equipos de destino.

@@ -5,9 +5,8 @@ import { SignalProcessingPipeline } from '../components/signal/SignalProcessingP
 import { CSI_CASES } from '../config/cases';
 import { useTelemetry } from '../hooks/useTelemetry';
 import { useCaseMetrics } from '../hooks/useCaseMetrics';
-import type { CaseId } from '../types/telemetry';
 
-export function CsiCasePage({ caseId }: { caseId: Exclude<CaseId, 'pir'> }) {
+export function CsiCasePage({ caseId }: { caseId: 'csi_router' }) {
   const { getCaseStatus, getCaseData } = useTelemetry();
   const { metrics, trials, loading, error } = useCaseMetrics(caseId);
   const data = getCaseData(caseId);

@@ -46,7 +46,7 @@ def test_startup_mode_and_cleanup(args, tmp_path):
     ports = [8000, 5173, 1883]
     if any(open_port(port) for port in ports):
         pytest.skip("Hay servicios del usuario activos en los puertos de la prueba")
-    env = dict(os.environ, APP_DEBUG="false", MQTT_HOST="127.0.0.1", MQTT_PORT="1883",
+    env = dict(os.environ, APP_DEBUG="false", PRESENCE_OPEN_BROWSER="0", MQTT_HOST="127.0.0.1", MQTT_PORT="1883",
                DATABASE_URL=f"sqlite+aiosqlite:///{tmp_path / 'telemetry.db'}")
     with (tmp_path / "startup.log").open("w") as output:
         process = subprocess.Popen(["bash", "start.sh", *args], cwd=ROOT, env=env, stdout=output, stderr=subprocess.STDOUT)

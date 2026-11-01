@@ -1,3 +1,5 @@
+> **Estado actual del proyecto.** El Caso 3 vigente muestra PIR + CSI en paralelo; la pantalla PIR USB se retiró. El servidor y la web se preparan con `./start.sh` o `.\start.bat`. Ver [arranque](../arranque.md) y [prueba conjunta](../prueba-conjunta.md).
+
 > **Texto histórico del avance I.** Describe una versión anterior al refactor del 24/10: incluye el firmware anterior, muestreo de 200 ms y referencias a Arduino IDE. No es la guía del código actual. Para el estado vigente, consultar [arquitectura](../architecture.md), [firmware PIR](../../firmware/pir/README.md) y [contrato MQTT](../mqtt-topics.md). Las afirmaciones de pruebas físicas pertenecen al informe y no constituyen una nueva verificación de hardware.
 
 ## 6.1 Firmware desarrollado para prueba del sensor PIR

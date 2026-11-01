@@ -2,6 +2,8 @@
 
 El ESP32 se conecta al router, le hace ping 10 veces por segundo y, por cada respuesta, calcula la amplitud de 55 subportadoras (campo HT-LTF) y la publica por MQTT en `presence/csi/router/raw`. El backend calcula los indicadores de movimiento y forma y decide si hay presencia (ver `docs/signal-processing.md`).
 
+Iniciá el servidor y la web con `./start.sh` o `.\start.bat`; el comando prepara las dependencias y Mosquitto cuando faltan. La placa se configura y carga por separado.
+
 ## Cómo usarlo
 
 1. Copiar `include/config.example.h` como `include/config.h` y completar:
@@ -16,3 +18,7 @@ El ESP32 se conecta al router, le hace ping 10 veces por segundo y, por cada res
 ## Sin la placa
 
 `prueba_CSI/analisis/reproducir_log_mqtt.py` publica una grabación del monitor serie con el mismo formato, para probar el backend y la web sin hardware.
+
+## Prueba conjunta
+
+El Caso 3 (`/case/combined`) muestra esta misma fuente CSI junto con PIR. La calibración iniciada allí es la del Caso 2; no hay otra placa, tópico ni detector para el caso conjunto.

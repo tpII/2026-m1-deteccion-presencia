@@ -1,6 +1,6 @@
 # Cómo leer y modificar el proyecto
 
-Empezá por el README para ejecutarlo y después seguí una muestra PIR. No hace falta comprender los filtros CSI para trabajar con el sensor PIR o las pantallas.
+Arrancá todo con `./start.sh` o `.\start.bat`; el comando prepara las dependencias faltantes. Empezá por el [README](../README.md) y la [guía de arranque](arranque.md) para ejecutarlo y después seguí una muestra PIR. No hace falta comprender el detector CSI para trabajar con el sensor PIR o las pantallas.
 
 ## Seguir una lectura del PIR
 
@@ -23,10 +23,10 @@ Empezá por el README para ejecutarlo y después seguí una muestra PIR. No hace
 | Dato | Origen | Dónde se guarda | Para qué sirve |
 | --- | --- | --- | --- |
 | Telemetría | ESP32 por MQTT | Tabla `telemetry` y buffer en memoria | Estado en vivo e historial. |
-| Lectura USB | Puerto serial de esta computadora | Tabla `pir_usb_readings`, al guardar manualmente | Diagnóstico del PIR. |
+| Lectura USB histórica | Endpoints conservados por compatibilidad | Tabla `pir_usb_readings` | Historial del diagnóstico retirado de la web. |
 | Ensayo | Formulario con presencia observada | Tabla `trials` | Exactitud, errores y comparación. |
 
-El firmware CSI con router de `prueba_CSI/` usa un recorrido separado: ESP32 → Serial/CSV. No llama al backend ni alimenta las páginas CSI; falta integrar la conversión a amplitudes y su envío por MQTT.
+`firmware/csi_router/` publica amplitudes por MQTT para el Caso 2. `prueba_CSI/` es la captura separada ESP32 → Serial/CSV y tiene análisis y reproducción MQTT. `pages/JointCasePage.tsx` reutiliza PIR y CSI router para el Caso 3, con una conexión WebSocket compartida y sin fusión de decisiones.
 
 Guardar muchas muestras no crea ensayos. Para calcular precisión hace falta saber, de manera independiente, si había una persona.
 
@@ -37,7 +37,7 @@ Guardar muchas muestras no crea ensayos. Para calcular precisión hace falta sab
 | Pin, intervalo, red o broker de la ESP32 | `firmware/pir/include/config.h`, copiado del ejemplo. Después recompilar y cargar. |
 | Dirección del broker o base del servidor | `.env` en la raíz. Después reiniciar el backend. |
 | Mensaje MQTT aceptado | `backend/app/schemas/telemetry.py` y `docs/mqtt-topics.md`. Revisar también el publicador. |
-| Filtros o umbral CSI | `backend/app/signal_processing/`. Los umbrales de cada caso se eligen en `telemetry.py`. |
+| Indicadores o calibración CSI | `backend/app/signal_processing/`. Los umbrales se calculan con la referencia del ambiente vacío en `presence_detector.py`. |
 | Fórmulas de métricas | `backend/app/repositories/metrics_repository.py`. |
 | Una pantalla | `frontend/src/pages/`. |
 | Colores y espacios | `frontend/src/styles/`. |
@@ -54,7 +54,7 @@ Las partes que requieren más estudio son la comunicación asíncrona y CSI:
 - El cliente MQTT recibe mensajes en otro hilo. `run_coroutine_threadsafe` los entrega al bucle asíncrono del backend. Ese cruce está concentrado en `mqtt.py`.
 - Un `Lock` impide ejecutar dos escrituras del mismo lote al mismo tiempo. `Event` permite pedir el cierre de las tareas sin interrumpir una escritura activa.
 - `deque(maxlen=500)` conserva un historial acotado y descarta los puntos más viejos del buffer. Eso no borra el historial SQLite.
-- Para cambiar la detección CSI hay que comprender ventanas, varianza, filtros y FFT. Su explicación y límites están en [signal-processing.md](signal-processing.md).
+- Para cambiar la detección CSI hay que comprender ventanas temporales, perfiles normalizados, desvíos y distancias RMS. Su explicación y límites están en [signal-processing.md](signal-processing.md).
 
 ## Antes de dar un cambio por terminado
 

@@ -9,6 +9,9 @@ frontend/yarn-error.log*
 
 # Python / Backend
 backend/.venv/
+backend/.venv.backup-*/
+.tools/
+.runtime/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -44,3 +47,4 @@ tmp/
 output/
 
 .agents/skills/formato-entregas/
+.gstack/

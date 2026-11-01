@@ -6,7 +6,7 @@ SQLite guarda tres tipos de datos. Las tablas se crean en `backend/app/database.
 | --- | --- | --- |
 | `telemetry` | Método, hora UTC asignada al encolar, presencia, señal cruda, latencia y score. | Recepción MQTT y consulta `/api/v1/telemetry/{case_id}/history`. |
 | `trials` | Método, hora UTC, presencia observada, detección, acierto, latencia, score opcional y notas. | Formulario de ensayos y comparación de métodos. |
-| `pir_usb_readings` | Hora de recepción y salida digital leída por USB. | Diagnóstico USB y su guardado manual. |
+| `pir_usb_readings` | Hora de recepción y salida digital leída por USB. | Compatibilidad e historial del diagnóstico USB retirado. |
 
 Cada tabla tiene un `id` autoincremental. Los métodos válidos son `pir`, `csi_router` y `csi_dedicated`. Los booleanos se guardan como 0 o 1. Una lectura USB con la misma hora y salida no se inserta dos veces.
 
@@ -20,7 +20,9 @@ El repositorio de telemetría escribe por lotes. Sólo retira de la cola las mue
 
 El historial MQTT devuelve primero las filas más nuevas por `id`; los puntos en vivo conservan el orden de procesamiento. `timestamp` del nodo, `source` y `ground_truth` no se guardan en `telemetry`. El historial guarda un valor por mensaje CSI: la amplitud media del vector. El detector usa todas las subportadoras; los indicadores de movimiento y forma se conservan en memoria y se transmiten a la web, sin persistirse en SQLite. El score CSI es una relación indicador/umbral y puede superar 1; no es una probabilidad. Las marcas de tiempo y los campos ignorados están detallados en [mqtt-topics.md](mqtt-topics.md).
 
-La prueba USB conserva hasta 50 lecturas en el navegador y las guarda cuando se pulsa el botón. Es independiente del flujo MQTT.
+La pantalla USB ya no existe. La tabla `pir_usb_readings` y sus endpoints se conservan por compatibilidad; no reciben datos desde una pantalla activa.
+
+El Caso 3 conjunto reutiliza `pir` y `csi_router`; no crea una tercera serie ni métricas fusionadas. El identificador `csi_dedicated` sigue admitido por el backend para compatibilidad histórica, pero no se ofrece para nuevos ensayos desde la web.
 
 ## Métricas
 

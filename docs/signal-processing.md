@@ -56,6 +56,6 @@ Durante la calibración no debe haber nadie cerca: el CSI también percibe movim
 
 ### Validación con grabaciones reales
 
-El algoritmo se ajustó fuera de línea con grabaciones del ESP32 (`prueba_CSI/analisis`): con ventana de 4 s se obtuvo 0 % de falsas alarmas con la habitación vacía y 100 % de detección caminando y sentado quieto. Con ventana de 2 s, la detección de la persona quieta bajaba al 84 %.
+El algoritmo se ajustó fuera de línea con grabaciones del ESP32 (`prueba_CSI/analisis`). Los resultados deben asociarse a un log, intervalos y configuración concretos. La documentación anterior mencionaba 0 % de falsas alarmas, pero el `resumen.txt` guardado informa 89,3 % de falsas alarmas combinadas para su tramo vacío y 100 % de detección caminando y sentado. No se resolvió la discrepancia; no se presenta el 0 % como resultado consolidado.
 
-Los resultados fuera de línea corresponden a esas grabaciones y no garantizan el mismo rendimiento en otros ambientes. El caso CSI dedicado aún requiere firmware y validación física. La calibración y sus umbrales se conservan en memoria del backend; hay que repetirla tras reiniciar.
+El Caso 3 conjunto muestra PIR y CSI con router con estados separados. Reutiliza el mismo detector y la misma calibración de `csi_router`; no fusiona decisiones ni requiere un detector nuevo. La calibración vive en memoria y se pierde al reiniciar el backend. Las pruebas sintéticas de software no garantizan exactitud física.

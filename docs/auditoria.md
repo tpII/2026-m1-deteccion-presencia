@@ -1,6 +1,6 @@
 # Auditoría y limpieza — 15 de octubre de 2026
 
-> **Registro histórico.** Los resultados, conteos y pendientes corresponden a las etapas auditadas, no se actualizan como si se hubieran medido otra vez. La rama actual también incluye `prueba_CSI/`, incorporado desde `main`: captura CSI del router por Serial, pero no publica MQTT. El estado vigente está en [architecture.md](architecture.md) y [mqtt-topics.md](mqtt-topics.md).
+> **Registro histórico.** Los resultados y conteos siguientes corresponden a las fechas auditadas y no se presentan como pruebas actuales. Estado vigente: Caso 1 PIR, Caso 2 CSI con router y Caso 3 conjunto. La pantalla USB se retiró; el detector actual usa todas las amplitudes y calibración. El arranque prepara dependencias con un comando. Consultar [arranque](arranque.md), [arquitectura](architecture.md) y [prueba conjunta](prueba-conjunta.md).
 
 El proyecto conserva el recorrido ESP32 → MQTT → FastAPI → SQLite → React. La limpieza reduce carpetas, código sin consumidores y documentación que describía funciones inexistentes.
 

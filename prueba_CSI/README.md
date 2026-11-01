@@ -40,10 +40,10 @@ El CSV conserva los bytes capturados. El modo de disección calcula amplitud y f
 
 El callback copia los paquetes en una cola de 16 entradas. El bucle los consume para mostrarlos; si la cola se llena, se descartan y aumenta el contador correspondiente. No hay persistencia SQLite ni reenvío al servidor en este proyecto.
 
-## Qué falta para llegar al dashboard
+## Análisis y visualización web
 
-1. Seleccionar los datos válidos de la captura y convertirlos a amplitudes con significado estable entre mensajes.
-2. Publicarlos en `presence/csi/router/raw`, con `case_id: "csi_router"`, según [el contrato MQTT](../docs/mqtt-topics.md).
-3. Verificar la recepción en Mosquitto, backend e historial y después validar la detección con ensayos físicos.
+`analisis/analizar_csi.py` procesa logs después de grabarlos. `analisis/reproducir_log_mqtt.py` publica una grabación por MQTT respetando sus tiempos; esa reproducción no es captura del ambiente actual. Los requisitos del análisis son NumPy, pandas y matplotlib; la reproducción necesita NumPy y paho-mqtt.
 
-El backend actualmente utiliza sólo la primera amplitud del mensaje. No lee este CSV ni procesa el buffer CSI completo. No hay un adaptador que conecte ambos formatos en el repositorio.
+Para una adquisición en vivo que publique directamente en el dashboard, cargar **`firmware/csi_router/`**, que calcula 55 amplitudes y las publica en `presence/csi/router/raw`. El backend usa todo el vector para calcular movimiento y forma; guarda la amplitud media por paquete.
+
+La web se inicia con `./start.sh` o `.\start.bat`, que prepara las dependencias del servidor. El Caso 2 permite calibrar CSI; el Caso 3 lo muestra junto con PIR. Esta captura Serial sigue siendo independiente. Ver [guía completa](../docs/guia-completa-muestra.md) y [arranque](../docs/arranque.md).

@@ -4,6 +4,7 @@ import { SectionHeader } from '../components/ui/SectionHeader';
 import { ComparisonBarChart } from '../components/charts/ComparisonBarChart';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { api } from '../services/api';
+import { ACTIVE_CASES } from '../config/cases';
 
 const charts = [
   { metricKey: 'detection_rate', title: 'Exactitud', unit: '%' },
@@ -14,7 +15,8 @@ const charts = [
 
 export function ComparisonPage() {
   const { data: comparison, loading, error, refresh } = useApiQuery(api.getSystemComparison);
-  const metrics = (comparison?.metrics ?? []).filter((metric) => metric.total_tests > 0);
+  const metrics = (comparison?.metrics ?? []).filter((metric) =>
+    metric.total_tests > 0 && ACTIVE_CASES.some((caseId) => caseId === metric.case_id));
 
   return (
     <div className="page-stack">
@@ -31,10 +33,10 @@ export function ComparisonPage() {
           <SectionHeader title="Desempeño experimental" subtitle="Indicadores por método" />
           <div className="glass-table-container">
             <table className="glass-table">
-              <thead><tr><th>Métrica</th><th>Unidad</th><th>PIR</th><th>CSI Router</th><th>CSI Dedicado</th></tr></thead>
+              <thead><tr><th>Métrica</th><th>Unidad</th><th>PIR</th><th>CSI Router</th></tr></thead>
               <tbody>
                 {comparison.table.map((row) => (
-                  <tr key={row.metric}><td>{row.metric}</td><td>{row.unit}</td><td>{row.pir}</td><td>{row.csi_router}</td><td>{row.csi_dedicated}</td></tr>
+                  <tr key={row.metric}><td>{row.metric}</td><td>{row.unit}</td><td>{row.pir}</td><td>{row.csi_router}</td></tr>
                 ))}
               </tbody>
             </table>

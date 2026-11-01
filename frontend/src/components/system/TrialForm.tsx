@@ -2,7 +2,7 @@ import { useRef, useState, type FormEvent } from 'react';
 import { Send } from 'lucide-react';
 import { GlassPanel } from '../ui/GlassPanel';
 import { SectionHeader } from '../ui/SectionHeader';
-import { CASE_LABELS } from '../../config/cases';
+import { ACTIVE_CASES, CASE_LABELS } from '../../config/cases';
 import { api } from '../../services/api';
 import type { CaseId } from '../../types/telemetry';
 
@@ -53,7 +53,7 @@ export function TrialForm() {
         <label>
           Método
           <select value={caseId} onChange={(event) => setCaseId(event.target.value as CaseId)}>
-            {Object.entries(CASE_LABELS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+            {ACTIVE_CASES.map((id) => <option key={id} value={id}>{CASE_LABELS[id]}</option>)}
           </select>
         </label>
         <label>

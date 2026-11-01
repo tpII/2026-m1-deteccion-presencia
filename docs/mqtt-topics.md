@@ -8,7 +8,8 @@ El contrato de entrada está definido en `backend/app/constants.py`, `backend/ap
 | --- | --- | --- |
 | PIR | `firmware/pir/`: JSON por MQTT y texto de diagnóstico por Serial. | `presence/pir/telemetry` |
 | CSI con router | `firmware/csi_router/`: captura Wi-Fi y publicación de amplitudes por MQTT. | `presence/csi/router/raw` |
-| CSI dedicado | No hay firmware del emisor AP ni del receptor Station. | `presence/csi/dedicated/raw`, preparado para recibir amplitudes. |
+| Caso 3 conjunto | Reutiliza las placas PIR y CSI con router. | Los dos tópicos anteriores; no hay un tópico conjunto. |
+| Dedicado histórico | Contrato retenido por compatibilidad, fuera de la web actual. | `presence/csi/dedicated/raw` |
 
 El CSV de `prueba_CSI/` no es el JSON que acepta el backend. Abrir su monitor no alimenta el dashboard. Para publicar en vivo se usa `firmware/csi_router/`; para reproducir una grabación se usa `prueba_CSI/analisis/reproducir_log_mqtt.py`. Su funcionamiento está explicado en [prueba_CSI/README.md](../prueba_CSI/README.md).
 
@@ -48,7 +49,7 @@ Ejemplo del formato aceptado para el caso con router; sus números ilustran el c
 {"case_id":"csi_router","source":"esp32_rx","amplitudes":[22.45,23.10,21.80]}
 ```
 
-Para el enlace dedicado se usa `case_id: "csi_dedicated"` en su tópico correspondiente.
+El Caso 3 muestra las fuentes `pir` y `csi_router` separadas. `csi_dedicated` es solo el contrato histórico del enlace dedicado y no identifica al caso conjunto.
 
 `firmware/csi_router/` publica aproximadamente 10 veces por segundo la amplitud de 55 subportadoras HT-LTF (k = −28 … 28, excluyendo 0 y 1). El backend usa el vector completo para calcular los indicadores de movimiento y forma. El gráfico crudo y SQLite guardan la amplitud media de cada paquete.
 
@@ -76,13 +77,13 @@ El firmware PIR incluido no envía `timestamp`, `latency_ms` ni `ground_truth`. 
 - La API de historial es `/api/v1/telemetry/{case_id}/history`, con `limit` entre 1 y 500, predeterminado 50. Métricas y ensayos usan `/api/v1/metrics`.
 - El backend no publica resultados ni comandos por MQTT. El navegador no se suscribe a Mosquitto. La web inicia la calibración del detector CSI en el backend; no cambia la configuración del firmware.
 
-El formato de almacenamiento y las métricas están en [data-model.md](data-model.md). La prueba USB usa su tabla y guardado manual, separados del flujo MQTT.
+El formato de almacenamiento y las métricas están en [data-model.md](data-model.md). La tabla USB y sus endpoints son históricos; la pantalla de adquisición USB se retiró.
 
 ## Broker y diagnóstico
 
 `mosquitto/mosquitto.conf` escucha en `0.0.0.0:1883`, sin autenticación y sin persistencia del broker. `MQTT_HOST` y `MQTT_PORT` de `.env` configuran el cliente del backend; no cambian ese archivo ni la configuración compilada de la ESP32.
 
-`start.sh` reutiliza el broker si su dirección y puerto responden. Sólo inicia Mosquitto automáticamente si está configurado en `localhost` o `127.0.0.1`, puerto `1883`. Para otro host o puerto hay que iniciar y configurar ese broker por separado.
+`start.sh` y `start.bat` preparan dependencias y reutilizan un broker que responda. Si el host es `localhost` o `127.0.0.1` y no responde, instalan Mosquitto cuando hace falta e intentan iniciarlo. Para un puerto local distinto de 1883 generan una configuración en `.runtime/`. Un broker remoto debe iniciarse en su equipo. Ver [arranque](arranque.md).
 
 Con la configuración local predeterminada, para observar mensajes:
 

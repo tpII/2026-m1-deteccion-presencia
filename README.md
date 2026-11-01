@@ -1,6 +1,6 @@
 # Detección de presencia: PIR y Wi-Fi CSI
 
-Proyecto de Taller de Proyecto II para comparar tres métodos: sensor PIR, CSI con router y CSI entre dos ESP32.
+Proyecto de Taller de Proyecto II con tres casos: sensor PIR, CSI con router y prueba conjunta de PIR + CSI para comparar sus respuestas en vivo.
 
 ```text
 ESP32 → MQTT / Mosquitto → FastAPI
@@ -8,32 +8,37 @@ ESP32 → MQTT / Mosquitto → FastAPI
                             └── SQLite → REST de historial y métricas → React
 ```
 
-El firmware PIR de `firmware/pir/` publica por MQTT. `firmware/csi_router/` captura CSI del router y publica amplitudes por MQTT; la pantalla del Caso 2 permite calibrar el detector con la habitación vacía. `prueba_CSI/` conserva la captura por Serial y agrega herramientas de análisis y reproducción de grabaciones por MQTT. El caso CSI dedicado todavía no tiene firmware; sin mensajes MQTT, su pantalla espera muestras.
+El firmware PIR de `firmware/pir/` publica por MQTT. `firmware/csi_router/` captura CSI del router y publica amplitudes por MQTT; la pantalla del Caso 2 permite calibrar el detector con la habitación vacía. El Caso 3 (`/case/combined`) muestra ambas fuentes con estados y gráficos separados, sin fusionar decisiones ni crear otro tópico. `prueba_CSI/` conserva la captura por Serial y las herramientas de análisis y reproducción de grabaciones por MQTT.
 
-## Instalar y ejecutar
+## Iniciar con un comando
 
-Requisitos: Python 3.12+, Node.js 20+ y Mosquitto. Ejecutar desde la raíz:
+Desde la raíz del repositorio:
 
 ```bash
-cp -n .env.example .env
-python3 -m venv backend/.venv
-backend/.venv/bin/python -m pip install -r backend/requirements.txt
-npm --prefix frontend ci
 ./start.sh
 ```
 
-Para instalar Mosquitto: `brew install mosquitto` en macOS o `sudo apt install mosquitto mosquitto-clients` en Ubuntu/Debian.
+En Windows:
 
-- Dashboard: http://localhost:5173
-- API y sus endpoints: http://localhost:8000/docs
-- Detener: `Ctrl+C`.
+```text
+.\start.bat
+```
 
-`start.sh` inicia Mosquitto si el broker configurado es `localhost` o `127.0.0.1` en el puerto `1883` y no responde; después inicia backend y frontend. Reutiliza el broker si ya responde. Para otro host o puerto, el broker debe iniciarse por separado. Funciona en macOS/Linux; en Windows se puede ejecutar `.\start.bat`, que invoca `start.ps1` para instalar las dependencias e iniciar los servicios. También se puede usar WSL o la [ejecución manual](docs/pruebas.md#8-ejecución-manual).
+El comando instala las herramientas faltantes que pueda gestionar el sistema, crea `.env` y el entorno Python, instala las dependencias y levanta Mosquitto, backend y frontend. Espera a que respondan y abre **http://localhost:5173**. **Ctrl+C** detiene sus procesos. Para macOS/Linux también sirve `bash start.sh` si falta permiso de ejecución.
+
+La primera vez necesita Internet y puede pedir permisos de administrador. En macOS usa Homebrew y puede instalarlo; en Linux con apt requiere Python 3.12+ disponible en la distribución; en Windows usa WinGet. Las instalaciones existentes y las dependencias que no cambiaron se reutilizan. Más detalles y solución de problemas en [arranque con un comando](docs/arranque.md).
+
+- Web: http://localhost:5173
+- API: http://localhost:8000/docs
+- Caso conjunto: http://localhost:5173/case/combined
+
+La preparación del servidor no configura ni flashea los ESP32. Programá las placas de PIR y CSI con router una vez, completá sus credenciales e IP del broker y calibrá CSI desde la web. No hay que iniciar por separado el backend, frontend ni un broker local nuevo.
 
 ## Dónde está cada cosa
 
 | Carpeta | Para qué sirve |
 | --- | --- |
+| `scripts/setup.sh` | Detección e instalación de herramientas y dependencias para `start.sh`. |
 | `backend/app/` | Recibir mensajes MQTT, procesarlos y servir la API. |
 | `backend/app/api/` | Direcciones HTTP y WebSocket que consulta la web. |
 | `backend/app/telemetry_state.py` | Estado en vivo y buffers de las señales. |
@@ -43,14 +48,14 @@ Para instalar Mosquitto: `brew install mosquitto` en macOS o `sudo apt install m
 | `frontend/src/pages/` | Una pantalla por archivo. |
 | `frontend/src/components/` | Componentes agrupados en `charts/`, `layout/`, `metrics/`, `signal/`, `system/` y `ui/`. |
 | `frontend/src/hooks/` | Conectar los datos con las pantallas de React. |
-| `frontend/src/services/` | Comunicación HTTP, WebSocket y USB. |
+| `frontend/src/services/` | Comunicación HTTP y WebSocket. |
 | `frontend/src/types/` | Tipos TypeScript de los datos. |
 | `frontend/src/context/`, `config/`, `styles/` | Telemetría compartida, tema claro/oscuro, configuración y estilos. |
 | `firmware/pir/` | Proyecto PlatformIO del PIR, basado en la rama `bernardo`, con salida USB y publicación MQTT. |
 | `firmware/csi_router/` | Captura CSI del router y publicación de amplitudes por MQTT. |
 | `prueba_CSI/` | Captura por Serial, análisis y reproducción de grabaciones por MQTT. |
 | `mosquitto/` | Configuración del broker MQTT. |
-| `tests/` | Pruebas automáticas del backend, USB y arranque. |
+| `tests/` | Pruebas automáticas del backend, frontend y arranque. |
 | `docs/` | Guías técnicas e informes del trabajo en `informes/`. |
 
 `backend/.venv/` y `frontend/node_modules/` son dependencias instaladas automáticamente. No se editan ni se suben a Git. `frontend/dist/` se genera con `npm run build`.
@@ -64,7 +69,7 @@ Para instalar Mosquitto: `brew install mosquitto` en macOS o `sudo apt install m
 - **Frontend:** usa `localhost:8000`; se puede cambiar con `VITE_API_URL` y `VITE_WS_URL` en `frontend/.env.local`.
 - **Mediciones:** SQLite, normalmente `backend/presence-hardware.db` al iniciar con `start.sh`. Una ruta relativa en `DATABASE_URL` se resuelve desde la carpeta en que se ejecuta el backend.
 
-La telemetría MQTT se guarda automáticamente. Los ensayos con presencia observada se registran en **Sistema & Hardware** y alimentan **Comparación**. La prueba USB es un diagnóstico separado con guardado manual.
+La telemetría MQTT se guarda automáticamente. Los ensayos con presencia observada se registran por separado para PIR y CSI en **Sistema & Hardware** y alimentan **Comparación**. La pantalla de prueba PIR por USB se retiró; el monitor Serial de PlatformIO sigue disponible para diagnóstico. Los datos históricos USB y del antiguo caso dedicado se conservan en el backend y no se reinterpretan como resultados del caso conjunto.
 
 ## Compilar y cargar el PIR
 
@@ -96,6 +101,9 @@ Los tests usan bases temporales. La prueba física requiere conectar y programar
 
 ## Documentación
 
+- [Arranque completo con un comando e instalación automática](docs/arranque.md).
+- [Preparar y realizar el Caso 3 de PIR + CSI en conjunto](docs/prueba-conjunta.md).
+- [Guía completa para preparar y explicar el sistema en la muestra](docs/guia-completa-muestra.md).
 - [Pruebas con hardware, cableado, PlatformIO y solución de problemas](docs/pruebas.md).
 - [Arquitectura y recorrido del código](docs/architecture.md).
 - [Cómo leer y modificar el código, paso a paso](docs/recorrido-codigo.md).
