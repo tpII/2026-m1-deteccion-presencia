@@ -9,6 +9,9 @@ frontend/yarn-error.log*
 
 # Python / Backend
 backend/.venv/
+backend/.venv.backup-*/
+.tools/
+.runtime/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -42,3 +45,6 @@ firmware/**/.pio/
 # Archivos temporales de informes y exportaciones
 tmp/
 output/
+
+.agents/skills/formato-entregas/
+.gstack/

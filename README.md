@@ -1,262 +1,116 @@
-# Detección de Presencia mediante PIR y CSI Wi-Fi
+# Detección de presencia: PIR y Wi-Fi CSI
 
-Proyecto Universitario de Ingeniería — Taller de Proyecto II 2026 (Grupo M1)
+Proyecto de Taller de Proyecto II con tres casos: sensor PIR, CSI con router y prueba conjunta de PIR + CSI para comparar sus respuestas en vivo.
 
-Plataforma full-stack de adquisición, procesamiento de señal y visualización en tiempo real para la evaluación y comparación experimental de tres metodologías de detección de presencia humana en interiores:
-1. **Caso 1 — Sensor PIR**: Detección térmica piroeléctrica por infrarrojo pasivo.
-2. **Caso 2 — CSI con Router Wi-Fi**: Extracción de Channel State Information de subportadoras OFDM sobre red comercial existente.
-3. **Caso 3 — CSI en Red Dedicada**: Enlace directo cerrado y controlado entre dos nodos ESP32 (Access Point y Station).
+```text
+ESP32 → MQTT / Mosquitto → FastAPI
+                            ├── Estado en memoria → WebSocket / REST → React
+                            └── SQLite → REST de historial y métricas → React
+```
 
----
+El firmware PIR de `firmware/pir/` publica por MQTT. `firmware/csi_router/` captura CSI del router y publica amplitudes por MQTT; la pantalla del Caso 2 permite calibrar el detector con la habitación vacía. El Caso 3 (`/case/combined`) muestra ambas fuentes con estados y gráficos separados, sin fusionar decisiones ni crear otro tópico. `prueba_CSI/` conserva la captura por Serial y las herramientas de análisis y reproducción de grabaciones por MQTT.
 
-## ⚡ Inicio Rápido (1 Solo Comando)
+## Iniciar con un comando
 
-Podés levantar y ver la aplicación completa inmediatamente (Frontend React + Backend FastAPI con datos simulados en vivo) ejecutando el script de inicio:
+Desde la raíz del repositorio:
 
 ```bash
 ./start.sh
 ```
 
-Una vez levantado:
-- 🌐 **Dashboard Web interactivo:** [http://localhost:5173](http://localhost:5173)
-- 📚 **Documentación API REST (Swagger):** [http://localhost:8000/docs](http://localhost:8000/docs)
-- 🩺 **Health Check del Backend:** [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
+En Windows:
 
----
-
-## 1. Arquitectura General
-
-```
-ESP32 (Hardware / ESP-IDF)
-  │
-  ▼ MQTT (1883)
-Mosquitto Broker
-  │
-  ▼ paho-mqtt
-FastAPI Backend ◄──────────── [ MockDataSource ] (si DATA_SOURCE=mock)
-  │
-  ├── Detector CSI (indicadores de movimiento y forma, calibrado en el lugar)
-  ├── Persistencia Experimental (SQLite / aiosqlite)
-  └── Buffer Circular en Memoria (500 muestras en tiempo real)
-  │
-  ├────────────────────────────┬────────────────────────────┐
-  ▼ WebSocket (/ws/telemetry)   ▼ REST API (/api/v1)         ▼ Swagger (/docs)
-WebSocket Manager              Endpoints HTTP               Documentación Interactiva
-  │                            │
-  └───────────────┬────────────┘
-                  ▼
-         React 18 + Vite Frontend
-           ├── Dashboard Liquid Glass (Apple Lab Style)
-           ├── Apache ECharts en Canvas
-           └── Navegación Desacoplada (React Router)
-```
-
----
-
-## 2. Stack Tecnológico
-
-### Frontend
-- **Framework**: React 18 con TypeScript y Vite.
-- **Rutas**: React Router DOM v6.
-- **Motor de Gráficos**: Apache ECharts (renderizado Canvas de alta frecuencia y baja latencia).
-- **Iconografía Técnica**: Lucide React.
-- **Estilos**: Vanilla CSS con tokens de diseño y estética *Liquid Glass* (paneles translúcidos, desenfoque de fondo, bordes suaves y contraste de alta legibilidad).
-
-### Backend
-- **Framework**: Python 3.12+ (probado en 3.13) con FastAPI y Uvicorn.
-- **Validación & Configuración**: Pydantic v2 y Pydantic-Settings.
-- **Procesamiento de Señal**: NumPy (indicadores de movimiento y forma del canal CSI, ver `docs/signal-processing.md`).
-- **Persistencia**: SQLite asíncrono con `aiosqlite`.
-- **Telemetría**: WebSockets nativos de FastAPI y cliente MQTT `paho-mqtt`.
-
----
-
-## 3. Estructura de Carpetas
-
-```
-tp2/
-├── README.md               # Documentación principal del proyecto
-├── .gitignore              # Exclusiones de Git
-├── .env.example            # Plantilla de variables de entorno
-├── docker-compose.yml      # Orquestación con Docker
-│
-├── frontend/               # Aplicación web React + TypeScript + ECharts
-│   ├── src/
-│   │   ├── components/     # Componentes Glass, gráficos, pipeline y tablas
-│   │   ├── pages/          # Overview, PIR, CSI Router, CSI Dedicado, Comparación, Sistema
-│   │   ├── services/       # Cliente HTTP y WebSocket con reconexión automática
-│   │   ├── hooks/          # useTelemetry, useMetrics, useWebSocket
-│   │   ├── styles/         # Tokens de diseño y utilidades Glass
-│   │   └── types/          # Definiciones TypeScript de datos y señales
-│   └── package.json
-│
-├── backend/                # Servicio FastAPI, procesamiento y WebSockets
-│   ├── app/
-│   │   ├── api/            # Rutas REST (/health, /telemetry, /metrics, /cases) y /ws
-│   │   ├── core/           # Configuración (settings), constantes y logs
-│   │   ├── data_sources/   # Abstracción DataSource (MockDataSource y MQTTDataSource)
-│   │   ├── database/       # Conexión SQLite y esquema relacional
-│   │   ├── repositories/   # Buffers circulares en memoria y persistencia
-│   │   ├── schemas/        # Modelos de validación Pydantic
-│   │   ├── services/       # Orquestadores de telemetría y métricas
-│   │   └── signal_processing/ # Detector CSI con calibración
-│   ├── requirements.txt
-│   └── pyproject.toml
-│
-├── infrastructure/         # Configuración del broker Mosquitto (mosquitto.conf)
-├── scripts/                # Simulador MQTT (ESP32 publisher), generador de datos y reset DB
-├── tests/                  # Tests unitarios y de integración de backend y frontend
-└── docs/                   # Documentación detallada (arquitectura, tópicos MQTT, modelos, señal)
-```
-
----
-
-## Inicio rápido en Windows
-
-Con Python 3.11+ y Node.js instalados, desde la carpeta del proyecto:
-
-```
+```text
 .\start.bat
 ```
 
-La primera vez instala las dependencias del backend y del frontend, y Mosquitto con `winget` si falta. Después levanta el broker, el backend y la página web, y muestra la IP de la PC para configurar `MQTT_HOST` en el firmware. `Ctrl+C` detiene todo. (`start.sh` es el equivalente para Linux y macOS.)
+El comando instala las herramientas faltantes que pueda gestionar el sistema, crea `.env` y el entorno Python, instala las dependencias y levanta Mosquitto, backend y frontend. Espera a que respondan y abre **http://localhost:5173**. **Ctrl+C** detiene sus procesos. Para macOS/Linux también sirve `bash start.sh` si falta permiso de ejecución.
 
----
+La primera vez necesita Internet y puede pedir permisos de administrador. En macOS usa Homebrew y puede instalarlo; en Linux con apt requiere Python 3.12+ disponible en la distribución; en Windows usa WinGet. Las instalaciones existentes y las dependencias que no cambiaron se reutilizan. Más detalles y solución de problemas en [arranque con un comando](docs/arranque.md).
 
-## 4. Requisitos Previos
+- Web: http://localhost:5173
+- API: http://localhost:8000/docs
+- Caso conjunto: http://localhost:5173/case/combined
 
-- **Node.js**: $\ge 20.0.0$ (recomendado 22 LTS o 24)
-- **npm**: $\ge 10.0.0$
-- **Python**: $\ge 3.12$ (recomendado 3.12 o 3.13)
-- **Git**
+La preparación del servidor no configura ni flashea los ESP32. Programá las placas de PIR y CSI con router una vez, completá sus credenciales e IP del broker y calibrá CSI desde la web. No hay que iniciar por separado el backend, frontend ni un broker local nuevo.
 
----
+## Dónde está cada cosa
 
-## 5. Instalación Paso a Paso
+| Carpeta | Para qué sirve |
+| --- | --- |
+| `scripts/setup.sh` | Detección e instalación de herramientas y dependencias para `start.sh`. |
+| `backend/app/` | Recibir mensajes MQTT, procesarlos y servir la API. |
+| `backend/app/api/` | Direcciones HTTP y WebSocket que consulta la web. |
+| `backend/app/telemetry_state.py` | Estado en vivo y buffers de las señales. |
+| `backend/app/repositories/` | Guardar y consultar muestras y ensayos en SQLite. |
+| `backend/app/schemas/` | Validar la forma de los datos con Pydantic. |
+| `backend/app/signal_processing/` | Detector CSI con indicadores de movimiento, forma y calibración. |
+| `frontend/src/pages/` | Una pantalla por archivo. |
+| `frontend/src/components/` | Componentes agrupados en `charts/`, `layout/`, `metrics/`, `signal/`, `system/` y `ui/`. |
+| `frontend/src/hooks/` | Conectar los datos con las pantallas de React. |
+| `frontend/src/services/` | Comunicación HTTP y WebSocket. |
+| `frontend/src/types/` | Tipos TypeScript de los datos. |
+| `frontend/src/context/`, `config/`, `styles/` | Telemetría compartida, tema claro/oscuro, configuración y estilos. |
+| `firmware/pir/` | Proyecto PlatformIO del PIR, basado en la rama `bernardo`, con salida USB y publicación MQTT. |
+| `firmware/csi_router/` | Captura CSI del router y publicación de amplitudes por MQTT. |
+| `prueba_CSI/` | Captura por Serial, análisis y reproducción de grabaciones por MQTT. |
+| `mosquitto/` | Configuración del broker MQTT. |
+| `tests/` | Pruebas automáticas del backend, frontend y arranque. |
+| `docs/` | Guías técnicas e informes del trabajo en `informes/`. |
 
-### 1. Clonar y configurar variables de entorno
+`backend/.venv/` y `frontend/node_modules/` son dependencias instaladas automáticamente. No se editan ni se suben a Git. `frontend/dist/` se genera con `npm run build`.
 
-Copiar el archivo de configuración base:
+## Configuración y datos
 
-```bash
-cp .env.example .env
-```
+- **Backend:** `.env` en la raíz. Si existe `backend/.env`, tiene prioridad; las variables de la terminal tienen prioridad sobre ambos archivos.
+- **Depuración:** `APP_DEBUG=true` habilita los registros de acceso. La variable genérica `DEBUG` no configura este backend.
+- **ESP32 PIR:** copiar `firmware/pir/include/config.example.h` como `firmware/pir/include/config.h`, completar Wi-Fi e IP LAN del broker y compilar/cargar con PlatformIO. Ese archivo no se sube a Git.
+- **ESP32 CSI con router:** copiar `firmware/csi_router/include/config.example.h` como `config.h` en la misma carpeta, completar Wi-Fi y broker, y compilar/cargar con PlatformIO. Ver [su guía](firmware/csi_router/README.md).
+- **Frontend:** usa `localhost:8000`; se puede cambiar con `VITE_API_URL` y `VITE_WS_URL` en `frontend/.env.local`.
+- **Mediciones:** SQLite, normalmente `backend/presence-hardware.db` al iniciar con `start.sh`. Una ruta relativa en `DATABASE_URL` se resuelve desde la carpeta en que se ejecuta el backend.
 
-### 2. Configurar e Instalar Backend
+La telemetría MQTT se guarda automáticamente. Los ensayos con presencia observada se registran por separado para PIR y CSI en **Sistema & Hardware** y alimentan **Comparación**. La pantalla de prueba PIR por USB se retiró; el monitor Serial de PlatformIO sigue disponible para diagnóstico. Los datos históricos USB y del antiguo caso dedicado se conservan en el backend y no se reinterpretan como resultados del caso conjunto.
 
-```bash
-cd backend
+## Compilar y cargar el PIR
 
-# Crear entorno virtual de Python
-python3 -m venv .venv
-
-# Activar el entorno virtual:
-# En macOS / Linux:
-source .venv/bin/activate
-# En Windows:
-# .venv\Scripts\activate
-
-# Instalar dependencias
-pip install -r requirements.txt
-cd ..
-```
-
-### 3. Configurar e Instalar Frontend
-
-```bash
-cd frontend
-npm install
-cd ..
-```
-
----
-
-## 6. Ejecución en Modo MOCK (Simulación sin Hardware)
-
-El sistema viene preconfigurado con `DATA_SOURCE=mock` para operar de forma 100% autónoma sin microcontroladores conectados.
-
-### Terminal 1 — Backend:
+Instalá PlatformIO IDE en VS Code y abrí `firmware/pir/` como proyecto. Con PlatformIO Core también podés ejecutar desde la raíz:
 
 ```bash
-cd backend
-source .venv/bin/activate
-uvicorn app.main:app --reload --port 8000
+cp -n firmware/pir/include/config.example.h firmware/pir/include/config.h
+pio run --project-dir firmware/pir
+pio run --project-dir firmware/pir --target upload
 ```
 
-- API Swagger: [http://localhost:8000/docs](http://localhost:8000/docs)
-- Health Check: [http://localhost:8000/api/v1/health](http://localhost:8000/api/v1/health)
+La placa configurada es `upesy_wroom`, como en el proyecto de Bernardo. El puerto USB se detecta automáticamente; no se fija `COM9`. El firmware mantiene GPIO27 con `INPUT_PULLDOWN`, mensajes Serial a 115200 baud y muestreo nominal cada 500 ms. MQTT y Serial funcionan desde el mismo programa. Más detalles en [firmware/pir/README.md](firmware/pir/README.md).
 
-### Terminal 2 — Frontend:
+## Comprobar el proyecto
 
 ```bash
-cd frontend
-npm run dev
+backend/.venv/bin/python -m pytest
+npm --prefix frontend test
+npm --prefix frontend run build
 ```
 
-- Dashboard Web: [http://localhost:5173](http://localhost:5173)
-
-Al abrir la aplicación se observará la señal en vivo transmitiéndose por WebSocket, los estados de presencia alternando y el pipeline de procesamiento CSI ejecutándose en tiempo real.
-
----
-
-## 7. Ejecución en Modo Hardware con Broker MQTT
-
-Cuando se conecten los nodos físicos ESP32:
-
-1. **Iniciar el broker Mosquitto**:
-   ```bash
-   mosquitto -c infrastructure/mosquitto/mosquitto.conf -v
-   ```
-
-2. **Cambiar la fuente de datos en `.env`**:
-   ```ini
-   DATA_SOURCE=mqtt
-   MQTT_HOST=localhost
-   MQTT_PORT=1883
-   ```
-
-3. **Iniciar el backend**:
-   ```bash
-   uvicorn app.main:app --reload --port 8000
-   ```
-
-4. **(Opcional) Probar con el simulador de ESP32**:
-   Si los ESP32 reales aún no están flasheados pero se desea validar el enlace MQTT completo:
-   ```bash
-   python scripts/mqtt_test_publisher.py --host localhost --port 1883 --case all
-   ```
-
----
-
-## 8. Pruebas Automatizadas
-
-### Backend:
+Pruebas opcionales con procesos reales, con los puertos 1883, 8000 y 5173 libres. Los mensajes los publican los tests; no requieren ESP32 ni validan la detección física:
 
 ```bash
-cd backend
-source .venv/bin/activate
-pytest ../tests/backend -v
+RUN_MQTT_INTEGRATION=1 backend/.venv/bin/python -m pytest tests/integration
 ```
 
-### Frontend:
+Los tests usan bases temporales. La prueba física requiere conectar y programar las placas.
 
-```bash
-cd frontend
-npm run build
-```
+## Documentación
 
----
-
-## 9. Resolución de Problemas Frecuentes (Troubleshooting)
-
-- **Puerto 8000 o 5173 ocupado**:
-  - Backend: `uvicorn app.main:app --reload --port 8001` y actualizar `VITE_API_URL` en `frontend/.env`.
-  - Frontend: Vite asignará automáticamente el siguiente puerto libre (ej. `5174`).
-- **WebSocket indica 'RECONNECTING' u 'OFFLINE'**:
-  - Verificar que el backend esté corriendo en el puerto 8000 y responda en `http://localhost:8000/api/v1/health`.
-- **CORS Error en consola del navegador**:
-  - Asegurarse de que el origen del frontend esté en la variable `CORS_ORIGINS` del backend en `.env` (por defecto `http://localhost:5173`).
-- **MQTT Broker Connection Refused**:
-  - Si `DATA_SOURCE=mqtt`, verificar que Mosquitto esté corriendo en el puerto 1883 (`telnet localhost 1883`). Para desarrollo sin broker, cambiar a `DATA_SOURCE=mock`.
-- **Restaurar base de datos a estado original**:
-  - Ejecutar: `python scripts/reset_database.py`.
+- [Arranque completo con un comando e instalación automática](docs/arranque.md).
+- [Preparar y realizar el Caso 3 de PIR + CSI en conjunto](docs/prueba-conjunta.md).
+- [Guía completa para preparar y explicar el sistema en la muestra](docs/guia-completa-muestra.md).
+- [Pruebas con hardware, cableado, PlatformIO y solución de problemas](docs/pruebas.md).
+- [Arquitectura y recorrido del código](docs/architecture.md).
+- [Cómo leer y modificar el código, paso a paso](docs/recorrido-codigo.md).
+- [Qué comprueban las pruebas automáticas](docs/pruebas-automaticas.md).
+- [Tópicos y mensajes MQTT](docs/mqtt-topics.md).
+- [Detector y calibración CSI](docs/signal-processing.md).
+- [Datos y métricas](docs/data-model.md).
+- [Auditoría y limpieza del repositorio](docs/auditoria.md).
+- [Auditoría final y comprobaciones realizadas](docs/auditoria-final.md).
+- [Bitácora del trabajo](BITACORA.md).

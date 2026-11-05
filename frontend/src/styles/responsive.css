@@ -1,0 +1,52 @@
+@media (max-width: 1024px) {
+  .app-body { flex-direction: column; }
+  .app-main { padding: 1.5rem; }
+  .app-header { flex-wrap: wrap; padding: 0.85rem 1.5rem; }
+  .header-controls { flex-wrap: wrap; }
+  .mobile-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border: 1px solid var(--glass-border-subtle);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    background: var(--surface-subtle);
+  }
+  .app-sidebar { display: none; width: 100%; border-right: 0; }
+  .app-sidebar.is-open { display: flex; border-bottom: 1px solid var(--glass-border-subtle); }
+  .sidebar-footer { display: none; }
+  .theme-toggle { width: 44px; height: 44px; }
+}
+
+@media (max-width: 768px) {
+  .app-header { gap: 0.5rem; padding: 0.75rem 1rem; }
+  .header-brand { width: 100%; gap: 0.65rem; }
+  .header-brand h1 { font-size: 1.05rem !important; }
+  .header-subtitle, .header-clock { display: none; }
+  .header-controls { width: 100%; gap: 0.5rem; }
+  .app-main { padding: 1rem; }
+  .app-content .glass-panel,
+  .app-content .glass-card {
+    padding: 1rem !important;
+  }
+  .section-heading { align-items: flex-start !important; }
+  .section-heading h2 { font-size: 1.1rem !important; }
+  .app-sidebar nav a { font-size: 0.95rem !important; }
+  .app-content button { min-height: 44px; }
+  input, select, textarea { font-size: 16px !important; min-height: 44px; }
+  .glass-table { min-width: 600px; }
+  .glass-table-container { max-width: 100%; }
+  .pipeline-flow-wrapper { flex-direction: column; overflow-x: visible; }
+  .pipeline-stage-card { min-width: 0; width: 100%; }
+  .pipeline-arrow { transform: rotate(90deg); align-self: center; }
+  .signal-details { flex-direction: column; align-items: flex-start !important; }
+}
+
+@media (max-width: 768px) {
+  .grid-2, .grid-4 {
+    grid-template-columns: 1fr;
+  }
+}

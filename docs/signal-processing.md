@@ -7,7 +7,10 @@ Este documento describe la base teórica y el algoritmo utilizado para detectar 
 ## 1. Fundamentos Físicos
 
 ### Sensor PIR
-El sensor piroeléctrico capta radiación infrarroja centrada en $\approx 10\,\mu\text{m}$ (longitud de onda emitida por la temperatura corporal humana $\approx 37^\circ\text{C}$). 
+
+El firmware PlatformIO lee GPIO27 con `INPUT_PULLDOWN` cada 500 ms nominales y envía su nivel digital. El backend lo guarda y lo muestra sin filtros CSI. Una salida baja indica que el sensor no detectó movimiento; no demuestra que el ambiente esté vacío.
+
+El sensor piroeléctrico capta radiación infrarroja centrada en $\approx 10\,\mu\text{m}$ (longitud de onda emitida por la temperatura corporal humana $\approx 37^\circ\text{C}$).
 La lente de Fresnel divide el campo de visión en conos alternados; cuando una persona se desplaza, la diferencia de irradiación entre los dos elementos piroeléctricos genera un pulso de voltaje analógico que un comparador digitaliza a nivel alto ($1$).
 - **Limitación intrínseca**: Si la persona se detiene por completo o duerme, $\frac{\mathrm{d}T}{\mathrm{d}t} \to 0$ y la señal cae a ausencia ($0$).
 
@@ -22,6 +25,8 @@ El cuerpo humano, compuesto en un 70% de agua salina, actúa como un reflector y
 ---
 
 ## 2. Detector CSI (`backend/app/signal_processing/presence_detector.py`)
+
+`presence_detector.py` conserva el estado de calibración y la decisión de presencia. Las fórmulas y la ventana temporal están en `signal_processing/indicators.py`; esta separación no cambia los cálculos ni los parámetros.
 
 El ESP32 (`firmware/csi_router`) publica por cada paquete del router la amplitud $|H(k)|$ de 55 subportadoras del campo HT-LTF ($k = -28 \dots 28$, sin $k = 0$ ni $k = 1$), unas 10 veces por segundo. El backend calcula dos indicadores sobre una ventana móvil de **4 s**:
 
@@ -53,4 +58,6 @@ Durante la calibración no debe haber nadie cerca: el CSI también percibe movim
 
 ### Validación con grabaciones reales
 
-El algoritmo se ajustó fuera de línea con grabaciones del ESP32 (`prueba_CSI/analisis`): con ventana de 4 s se obtuvo 0 % de falsas alarmas con la habitación vacía y 100 % de detección caminando y sentado quieto. Con ventana de 2 s, la detección de la persona quieta bajaba al 84 %.
+El algoritmo se ajustó fuera de línea con grabaciones del ESP32 (`prueba_CSI/analisis`). Los resultados deben asociarse a un log, intervalos y configuración concretos. La documentación anterior mencionaba 0 % de falsas alarmas, pero el `resumen.txt` guardado informa 89,3 % de falsas alarmas combinadas para su tramo vacío y 100 % de detección caminando y sentado. No se resolvió la discrepancia; no se presenta el 0 % como resultado consolidado.
+
+El Caso 3 conjunto muestra PIR y CSI con router con estados separados. Reutiliza el mismo detector y la misma calibración de `csi_router`; no fusiona decisiones ni requiere un detector nuevo. La calibración vive en memoria y se pierde al reiniciar el backend. Las pruebas sintéticas de software no garantizan exactitud física.

@@ -110,7 +110,7 @@ class MetricsRepository:
     async def get_system_comparison(self) -> SystemComparison:
         metrics = [await self.calculate_case_metrics(case) for case in CaseId]
         rows = [
-            ("Tasa de detección", "%", "detection_rate"),
+            ("Exactitud", "%", "detection_rate"),
             ("Falsos positivos", "ensayos", "false_positives"),
             ("Falsos negativos", "ensayos", "false_negatives"),
             ("Latencia media", "ms", "average_latency_ms"),

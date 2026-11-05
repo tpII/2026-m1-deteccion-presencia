@@ -136,3 +136,12 @@ Resultados de la prueba:
 Se probó el caso 2 mientras el celular compartía internet y el ESP32 se conectó a esa red. Para que funcionara, hubo que activar en el iPhone la opción “Maximizar compatibilidad”, que hace que la red se cree en la banda de 2,4 GHz, la única que admite el ESP32. Con eso, el ESP32 se conectó, capturó paquetes CSI del celular y los publicó correctamente en la plataforma web.
 
 Es requisito que la computadora donde corren el broker MQTT y el backend esté conectada a la misma red que comparte el celular. El ESP32 envía los datos a la dirección IP local de la computadora, y esa dirección solo es alcanzable dentro de la misma red local. Al cambiar de red, la computadora recibe una IP nueva (en el hotspot del iPhone, del tipo 172.20.10.x), así que hay que actualizar MQTT_HOST en la configuración del firmware (config.h) y volver a cargarlo en la placa.
+
+## 31/10 — Caso conjunto y arranque automático
+
+- El Caso 3 de la web pasa a mostrar PIR y CSI con router juntos, con estados y gráficos separados, reutilizando la calibración del Caso 2. No se implementó una fusión de decisiones.
+- Se retiró la pantalla de prueba PIR por USB; se conservan el monitor Serial del firmware y los datos y endpoints históricos del backend.
+- El inicio se concentra en `./start.sh` o `.\start.bat`: preparación de herramientas soportadas, entorno Python, dependencias y configuración inicial; arranque y comprobación de broker, backend y frontend.
+- Se actualizó la documentación operativa y la guía de la muestra. Los informes y auditorías de fechas anteriores se conservan como registros históricos identificados.
+- La instalación de herramientas depende de Internet, permisos y disponibilidad de los gestores. La configuración y carga de los ESP32 y la validación física se realizan por separado.
+- Validación de software: 61 pruebas de backend, 22 de frontend y 2 de integración aprobadas; compilación del frontend correcta. Tres pruebas de arranque con puertos fijos se omitieron porque estaban ocupados por servicios existentes. Windows y la instalación desde un sistema sin herramientas quedan pendientes de verificación en equipos de destino.

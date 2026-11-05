@@ -12,7 +12,7 @@ interface DigitalSignalChartProps {
 
 export function DigitalSignalChart({
   points,
-  title = 'Cronograma Digital PIR (0: Ausencia / 1: Detección)',
+  title = 'Salida PIR (0: Sin movimiento / 1: Movimiento)',
   height = 240,
 }: DigitalSignalChartProps) {
   const { isDark } = useTheme();
@@ -39,7 +39,7 @@ export function DigitalSignalChart({
       textStyle: {
         color: tooltipText,
       },
-      valueFormatter: (value) => value === 1 ? 'PRESENCIA (1)' : 'AUSENCIA (0)',
+      valueFormatter: (value) => value === 1 ? 'MOVIMIENTO (1)' : 'SIN MOVIMIENTO (0)',
     },
     grid: {
       left: '4%',
@@ -64,7 +64,7 @@ export function DigitalSignalChart({
       max: 1,
       interval: 1,
       axisLabel: {
-        formatter: (val: number) => (val === 1 ? '1 (Presencia)' : '0 (Ausencia)'),
+        formatter: (val: number) => String(val),
         color: textColor,
         fontSize: 10,
       },

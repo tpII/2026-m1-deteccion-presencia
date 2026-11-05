@@ -1,167 +1,94 @@
-# Especificación de Tópicos y Mensajes MQTT
+# Mensajes MQTT
 
-Esta especificación estandariza la comunicación entre los nodos microcontroladores **ESP32** y el backend **FastAPI** a través del broker **Eclipse Mosquitto** (puerto 1883).
+El contrato de entrada está definido en `backend/app/constants.py`, `backend/app/mqtt.py` y `backend/app/schemas/telemetry.py`. Mosquitto distribuye mensajes; FastAPI se suscribe y React recibe los resultados por REST y WebSocket.
 
----
+## Qué está conectado hoy
 
-## 1. Tópico: `presence/pir/telemetry`
+| Caso | Publicador disponible | Entrada del backend |
+| --- | --- | --- |
+| PIR | `firmware/pir/`: JSON por MQTT y texto de diagnóstico por Serial. | `presence/pir/telemetry` |
+| CSI con router | `firmware/csi_router/`: captura Wi-Fi y publicación de amplitudes por MQTT. | `presence/csi/router/raw` |
+| Caso 3 conjunto | Reutiliza las placas PIR y CSI con router. | Los dos tópicos anteriores; no hay un tópico conjunto. |
+| Dedicado histórico | Contrato retenido por compatibilidad, fuera de la web actual. | `presence/csi/dedicated/raw` |
 
-Publicado por el nodo ESP32 conectado al sensor PIR tras cambio de nivel lógico o intervalo de refresco.
+El CSV de `prueba_CSI/` no es el JSON que acepta el backend. Abrir su monitor no alimenta el dashboard. Para publicar en vivo se usa `firmware/csi_router/`; para reproducir una grabación se usa `prueba_CSI/analisis/reproducir_log_mqtt.py`. Su funcionamiento está explicado en [prueba_CSI/README.md](../prueba_CSI/README.md).
 
-### Formato de Mensaje (JSON)
-```json
-{
-  "timestamp": "2026-09-18T18:30:00.120Z",
-  "case_id": "pir",
-  "source": "esp32_pir_node_01",
-  "presence": true,
-  "raw_value": 1.0,
-  "latency_ms": 145.2,
-  "ground_truth": true
-}
-```
+## Tópicos y validación
 
-### Campos:
-- `timestamp`: Cadena ISO 8601 en tiempo UTC.
-- `case_id`: Constante `"pir"`.
-- `source`: Identificador del dispositivo de origen.
-- `presence`: Booleano indicando detección (`true`) o reposo (`false`).
-- `raw_value`: `1.0` (Active High) o `0.0`.
-- `latency_ms`: Tiempo de propagación / procesamiento interno en milisegundos.
-- `ground_truth`: Opcional, estado real verificado durante ensayos experimentales.
+| Tópico | `case_id` obligatorio | Campos de datos obligatorios |
+| --- | --- | --- |
+| `presence/pir/telemetry` | `pir` | `presence`, `raw_value` |
+| `presence/csi/router/raw` | `csi_router` | `amplitudes` |
+| `presence/csi/dedicated/raw` | `csi_dedicated` | `amplitudes` |
 
----
+La suscripción solicita QoS 0 para los tres tópicos. Un tópico desconocido se ignora. Un JSON inválido, campos obligatorios ausentes o un `case_id` distinto del indicado en la tabla se rechazan y se registran en consola. Los campos adicionales no definidos por el esquema se ignoran.
 
-## 2. Tópico: `presence/csi/router/raw`
+Las latencias deben ser finitas y no negativas. Las amplitudes deben formar una lista no vacía de números finitos; el esquema no impone que sean positivas. Los modelos Pydantic admiten algunas conversiones de tipos: los ejemplos usan booleanos y números JSON para evitar depender de ellas.
 
-Publicado por el ESP32 receptor (Station) que captura tramas del router comercial Wi-Fi existente.
+## PIR
 
-### Formato de Mensaje (JSON)
-```json
-{
-  "timestamp": "2026-09-18T18:30:00.250Z",
-  "case_id": "csi_router",
-  "source": "esp32_csi_sta_node",
-  "amplitudes": [22.45, 23.10, 21.80],
-  "latency_ms": 318.5,
-  "ground_truth": true
-}
-```
-
-### Campos:
-- `amplitudes`: Amplitud |H(k)| de 55 subportadoras del campo HT-LTF (k = -28 … 28, sin k = 0 ni k = 1), en ese orden. La publica `firmware/csi_router` unas 10 veces por segundo (una por respuesta al ping).
-- `latency_ms`: Latencia medida de captura y envío (opcional).
-
----
-
-## 3. Tópico: `presence/csi/dedicated/raw`
-
-Publicado por el ESP32 receptor del par dedicado (AP - STA).
-
-### Formato de Mensaje (JSON)
-```json
-{
-  "timestamp": "2026-09-18T18:30:00.310Z",
-  "case_id": "csi_dedicated",
-  "source": "esp32_dedicated_pair",
-  "amplitudes": [35.20, 36.15, 34.90],
-  "latency_ms": 395.0,
-  "ground_truth": true
-}
-```
-
----
-
-## 4. Tópicos de Señal Procesada:
-- `presence/csi/router/processed`
-- `presence/csi/dedicated/processed`
-
-Emitidos opcionalmente por el backend hacia herramientas de telemetría de laboratorio.
+El firmware publica cada 500 ms nominales, según `SAMPLE_INTERVAL_MS` de su configuración, con QoS 0 y `retain=false`:
 
 ```json
-{
-  "timestamp": "2026-09-18T18:30:00.320Z",
-  "case_id": "csi_router",
-  "filtered_amplitude": 22.38,
-  "variance": 3.45,
-  "energy": 501.2,
-  "detection_score": 0.89,
-  "presence": true
-}
+{"case_id":"pir","source":"pir-94e68605a918","presence":true,"raw_value":1}
 ```
 
----
+`presence` representa el nivel alto del PIR, no una observación independiente de que haya una persona. El firmware envía `raw_value=1` para movimiento y `raw_value=0` para ausencia de movimiento. Publica cada muestra, aunque el estado no cambie.
 
-## 5. Tópico: `presence/system/status`
+El backend utiliza `presence` para el estado y `raw_value` para el gráfico y el historial. Actualmente valida que `raw_value` sea finito, pero **no exige 0/1 ni comprueba su coherencia con `presence`**. El publicador debe mantener esa correspondencia.
 
-Heartbeat de estado del nodo físico.
+`source` identifica la placa, pero el backend agrupa las muestras por `case_id`, no por placa. Dos publicadores PIR mezclarían sus lecturas en la misma serie. `source` no se guarda en SQLite ni se transmite a React.
+
+Si no hay Wi-Fi o broker, la lectura sigue saliendo por Serial cuando el bucle la toma. Las muestras no publicadas no se conservan para reenvío. Los intentos de reconexión pueden demorar el intervalo nominal; QoS 0 no confirma entrega al backend ni persistencia.
+
+## CSI
+
+Ejemplo del formato aceptado para el caso con router; sus números ilustran el contrato y no son mediciones del proyecto:
 
 ```json
-{
-  "source": "esp32_pir_node_01",
-  "state": "online",
-  "rssi": -58,
-  "free_heap": 184520,
-  "uptime_sec": 3600
-}
+{"case_id":"csi_router","source":"esp32_rx","amplitudes":[22.45,23.10,21.80]}
 ```
 
----
+El Caso 3 muestra las fuentes `pir` y `csi_router` separadas. `csi_dedicated` es solo el contrato histórico del enlace dedicado y no identifica al caso conjunto.
 
-## 6. Tópicos de Configuración y Control de Nodos ESP32
+`firmware/csi_router/` publica aproximadamente 10 veces por segundo la amplitud de 55 subportadoras HT-LTF (k = −28 … 28, excluyendo 0 y 1). El backend usa el vector completo para calcular los indicadores de movimiento y forma. El gráfico crudo y SQLite guardan la amplitud media de cada paquete.
 
-Emitidos por el backend hacia los nodos para ajustar parámetros de radiofrecuencia y muestreo en tiempo real.
+El firmware convierte los pares imaginario-real a amplitudes antes de publicar; el backend no interpreta tramas CSV `CSI_DATA` ni bytes CSI originales. El orden y la cantidad de subportadoras deben mantenerse entre mensajes; si cambia la cantidad después de calibrar, el detector invalida la calibración. Ver [signal-processing.md](signal-processing.md).
 
-### `presence/nodes/pir/config`
-```json
-{
-  "node_id": "esp32_pir_node_01",
-  "gpio_pin": 13,
-  "trigger_mode": "RISING",
-  "debounce_ms": 3000,
-  "sample_interval_ms": 200,
-  "mqtt_topic": "presence/pir/telemetry"
-}
-```
+## Campos opcionales y uso real
 
-### `presence/nodes/csi_router/config`
-```json
-{
-  "node_id": "esp32_csi_sta_node",
-  "wifi_channel": 6,
-  "target_ssid": "Laboratorio-WiFi",
-  "sampling_rate_hz": 20,
-  "subcarriers_mode": "PRIMARY",
-  "mqtt_topic": "presence/csi/router/raw"
-}
-```
+| Campo | Si se omite | Qué hace el backend |
+| --- | --- | --- |
+| `source` | `hardware` en PIR; `esp32` en CSI. | Lo valida como texto, pero no lo persiste ni lo expone a React. |
+| `timestamp` | Asigna una cadena de hora UTC al validar el mensaje. | No utiliza la hora del nodo para ordenar o guardar. Si se envía, sólo exige texto; no valida su formato ISO ni zona horaria. |
+| `latency_ms` | `0`. | Lo guarda y muestra; no mide ni calcula la latencia de adquisición o transporte. En las tarjetas en vivo, cero se muestra como «Sin medir». |
+| `ground_truth` | `null`. | Lo acepta, pero no lo incorpora al estado, al historial ni a los ensayos. Se registra la presencia observada desde el formulario o REST. |
 
-### `presence/nodes/csi_dedicated/config`
-```json
-{
-  "node_id": "esp32_dedicated_pair",
-  "wifi_channel": 1,
-  "tx_power_dbm": 16,
-  "packet_rate_hz": 40,
-  "custom_bssid": "02:00:00:00:00:01",
-  "mqtt_topic": "presence/csi/dedicated/raw"
-}
-```
+Los gráficos usan la hora del backend al procesar la muestra, en milisegundos desde la época Unix. `last_updated` se asigna al actualizar el estado; el historial SQLite asigna otra hora UTC al encolar la fila. Son marcas de procesamiento del backend, no la hora del ESP32 ni el momento del commit de SQLite.
 
----
+El firmware PIR incluido no envía `timestamp`, `latency_ms` ni `ground_truth`. El timestamp de radio que imprime `prueba_CSI/` es otro dato: microsegundos locales del dispositivo, no una fecha UTC.
 
-## Simulación de Hardware
+## Del backend a la web y a SQLite
 
-Para simular publicaciones de hardware sin encender microcontroladores físicos:
+- El estado en memoria conserva hasta 500 puntos por caso; REST de telemetría en vivo y cada mensaje WebSocket incluyen los últimos 100 puntos crudos y hasta 300 puntos de cada indicador CSI.
+- `/ws/telemetry` envía `initial_state` al conectar y `telemetry_batch` aproximadamente cada 120 ms mientras haya clientes, aunque no hayan llegado muestras nuevas. La frecuencia de difusión no es la de adquisición.
+- `total_samples` cuenta mensajes procesados en la sesión; no es el total de filas histórico. Un caso se marca conectado si tiene muestras y la última actualización tiene menos de 10 segundos.
+- La cola SQLite se vacía aproximadamente cada 2 segundos, al consultar el historial de telemetría y durante el cierre normal. Difusión y escritura son independientes; no hace falta leer SQLite para actualizar el gráfico.
+- La API de historial es `/api/v1/telemetry/{case_id}/history`, con `limit` entre 1 y 500, predeterminado 50. Métricas y ensayos usan `/api/v1/metrics`.
+- El backend no publica resultados ni comandos por MQTT. El navegador no se suscribe a Mosquitto. La web inicia la calibración del detector CSI en el backend; no cambia la configuración del firmware.
+
+El formato de almacenamiento y las métricas están en [data-model.md](data-model.md). La tabla USB y sus endpoints son históricos; la pantalla de adquisición USB se retiró.
+
+## Broker y diagnóstico
+
+`mosquitto/mosquitto.conf` escucha en `0.0.0.0:1883`, sin autenticación y sin persistencia del broker. `MQTT_HOST` y `MQTT_PORT` de `.env` configuran el cliente del backend; no cambian ese archivo ni la configuración compilada de la ESP32.
+
+`start.sh` y `start.bat` preparan dependencias y reutilizan un broker que responda. Si el host es `localhost` o `127.0.0.1` y no responde, instalan Mosquitto cuando hace falta e intentan iniciarlo. Para un puerto local distinto de 1883 generan una configuración en `.runtime/`. Un broker remoto debe iniciarse en su equipo. Ver [arranque](arranque.md).
+
+Con la configuración local predeterminada, para observar mensajes:
 
 ```bash
-# Simulación general
-python scripts/mqtt_test_publisher.py --host localhost --port 1883 --case all
-
-# Simulación de objeto periódico (ventilador en marcha)
-python scripts/mqtt_test_publisher.py --host localhost --port 1883 --case all --scenario object_fan
-
-# Simulación de persona en reposo (respiración micro-Doppler)
-python scripts/mqtt_test_publisher.py --host localhost --port 1883 --case all --scenario human_static
+mosquitto_sub -h localhost -p 1883 -t 'presence/#' -v
 ```
 
+Si el broker es otro, ajustar host y puerto. En la ESP32, `MQTT_HOST` debe ser la dirección del broker accesible desde la placa, normalmente la IP LAN de la computadora. `localhost` apuntaría a la propia ESP32. Los parámetros PIR se editan en `firmware/pir/include/config.h` y requieren recompilar y cargar la placa.

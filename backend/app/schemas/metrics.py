@@ -7,7 +7,7 @@ class CaseMetrics(BaseModel):
     case_name: str
     total_tests: int = Field(..., description="Cantidad total de ensayos realizados")
     correct_detections: int = Field(..., description="Detecciones correctas (TP + TN)")
-    detection_rate: float = Field(..., description="Tasa de detección porcentual (0 - 100%)")
+    detection_rate: float = Field(..., description="Exactitud porcentual: (TP + TN) / total × 100")
     false_positives: int = Field(..., description="Falsos positivos (FP)")
     false_negatives: int = Field(..., description="Falsos negativos (FN)")
     average_latency_ms: float = Field(..., description="Latencia media en milisegundos")

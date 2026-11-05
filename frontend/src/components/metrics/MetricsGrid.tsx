@@ -31,7 +31,7 @@ export function MetricsGrid({ metrics, loading = false }: MetricsGridProps) {
   return (
     <div className="grid-4">
       <MetricCard
-        label="Tasa de Detección"
+        label="Exactitud"
         value={metrics.detection_rate}
         unit="%"
         subtitle={`${metrics.correct_detections} de ${metrics.total_tests} ensayos válidos`}
@@ -61,7 +61,7 @@ export function MetricsGrid({ metrics, loading = false }: MetricsGridProps) {
         label="Latencia Media"
         value={metrics.average_latency_ms}
         unit="ms"
-        subtitle="Tiempo de respuesta extremo a extremo"
+        subtitle="Promedio de las latencias registradas en los ensayos"
         icon={<Clock size={18} />}
         accentColor="#0284c7"
       />

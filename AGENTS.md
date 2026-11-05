@@ -6,7 +6,9 @@ This repository contains a university engineering project for human presence det
 
 1. PIR sensor detection.
 2. Wi-Fi CSI detection using a commercial router.
-3. Wi-Fi CSI detection using a dedicated ESP32-to-ESP32 network.
+3. A joint live experiment showing PIR and router CSI side by side, with separate states and charts.
+
+The dedicated ESP32-to-ESP32 case is legacy backend compatibility, not the current Case 3. The USB test page has been removed. Start the local stack with `./start.sh` or `.\start.bat`; these prepare supported missing tools and dependencies before starting services.
 
 The project includes:
 
@@ -50,6 +52,10 @@ prefer the clearer implementation.
 Code should be understandable by someone who did not originally write it.
 
 Avoid unnecessary complexity.
+
+Keep every project source module below 200 physical lines, including tests, styles and
+startup scripts. Split responsibilities into clear modules; do not compress code to
+meet the limit. `tests/backend/test_module_size.py` enforces this rule.
 
 ---
 
