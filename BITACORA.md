@@ -114,6 +114,28 @@ Queda pendiente comenzar a investigar y aplicar el procesamiento de la señal CS
 - Se mejoraron la reconexión y el guardado de datos, y se realizaron pruebas automáticas del sistema con resultados satisfactorios.
 - Queda pendiente probar el funcionamiento completo con la ESP32 y el sensor PIR físicos.
 
+## 25/10 — Análisis de CSI (Caso 2)
+
+Se grabaron capturas de CSI del ESP32 conectado al router en tres situaciones: habitación vacía, una persona caminando y una persona sentada quieta. Las grabaciones se analizaron por separado con scripts en Python (se encuentra en prueba_CSI/analisis/). De cada paquete se usaron las amplitudes de las 55 subportadoras útiles del bloque HT-LTF, divididas por el promedio del paquete (perfil).
+
+<img width="2200" height="760" alt="amplitud_subportadoras" src="https://github.com/user-attachments/assets/7239ae6c-c492-42e8-a70d-79737f061d9f" />
+Se observó que con la habitación vacía el perfil se mantiene estable, al caminar varía rápido y con una persona quieta queda distinto al de la habitación vacía. A partir de esto se definieron dos indicadores, calculados en ventanas de 4 s:
+
+Movimiento: cuánto varía el canal en el tiempo.
+Forma: cuánto se aleja el perfil del medido con la habitación vacía.
+
+Los umbrales se calibran con la habitación vacía, y se detecta presencia si cualquiera de los dos indicadores supera su umbral.
+
+Resultados de la prueba:
+
+<img width="2200" height="1240" alt="indicadores" src="https://github.com/user-attachments/assets/8cf0e163-e943-48f4-ab40-ff5e866af4b5" />
+
+0 % de falsas alarmas, 100 % de detección caminando y 100 % sentado. Con la persona sentada, el indicador de movimiento solo detectó el 96 % del tiempo; el de forma cubrió los momentos de quietud, lo que justifica usar ambos. 
+
+## 31/10 — Prueba Caso 2 usando iPhone como router
+Se probó el caso 2 mientras el celular compartía internet y el ESP32 se conectó a esa red. Para que funcionara, hubo que activar en el iPhone la opción “Maximizar compatibilidad”, que hace que la red se cree en la banda de 2,4 GHz, la única que admite el ESP32. Con eso, el ESP32 se conectó, capturó paquetes CSI del celular y los publicó correctamente en la plataforma web.
+
+Es requisito que la computadora donde corren el broker MQTT y el backend esté conectada a la misma red que comparte el celular. El ESP32 envía los datos a la dirección IP local de la computadora, y esa dirección solo es alcanzable dentro de la misma red local. Al cambiar de red, la computadora recibe una IP nueva (en el hotspot del iPhone, del tipo 172.20.10.x), así que hay que actualizar MQTT_HOST en la configuración del firmware (config.h) y volver a cargarlo en la placa.
 
 ## 31/10 — Caso conjunto y arranque automático
 
