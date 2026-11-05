@@ -1,7 +1,7 @@
 """Detección de presencia por CSI con dos indicadores y calibración en el lugar.
 
 Cada paquete CSI llega como una lista de amplitudes |H(k)|, una por subportadora.
-Con ellas se calculan dos indicadores sobre una ventana móvil de WINDOW_SECONDS:
+Con ellas se calculan dos indicadores sobre una ventana móvil de cuatro segundos:
 
 1. Movimiento: cuánto fluctúa el canal.
    turbulencia = desvío / promedio de las amplitudes del paquete
@@ -23,16 +23,13 @@ El algoritmo y sus parámetros se validaron fuera de línea con grabaciones real
 (ver prueba_CSI/analisis).
 """
 
-from collections import deque
 from dataclasses import dataclass
 from enum import Enum
 
 import numpy as np
 
-WINDOW_SECONDS = 4.0
-MIN_WINDOW_SAMPLES = 5
-THRESHOLD_SIGMAS = 3.0
-MIN_THRESHOLD_RATIO = 1.3  # el umbral nunca queda por debajo de 1,3 x el promedio de la línea base
+from app.signal_processing.indicators import TimeWindow, profile, shape_distance, threshold_from, turbulence
+
 CALIBRATION_DELAY_SECONDS = 10.0
 CALIBRATION_SECONDS = 30.0
 MIN_CALIBRATION_SAMPLES = 50
@@ -54,60 +51,6 @@ class DetectionResult:
     detection_ratio: float  # indicador / umbral del más alto de los dos; >= 1 significa presencia
 
 
-def turbulence(amplitudes: np.ndarray) -> float:
-    mean = float(amplitudes.mean())
-    return float(amplitudes.std() / mean) if mean > 0 else 0.0
-
-
-def profile(amplitudes: np.ndarray) -> np.ndarray:
-    mean = float(amplitudes.mean())
-    return amplitudes / mean if mean > 0 else np.zeros_like(amplitudes)
-
-
-def shape_distance(amplitudes: np.ndarray, reference_profile: np.ndarray) -> float:
-    return float(np.sqrt(np.mean((profile(amplitudes) - reference_profile) ** 2)))
-
-
-class TimeWindow:
-    """Valores de los últimos `seconds` segundos."""
-
-    def __init__(self, seconds: float = WINDOW_SECONDS):
-        self.seconds = seconds
-        self._items: deque[tuple[float, float]] = deque()
-
-    def add(self, now: float, value: float) -> None:
-        self._items.append((now, value))
-        while self._items and self._items[0][0] < now - self.seconds:
-            self._items.popleft()
-
-    def clear(self) -> None:
-        self._items.clear()
-
-    def _values(self) -> np.ndarray | None:
-        if len(self._items) < MIN_WINDOW_SAMPLES:
-            return None
-        return np.array([value for _, value in self._items])
-
-    def std(self) -> float | None:
-        values = self._values()
-        return float(values.std()) if values is not None else None
-
-    def mean(self) -> float | None:
-        values = self._values()
-        return float(values.mean()) if values is not None else None
-
-
-def threshold_from(values: list[float]) -> float:
-    """Umbral = promedio + THRESHOLD_SIGMAS desvíos de la línea base.
-
-    Las ventanas se superponen, así que pocos segundos de calibración pueden subestimar el desvío.
-    Por eso el umbral tiene un mínimo relativo al promedio.
-    """
-    baseline = np.array(values)
-    mean = float(baseline.mean())
-    return max(mean + THRESHOLD_SIGMAS * float(baseline.std()), MIN_THRESHOLD_RATIO * mean)
-
-
 class CsiPresenceDetector:
     def __init__(self):
         self.state = CalibrationState.NOT_CALIBRATED
@@ -120,8 +63,6 @@ class CsiPresenceDetector:
         self._calibration_start = 0.0
         self._calibration_end = 0.0
         self._calibration_samples: list[tuple[float, np.ndarray]] = []
-
-    # --- Calibración ---------------------------------------------------------------------------
 
     def start_calibration(
         self,
@@ -179,8 +120,6 @@ class CsiPresenceDetector:
         self._shape_window.clear()  # la forma se mide contra la referencia nueva
         self.state = CalibrationState.READY
         self.message = f"Calibrado con {len(samples)} paquetes de la habitación vacía."
-
-    # --- Detección -----------------------------------------------------------------------------
 
     def process(self, now: float, amplitudes: list[float]) -> DetectionResult:
         values = np.asarray(amplitudes, dtype=float)

@@ -46,9 +46,6 @@ class TelemetryState:
     def set_calibration(self, case_id: str, calibration: CalibrationInfo) -> None:
         self._calibration[case_id] = calibration
 
-    def get_raw_points(self, case_id: str) -> list[SignalPoint]:
-        return list(self._raw[case_id])
-
     def update_case_state(
         self,
         case_id: str,

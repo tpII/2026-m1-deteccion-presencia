@@ -40,9 +40,23 @@ El CSV conserva los bytes capturados. El modo de disección calcula amplitud y f
 
 El callback copia los paquetes en una cola de 16 entradas. El bucle los consume para mostrarlos; si la cola se llena, se descartan y aumenta el contador correspondiente. No hay persistencia SQLite ni reenvío al servidor en este proyecto.
 
+## Organización del código
+
+| Módulo en `src/` | Responsabilidad |
+| --- | --- |
+| `main.cpp` | Configuración inicial, comandos Serial y consumo de paquetes. |
+| `router_network.cpp` | Diagnóstico Wi-Fi, conexión al router y ping continuo. |
+| `csi_capture.cpp` | Configuración CSI, callback, cola y contadores. |
+| `csi_layout.cpp` | Segmentos del buffer y clasificación de subportadoras. |
+| `serial_output.cpp` | Cabecera, líneas CSV y disección de paquetes. |
+
+Las declaraciones compartidas están en `include/`. Todos estos módulos tienen menos de 200 líneas; se conservan las mismas teclas, formato CSV y velocidad Serial.
+
 ## Análisis y visualización web
 
 `analisis/analizar_csi.py` procesa logs después de grabarlos. `analisis/reproducir_log_mqtt.py` publica una grabación por MQTT respetando sus tiempos; esa reproducción no es captura del ambiente actual. Los requisitos del análisis son NumPy, pandas y matplotlib; la reproducción necesita NumPy y paho-mqtt.
+
+En el análisis, `csi_parse.py` lee los registros, `csi_detect.py` calcula indicadores, `analizar_csi.py` selecciona tramos y escribe el resumen, y `csi_plots.py` genera las figuras. Los comandos de análisis y sus archivos de salida se mantienen.
 
 Para una adquisición en vivo que publique directamente en el dashboard, cargar **`firmware/csi_router/`**, que calcula 55 amplitudes y las publica en `presence/csi/router/raw`. El backend usa todo el vector para calcular movimiento y forma; guarda la amplitud media por paquete.
 

@@ -30,7 +30,7 @@ app = FastAPI(
     title="Sistema de Detección de Presencia mediante PIR y CSI Wi-Fi",
     description=(
         "API y Servicio de Telemetría en Tiempo Real para la comparación experimental "
-        "de tres métodos de detección: Sensor PIR, CSI con Router y CSI en Red Dedicada. "
+        "de PIR y CSI con router, con una prueba conjunta de ambos métodos. "
         "Taller de Proyecto II 2026 — Grupo M1."
     ),
     version=settings.APP_VERSION,

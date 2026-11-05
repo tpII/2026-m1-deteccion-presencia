@@ -1,12 +1,11 @@
-import type { EChartsOption, SeriesOption } from 'echarts';
+import type { EChartsOption } from 'echarts';
 import { Chart } from './Chart';
-import { chartColors, graphic, formatSignalTime } from '../../services/charts';
+import { chartColors, formatSignalTime } from '../../services/charts';
 import { SignalPoint } from '../../types/telemetry';
 import { useTheme } from '../../context/ThemeContext';
 
 interface SignalChartProps {
   rawPoints: SignalPoint[];
-  filteredPoints?: SignalPoint[];
   title?: string;
   height?: string | number;
   yAxisName?: string;
@@ -14,7 +13,6 @@ interface SignalChartProps {
 
 export function SignalChart({
   rawPoints,
-  filteredPoints,
   title,
   height = 280,
   yAxisName = 'Amplitud (dB)',
@@ -24,11 +22,8 @@ export function SignalChart({
   const { titleColor, textColor, axisLineColor, splitLineColor, tooltipBg, tooltipBorder, tooltipText } = chartColors(isDark);
   const rawData = rawPoints.map((point) => [formatSignalTime(point.timestamp), point.value]);
 
-  const filteredData = (filteredPoints ?? []).map((point) => [formatSignalTime(point.timestamp), point.value]);
-
-  const seriesList: SeriesOption[] = [];
-  if (rawPoints.length > 0) {
-    seriesList.push({
+  const option: EChartsOption = {
+    series: rawPoints.length ? [{
       name: 'Señal Cruda',
       type: 'line',
       data: rawData,
@@ -41,30 +36,7 @@ export function SignalChart({
       itemStyle: {
         color: isDark ? '#38bdf8' : '#0ea5e9',
       },
-    });
-  }
-
-  if (filteredPoints && filteredPoints.length > 0) {
-    seriesList.push({
-      name: 'Señal Filtrada',
-      type: 'line',
-      data: filteredData,
-      showSymbol: false,
-      smooth: true,
-      lineStyle: {
-        width: 2.2,
-        color: isDark ? '#38bdf8' : '#0284c7',
-      },
-      areaStyle: {
-        color: new graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: isDark ? 'rgba(56, 189, 248, 0.22)' : 'rgba(2, 132, 199, 0.18)' },
-          { offset: 1, color: 'rgba(2, 132, 199, 0.0)' },
-        ]),
-      },
-    });
-  }
-
-  const option: EChartsOption = {
+    }] : [],
     title: title
       ? {
           text: title,
@@ -108,7 +80,7 @@ export function SignalChart({
       axisLabel: {
         color: textColor,
         fontSize: 10,
-        interval: Math.max(1, Math.floor(Math.max(rawPoints.length, filteredPoints?.length ?? 0) / 6)),
+        interval: Math.max(1, Math.floor(rawPoints.length / 6)),
       },
     },
     yAxis: {
@@ -129,7 +101,6 @@ export function SignalChart({
         fontSize: 10,
       },
     },
-    series: seriesList,
     animation: false,
   };
 

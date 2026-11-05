@@ -26,6 +26,8 @@ El cuerpo humano, compuesto en un 70% de agua salina, actúa como un reflector y
 
 ## 2. Detector CSI (`backend/app/signal_processing/presence_detector.py`)
 
+`presence_detector.py` conserva el estado de calibración y la decisión de presencia. Las fórmulas y la ventana temporal están en `signal_processing/indicators.py`; esta separación no cambia los cálculos ni los parámetros.
+
 El ESP32 (`firmware/csi_router`) publica por cada paquete del router la amplitud $|H(k)|$ de 55 subportadoras del campo HT-LTF ($k = -28 \dots 28$, sin $k = 0$ ni $k = 1$), unas 10 veces por segundo. El backend calcula dos indicadores sobre una ventana móvil de **4 s**:
 
 ```

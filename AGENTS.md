@@ -53,6 +53,10 @@ Code should be understandable by someone who did not originally write it.
 
 Avoid unnecessary complexity.
 
+Keep every project source module below 200 physical lines, including tests, styles and
+startup scripts. Split responsibilities into clear modules; do not compress code to
+meet the limit. `tests/backend/test_module_size.py` enforces this rule.
+
 ---
 
 # 2. Technology Stack

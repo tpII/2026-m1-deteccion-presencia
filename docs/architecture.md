@@ -1,6 +1,6 @@
 # Arquitectura y recorrido del código
 
-El arranque habitual es `./start.sh` o `.\start.bat`: instala herramientas y dependencias faltantes en los sistemas compatibles, prepara configuración y levanta broker, backend y frontend. Ver [arranque](arranque.md). `scripts/setup.sh` concentra la preparación Unix y `start.ps1` la de Windows.
+El arranque habitual es `./start.sh` o `.\start.bat`: instala herramientas y dependencias faltantes en los sistemas compatibles, prepara configuración y levanta broker, backend y frontend. Ver [arranque](arranque.md). `scripts/setup.sh` y `scripts/setup.ps1` concentran la preparación Unix y Windows; `start.sh` y `start.ps1` coordinan los servicios.
 
 El recorrido normal es:
 
@@ -31,7 +31,8 @@ Todo empieza en `backend/app/main.py`: crea FastAPI, registra las rutas, prepara
 | `api/` | Rutas de salud, telemetría, métricas, USB y WebSocket. |
 | `schemas/` | Modelos Pydantic de entrada y salida. |
 | `repositories/` | Escrituras y consultas SQLite. La cola de telemetría conserva los lotes fallidos para reintentarlos. |
-| `signal_processing/presence_detector.py` | Calcular indicadores de movimiento y forma, calibrar umbrales y decidir presencia. |
+| `signal_processing/indicators.py` | Calcular perfiles, distancias, estadísticas de ventanas temporales y umbrales. |
+| `signal_processing/presence_detector.py` | Coordinar la calibración y decidir presencia mediante ambos indicadores. |
 
 La señal PIR ya es digital. CSI pasa por un detector por método, con su propia referencia del canal vacío y umbrales calibrados.
 La telemetría se escribe por lotes aproximadamente cada dos segundos. El navegador recibe actualizaciones aproximadamente ocho veces por segundo en `/ws/telemetry`. Las consultas históricas usan REST. Persistencia y difusión tienen tareas separadas. Al detenerse, MQTT termina de entregar las muestras pendientes y el backend espera las escrituras activas antes del último guardado.
@@ -41,6 +42,8 @@ Para agregar o modificar una ruta, entrar en `api/`. Para cambiar un cálculo CS
 ## Frontend
 
 `frontend/src/main.tsx` carga `App.tsx`, donde se definen las rutas. `pages/` contiene las pantallas y `components/` los elementos que comparten.
+
+`styles/global.css` reúne los estilos base e importa los módulos de superficies, componentes, métricas, calibración, pipeline, estructura y adaptación a pantallas pequeñas. Cada archivo de código propio, CSS, prueba y arranque tiene menos de 200 líneas físicas; la prueba `test_module_size.py` evita superar ese límite. Las dependencias, archivos generados, grabaciones e informes no son módulos de código del proyecto.
 
 `context/TelemetryContext.tsx` mantiene una conexión WebSocket y una suscripción compartida para todas las pantallas. Al caer la conexión, los sensores dejan de mostrarse conectados.
 
