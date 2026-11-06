@@ -7,21 +7,19 @@ Basado en [`PRUEBA_PIR` de Bernardo](https://github.com/tpII/2026-m1-deteccion-p
 | `platformio.ini` | Placa `upesy_wroom`, plataforma ESP32 y PubSubClient. |
 | `src/main.cpp` | Lectura del PIR y salida Serial. |
 | `src/network.cpp` | Conexión Wi-Fi, reconexión y publicación MQTT. |
-| `include/config.example.h` | Ejemplo de red, broker, pin e intervalos. |
-| `include/config.h` | Configuración local, excluida de Git. |
+| `include/config.h` | Red, broker, pin e intervalos; incluye valores genéricos. |
 
 ## Preparar y compilar
 
-Instalá PlatformIO IDE en VS Code y abrí esta carpeta como proyecto, o usá PlatformIO Core. Copiá `include/config.example.h` como `include/config.h` y completá Wi-Fi de 2.4 GHz e IP LAN del broker.
+Instalá PlatformIO IDE en VS Code y abrí esta carpeta como proyecto, o usá PlatformIO Core. Editá `include/config.h` y completá Wi-Fi de 2.4 GHz e IP LAN del broker.
 
 Desde la raíz del repositorio:
 
 ```bash
-cp -n firmware/pir/include/config.example.h firmware/pir/include/config.h
 pio run --project-dir firmware/pir
 ```
 
-En Windows, copiá y renombrá el archivo desde VS Code. No hace falta instalar bibliotecas a mano ni usar Arduino IDE. El proyecto usa el framework Arduino de ESP32 dentro de PlatformIO.
+El archivo ya está incluido; no subas las credenciales reales a Git. No hace falta instalar bibliotecas a mano ni usar Arduino IDE. El proyecto usa el framework Arduino de ESP32 dentro de PlatformIO.
 
 ## Cargar y comprobar
 

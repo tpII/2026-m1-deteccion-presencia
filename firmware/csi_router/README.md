@@ -6,14 +6,14 @@ Iniciá el servidor y la web con `./start.sh` o `.\start.bat`; el comando prepar
 
 ## Cómo usarlo
 
-1. Copiar `include/config.example.h` como `include/config.h` y completar:
+1. Editar `include/config.h` y completar:
    - `WIFI_SSID` y `WIFI_PASSWORD`: red de **2,4 GHz** con clave WPA2 (no sirven redes con usuario o portal de login).
    - `MQTT_HOST`: IP de la computadora donde corren Mosquitto y el backend (en Windows: `ipconfig`, "Dirección IPv4"). La computadora y el ESP32 tienen que estar en la misma red.
 2. Abrir esta carpeta (`firmware/csi_router`) en VS Code con PlatformIO, compilar y subir.
 3. En el monitor serie (115200 baudios) cada 10 s aparece un resumen: paquetes CSI recibidos, publicados y estado de Wi-Fi y MQTT.
 4. Abrir la página **Caso 2 — CSI + Router** de la web y presionar **Calibrar** con la habitación vacía.
 
-`config.h` está en `.gitignore`: no se sube al repositorio.
+`config.h` se incluye con valores genéricos. No subir las credenciales reales a Git.
 
 ## Sin la placa
 

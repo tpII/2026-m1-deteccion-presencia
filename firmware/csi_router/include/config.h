@@ -1,19 +1,13 @@
 #pragma once
 
-// Copiar este archivo como config.h y completar los datos de la red.
-// config.h no se sube al repositorio (está en .gitignore).
-
 #include <stdint.h>
 
-//wifi fran:
-//WIFI_SSID "Personal-830"
-//WIFI_PASS "39F91ED830"
-
-constexpr char WIFI_SSID[] = "Personal-830";
-constexpr char WIFI_PASSWORD[] = "39F91ED830";
+// Completar para la prueba; no subir credenciales reales a Git.
+constexpr char WIFI_SSID[] = "TU_RED_WIFI";
+constexpr char WIFI_PASSWORD[] = "TU_CLAVE_WIFI";
 
 // IP de la computadora donde corre Mosquitto (ipconfig en Windows) y el backend.
-constexpr char MQTT_HOST[] = "192.168.0.100";
+constexpr char MQTT_HOST[] = "192.168.1.100";
 constexpr uint16_t MQTT_PORT = 1883;
 constexpr char MQTT_TOPIC[] = "presence/csi/router/raw";
 

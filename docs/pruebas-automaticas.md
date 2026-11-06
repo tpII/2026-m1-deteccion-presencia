@@ -49,7 +49,6 @@ RUN_MQTT_INTEGRATION=1 backend/.venv/bin/python -m pytest tests/integration
 ## Firmware
 
 ```bash
-cp -n firmware/pir/include/config.example.h firmware/pir/include/config.h
 pio run --project-dir firmware/pir
 ```
 

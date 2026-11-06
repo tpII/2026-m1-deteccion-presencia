@@ -26,7 +26,7 @@ LIVE solo verifica navegador y backend. MQTT conectado solo verifica backend y b
 
 ## 3 Configurar las placas
 
-Copiar el archivo `include/config.example.h` de cada firmware como `include/config.h` y completar `WIFI_SSID`, `WIFI_PASSWORD` y `MQTT_HOST`. Este último debe ser la IP LAN de la computadora con Mosquitto, no `localhost`. En el `.env` del backend sí puede mantenerse `localhost` si el broker corre en la misma computadora.
+Editar el archivo `include/config.h` de cada firmware y completar `WIFI_SSID`, `WIFI_PASSWORD` y `MQTT_HOST`. Este último debe ser la IP LAN de la computadora con Mosquitto, no `localhost`. En el `.env` del backend sí puede mantenerse `localhost` si el broker corre en la misma computadora.
 
 La red debe permitir comunicación entre clientes. Revisar banda de 2,4 GHz, firewall y aislamiento de invitados. Para CSI, comprobar además formato HT-LTF y canal esperado; conectarse al router no prueba que las capturas sean utilizables por el analizador.
 

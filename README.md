@@ -64,8 +64,8 @@ La preparación del servidor no configura ni flashea los ESP32. Programá las pl
 
 - **Backend:** `.env` en la raíz. Si existe `backend/.env`, tiene prioridad; las variables de la terminal tienen prioridad sobre ambos archivos.
 - **Depuración:** `APP_DEBUG=true` habilita los registros de acceso. La variable genérica `DEBUG` no configura este backend.
-- **ESP32 PIR:** copiar `firmware/pir/include/config.example.h` como `firmware/pir/include/config.h`, completar Wi-Fi e IP LAN del broker y compilar/cargar con PlatformIO. Ese archivo no se sube a Git.
-- **ESP32 CSI con router:** copiar `firmware/csi_router/include/config.example.h` como `config.h` en la misma carpeta, completar Wi-Fi y broker, y compilar/cargar con PlatformIO. Ver [su guía](firmware/csi_router/README.md).
+- **ESP32 PIR:** editar `firmware/pir/include/config.h`, completar Wi-Fi e IP LAN del broker y compilar/cargar con PlatformIO. El repositorio incluye valores genéricos; no subir credenciales reales.
+- **ESP32 CSI con router:** editar `firmware/csi_router/include/config.h`, completar Wi-Fi y broker, y compilar/cargar con PlatformIO. Ver [su guía](firmware/csi_router/README.md).
 - **Frontend:** usa `localhost:8000`; se puede cambiar con `VITE_API_URL` y `VITE_WS_URL` en `frontend/.env.local`.
 - **Mediciones:** SQLite, normalmente `backend/presence-hardware.db` al iniciar con `start.sh`. Una ruta relativa en `DATABASE_URL` se resuelve desde la carpeta en que se ejecuta el backend.
 
@@ -76,7 +76,6 @@ La telemetría MQTT se guarda automáticamente. Los ensayos con presencia observ
 Instalá PlatformIO IDE en VS Code y abrí `firmware/pir/` como proyecto. Con PlatformIO Core también podés ejecutar desde la raíz:
 
 ```bash
-cp -n firmware/pir/include/config.example.h firmware/pir/include/config.h
 pio run --project-dir firmware/pir
 pio run --project-dir firmware/pir --target upload
 ```

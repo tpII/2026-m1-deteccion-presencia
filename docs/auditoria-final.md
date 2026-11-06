@@ -34,7 +34,7 @@ En ECharts 6 se utiliza el tema de compatibilidad v5 y se registra `LegacyGridCo
 | TypeScript y build web | Aprobados. |
 | Firmware PlatformIO, `upesy_wroom` | Compilación aprobada. 44832 bytes de RAM y 748725 bytes de flash. |
 | Sintaxis de `start.sh`, espacios del diff, imports Python y enlaces locales de las guías | Sin problemas detectados. |
-| Configuración privada, base de datos y artefactos PlatformIO | `.env`, `include/config.h` y `.pio/` están excluidos de Git. |
+| Configuración privada, base de datos y artefactos PlatformIO | `.env` y `.pio/` están excluidos de Git. Los `include/config.h` se incluyen con valores genéricos; no subir credenciales reales. |
 
 Son 84 pruebas diferentes: 53 de backend, 27 de frontend y 4 de integración. La repetición en el entorno limpio no se cuenta como pruebas adicionales. La ejecución se realizó en macOS, con Python 3.13 y Node 24; no constituye una matriz de pruebas de todos los sistemas y versiones admitidos.
 

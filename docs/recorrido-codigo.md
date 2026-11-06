@@ -34,7 +34,7 @@ Guardar muchas muestras no crea ensayos. Para calcular precisión hace falta sab
 
 | Quiero cambiar… | Archivo inicial |
 | --- | --- |
-| Pin, intervalo, red o broker de la ESP32 | `firmware/pir/include/config.h`, copiado del ejemplo. Después recompilar y cargar. |
+| Pin, intervalo, red o broker de la ESP32 | `firmware/pir/include/config.h`. Después recompilar y cargar. |
 | Dirección del broker o base del servidor | `.env` en la raíz. Después reiniciar el backend. |
 | Mensaje MQTT aceptado | `backend/app/schemas/telemetry.py` y `docs/mqtt-topics.md`. Revisar también el publicador. |
 | Indicadores o calibración CSI | `backend/app/signal_processing/`. Los umbrales se calculan con la referencia del ambiente vacío en `presence_detector.py`. |

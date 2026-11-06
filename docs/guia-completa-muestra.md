@@ -195,7 +195,7 @@ El Caso 1 utiliza un PIR con salida digital conectado al ESP32. El código lee G
 **Programas necesarios.** VS Code con PlatformIO IDE, o PlatformIO Core. PlatformIO compila el firmware y lo carga; no se necesita ejecutar el backend para flashear. El entorno definido es `upesy_wroom`; debe corresponder a la placa utilizada.
 
 1. Abrí `firmware/pir/` como proyecto PlatformIO.
-2. Copiá `include/config.example.h` como `include/config.h`.
+2. Abrí `include/config.h`, incluido con valores genéricos.
 3. Completá `WIFI_SSID`, `WIFI_PASSWORD` y la IP LAN del broker en `MQTT_HOST`. Conservá el tópico del PIR y el puerto del broker.
 4. Conectá la placa con un cable USB de datos. Cerrá otros monitores que ocupen su puerto.
 5. Ejecutá Build y luego Upload. Esperá la confirmación de carga y reinicio.
@@ -361,7 +361,7 @@ ESP32 -- amplitudes por MQTT --> Mosquitto
 ```
 
 1. Conectá la computadora a la red del ensayo y obtené su IP LAN.
-2. Prepará `firmware/csi_router/include/config.h` a partir de `config.example.h`. Completá `WIFI_SSID`, `WIFI_PASSWORD` y `MQTT_HOST`. Verificá puerto 1883 y tópico `presence/csi/router/raw` si usás la configuración habitual.
+2. Editá `firmware/csi_router/include/config.h`. Completá `WIFI_SSID`, `WIFI_PASSWORD` y `MQTT_HOST`. Verificá puerto 1883 y tópico `presence/csi/router/raw` si usás la configuración habitual.
 3. Iniciá `start.sh` o `start.bat` y comprobá salud del backend.
 4. Abrí el proyecto en PlatformIO, compilá y cargá en la placa correspondiente. El entorno definido es `esp32doit-devkit-v1`.
 
