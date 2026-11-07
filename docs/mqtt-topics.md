@@ -21,9 +21,28 @@ El CSV de `prueba_CSI/` no es el JSON que acepta el backend. Abrir su monitor no
 | `presence/csi/router/raw` | `csi_router` | `amplitudes` |
 | `presence/csi/dedicated/raw` | `csi_dedicated` | `amplitudes` |
 
-La suscripción solicita QoS 0 para los tres tópicos. Un tópico desconocido se ignora. Un JSON inválido, campos obligatorios ausentes o un `case_id` distinto del indicado en la tabla se rechazan y se registran en consola. Los campos adicionales no definidos por el esquema se ignoran.
+La suscripción solicita QoS 0 para estos tres tópicos de muestras y QoS 1 para los dos tópicos de conexión descritos abajo. Un tópico desconocido se ignora. Un JSON inválido, campos obligatorios ausentes o un `case_id` distinto del indicado en la tabla se rechazan y se registran en consola. Los campos adicionales no definidos por el esquema se ignoran.
 
 Las latencias deben ser finitas y no negativas. Las amplitudes deben formar una lista no vacía de números finitos; el esquema no impone que sean positivas. Los modelos Pydantic admiten algunas conversiones de tipos: los ejemplos usan booleanos y números JSON para evitar depender de ellas.
+
+## Estado de conexión de las ESP32
+
+| Tópico | Placa | Payload | QoS | Retain |
+| --- | --- | --- | --- | --- |
+| `presence/pir/status` | PIR | `online` / `offline` | 1 | `true` |
+| `presence/csi/router/status` | CSI con router | `online` / `offline` | 1 | `true` |
+
+Los payloads son texto plano, en minúsculas y sin comillas JSON. El firmware registra antes de conectarse una **última voluntad (LWT)** `offline`, con QoS 1 y retain. Después de cada conexión publica `online` con los mismos parámetros y espera la confirmación del broker; si falla, cierra la conexión y reintenta. Ambos tópicos retienen el último estado para los suscriptores nuevos, incluido un backend que se reinicia.
+
+Si se corta la alimentación, Wi-Fi o TCP sin un cierre MQTT normal, Mosquitto publica la última voluntad. No siempre es inmediato: el keepalive de las placas es de 15 segundos y el broker puede detectar la falta de tráfico al cumplirse 1,5 veces ese intervalo. Si se agrega un apagado programado con `DISCONNECT`, debe publicarse y confirmarse `offline` antes de desconectar, porque ese cierre cancela la última voluntad.
+
+Los dos proyectos usan `256dpi/MQTT@2.5.2` porque PubSubClient solo permite publicar muestras con QoS 0. Las muestras conservan QoS 0 y `retain=false`; únicamente los mensajes de conexión usan QoS 1 y retain. QoS 1 puede entregar duplicados: asignar varias veces `online` u `offline` no cambia el resultado ni incrementa contadores de muestras. Ver [Arduino MQTT](https://github.com/256dpi/arduino-mqtt/tree/v2.5.2) y [especificación MQTT 3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html).
+
+El backend aplica estos estados a `is_connected` en REST y WebSocket, sin cambiar presencia, gráficos, historial, `last_updated` ni `total_samples`. `online` indica conexión MQTT de la placa, no garantiza que el sensor esté generando muestras. `offline` tiene prioridad aunque llegue una muestra tardía. Si el backend pierde el broker, todos los casos se muestran desconectados hasta recuperar la conexión y recibir nuevamente un estado o una muestra.
+
+El reproductor `reproducir_log_mqtt.py` usa el mismo tópico de estado CSI: anuncia `online`, registra última voluntad y confirma `offline` antes de un cierre normal. Debe ejecutarse con la placa CSI desconectada, porque ambos comparten tópicos. Para publicadores anteriores y el caso dedicado histórico, sin estado explícito se conserva la estimación por muestras recientes (10 segundos). El Caso 3 conjunto reutiliza los estados de PIR y CSI con router: no tiene otra ESP32 ni un tópico de conexión propio. Se admite una placa por método, igual que para las muestras; dos placas que compartan tópico sobrescribirían su estado.
+
+El broker local tiene `persistence false`: retain se conserva mientras Mosquitto siga ejecutándose, no tras reiniciarlo. Las placas reintentan y vuelven a publicar `online` al reconectarse. Para aplicar este contrato hay que recompilar y cargar ambos firmwares.
 
 ## PIR
 
@@ -72,7 +91,7 @@ El firmware PIR incluido no envía `timestamp`, `latency_ms` ni `ground_truth`. 
 
 - El estado en memoria conserva hasta 500 puntos por caso; REST de telemetría en vivo y cada mensaje WebSocket incluyen los últimos 100 puntos crudos y hasta 300 puntos de cada indicador CSI.
 - `/ws/telemetry` envía `initial_state` al conectar y `telemetry_batch` aproximadamente cada 120 ms mientras haya clientes, aunque no hayan llegado muestras nuevas. La frecuencia de difusión no es la de adquisición.
-- `total_samples` cuenta mensajes procesados en la sesión; no es el total de filas histórico. Un caso se marca conectado si tiene muestras y la última actualización tiene menos de 10 segundos.
+- `total_samples` cuenta mensajes procesados en la sesión; no es el total de filas histórico. La conexión se obtiene del tópico `status`; sin estado explícito se estima por muestras de menos de 10 segundos. Perder la conexión con el broker invalida ambas fuentes hasta que se reciban mensajes nuevos.
 - La cola SQLite se vacía aproximadamente cada 2 segundos, al consultar el historial de telemetría y durante el cierre normal. Difusión y escritura son independientes; no hace falta leer SQLite para actualizar el gráfico.
 - La API de historial es `/api/v1/telemetry/{case_id}/history`, con `limit` entre 1 y 500, predeterminado 50. Métricas y ensayos usan `/api/v1/metrics`.
 - El backend no publica resultados ni comandos por MQTT. El navegador no se suscribe a Mosquitto. La web inicia la calibración del detector CSI en el backend; no cambia la configuración del firmware.

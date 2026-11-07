@@ -33,6 +33,19 @@ class TelemetryState:
         }
         self._features: dict[str, FeatureMetrics] = {}
         self._calibration: dict[str, CalibrationInfo] = {}
+        self._device_connections: dict[str, bool] = {}
+        self._broker_connected = True
+        self._fresh_cases: set[str] = set()
+
+    def set_device_connection(self, case_id: str, connected: bool) -> None:
+        """El estado MQTT tiene prioridad sobre la llegada de muestras."""
+        self._device_connections[case_id] = connected
+
+    def set_broker_connection(self, connected: bool) -> None:
+        self._broker_connected = connected
+        if not connected:
+            self._device_connections.clear()
+            self._fresh_cases.clear()
 
     def append_raw_point(self, case_id: str, point: SignalPoint) -> None:
         self._raw[case_id].append(point)
@@ -58,6 +71,7 @@ class TelemetryState:
         status.current_latency_ms = round(latency_ms, 1)
         status.last_updated = datetime.now(timezone.utc).isoformat()
         status.total_samples += 1
+        self._fresh_cases.add(case_id)
         status.is_connected = True
         status.target_type = "person_active" if presence else "empty"
         if features is not None:
@@ -65,9 +79,11 @@ class TelemetryState:
 
     def get_all_statuses(self) -> list[CaseCurrentStatus]:
         now = datetime.now(timezone.utc)
-        for status in self._statuses.values():
+        for case_id, status in self._statuses.items():
             age = (now - datetime.fromisoformat(status.last_updated)).total_seconds()
-            status.is_connected = status.total_samples > 0 and age < CONNECTION_TIMEOUT_SECONDS
+            # Compatibilidad con publicadores antiguos y reproducción sin tópico de estado.
+            recent_sample = case_id in self._fresh_cases and age < CONNECTION_TIMEOUT_SECONDS
+            status.is_connected = self._broker_connected and self._device_connections.get(case_id, recent_sample)
         return list(self._statuses.values())
 
     def get_payload(self, case_id: str) -> CaseTelemetryPayload:

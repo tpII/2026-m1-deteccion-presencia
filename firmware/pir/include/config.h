@@ -11,3 +11,7 @@ constexpr char WIFI_PASSWORD[] = "TU_CLAVE_WIFI";
 constexpr char MQTT_HOST[] = "192.168.1.100";
 constexpr uint16_t MQTT_PORT = 1883;
 constexpr char MQTT_TOPIC[] = "presence/pir/telemetry";
+
+// Disponibilidad de esta placa, independiente de las muestras.
+constexpr char MQTT_STATUS_TOPIC[] = "presence/pir/status";
+constexpr uint16_t MQTT_KEEPALIVE_SECONDS = 15;

@@ -22,3 +22,9 @@ Iniciá el servidor y la web con `./start.sh` o `.\start.bat`; el comando prepar
 ## Prueba conjunta
 
 El Caso 3 (`/case/combined`) muestra esta misma fuente CSI junto con PIR. La calibración iniciada allí es la del Caso 2; no hay otra placa, tópico ni detector para el caso conjunto.
+
+## Estado de conexión MQTT
+
+La placa publica `online` en `presence/csi/router/status` al conectarse y registra una última voluntad `offline` para cortes de conexión. Ambos mensajes usan **QoS 1 y retain=true**. Las amplitudes en `presence/csi/router/raw` mantienen QoS 0 y retain=false. El keepalive es de 15 segundos; detectar un corte puede demorar aproximadamente 22,5 segundos sin tráfico.
+
+Es necesario recompilar y cargar este firmware para habilitar los estados. PlatformIO instala `256dpi/MQTT@2.5.2`, que permite publicar con QoS 1. Ver [contrato MQTT](../../docs/mqtt-topics.md).

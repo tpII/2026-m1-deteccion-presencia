@@ -56,6 +56,8 @@ Las declaraciones compartidas están en `include/`. Todos estos módulos tienen 
 
 `analisis/analizar_csi.py` procesa logs después de grabarlos. `analisis/reproducir_log_mqtt.py` publica una grabación por MQTT respetando sus tiempos; esa reproducción no es captura del ambiente actual. Los requisitos del análisis son NumPy, pandas y matplotlib; la reproducción necesita NumPy y paho-mqtt.
 
+El reproductor publica `online/offline` en `presence/csi/router/status`, con QoS 1 y retain, igual que el firmware. Registra última voluntad y confirma `offline` al terminar normalmente. Debe usarse con la placa CSI desconectada: ambos comparten los tópicos del Caso 2.
+
 En el análisis, `csi_parse.py` lee los registros, `csi_detect.py` calcula indicadores, `analizar_csi.py` selecciona tramos y escribe el resumen, y `csi_plots.py` genera las figuras. Los comandos de análisis y sus archivos de salida se mantienen.
 
 Para una adquisición en vivo que publique directamente en el dashboard, cargar **`firmware/csi_router/`**, que calcula 55 amplitudes y las publica en `presence/csi/router/raw`. El backend usa todo el vector para calcular movimiento y forma; guarda la amplitud media por paquete.

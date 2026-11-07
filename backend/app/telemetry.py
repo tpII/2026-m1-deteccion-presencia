@@ -33,6 +33,9 @@ class TelemetryService:
         self._stopping.clear()
         self.data_source = MQTTDataSource()
         self.data_source.set_sample_handler(self.handle_incoming_sample)
+        self.data_source.set_status_handler(self.state.set_device_connection)
+        self.data_source.set_connection_handler(self.state.set_broker_connection)
+        self.state.set_broker_connection(False)
         await self.data_source.start()
         self._tasks = [
             asyncio.create_task(self._broadcast_updates()),

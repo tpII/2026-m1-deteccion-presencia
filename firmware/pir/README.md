@@ -4,7 +4,7 @@ Basado en [`PRUEBA_PIR` de Bernardo](https://github.com/tpII/2026-m1-deteccion-p
 
 | Archivo | Responsabilidad |
 | --- | --- |
-| `platformio.ini` | Placa `upesy_wroom`, plataforma ESP32 y PubSubClient. |
+| `platformio.ini` | Placa `upesy_wroom`, plataforma ESP32 y Arduino MQTT (`256dpi/MQTT`). |
 | `src/main.cpp` | Lectura del PIR y salida Serial. |
 | `src/network.cpp` | Conexión Wi-Fi, reconexión y publicación MQTT. |
 | `include/config.h` | Red, broker, pin e intervalos; incluye valores genéricos. |
@@ -38,3 +38,9 @@ Iniciá todo con `./start.sh` o `.\start.bat`; instala las dependencias faltante
 Sin Wi-Fi o broker, el firmware sigue mostrando lecturas por Serial y reintenta la conexión. Las muestras desconectadas no se almacenan ni se reenvían. El intervalo de 500 ms es nominal: los intentos de conexión pueden demorar la lectura. No se inventa una latencia física; el backend conserva el valor por defecto de cero.
 
 Cableado, adquisición y registro de ensayos: [guía de pruebas](../../docs/pruebas.md).
+
+## Estado de conexión MQTT
+
+La placa publica `online` en `presence/pir/status` al conectarse y registra una última voluntad `offline` para cortes de conexión. Ambos mensajes usan **QoS 1 y retain=true**. Las muestras en `presence/pir/telemetry` mantienen QoS 0 y retain=false. El keepalive es de 15 segundos; detectar un corte puede demorar aproximadamente 22,5 segundos sin tráfico.
+
+Es necesario recompilar y cargar este firmware para habilitar los estados. PlatformIO instala `256dpi/MQTT@2.5.2`, que permite publicar con QoS 1. Ver [contrato MQTT](../../docs/mqtt-topics.md).

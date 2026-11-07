@@ -156,7 +156,7 @@ El esquema acepta un vector no vacío; el firmware CSI disponible envía 55 valo
 
 **HTTP y REST.** Se usan para consultar historial y métricas, guardar ensayos y pedir calibración. REST funciona por petición y respuesta; WebSocket mantiene el intercambio para la visualización en vivo.
 
-**Entrega.** La suscripción del backend es QoS 0; las publicaciones del firmware no son retenidas. No hay confirmación de persistencia extremo a extremo ni recuperación de muestras tomadas durante una desconexión. El broker tiene su persistencia desactivada; SQLite es el almacenamiento de la aplicación.
+**Entrega.** Las muestras usan QoS 0 y no son retenidas. Cada placa publica además `online/offline` en su tópico `status`, con QoS 1 y retain; el broker emite `offline` mediante última voluntad ante un corte. Ver [contrato MQTT](mqtt-topics.md). No hay confirmación de persistencia extremo a extremo ni recuperación de muestras tomadas durante una desconexión. El broker tiene su persistencia desactivada; SQLite es el almacenamiento de la aplicación.
 
 <!-- PAGE -->
 

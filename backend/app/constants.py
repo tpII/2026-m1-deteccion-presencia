@@ -9,7 +9,9 @@ class CaseId(str, Enum):
 
 class SystemTopics:
     PIR_TELEMETRY = "presence/pir/telemetry"
+    PIR_STATUS = "presence/pir/status"
     CSI_ROUTER_RAW = "presence/csi/router/raw"
+    CSI_ROUTER_STATUS = "presence/csi/router/status"
     CSI_DEDICATED_RAW = "presence/csi/dedicated/raw"
 
 
