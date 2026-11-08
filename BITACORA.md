@@ -145,3 +145,6 @@ Es requisito que la computadora donde corren el broker MQTT y el backend esté c
 - Se actualizó la documentación operativa y la guía de la muestra. Los informes y auditorías de fechas anteriores se conservan como registros históricos identificados.
 - La instalación de herramientas depende de Internet, permisos y disponibilidad de los gestores. La configuración y carga de los ESP32 y la validación física se realizan por separado.
 - Validación de software: 61 pruebas de backend, 22 de frontend y 2 de integración aprobadas; compilación del frontend correcta. Tres pruebas de arranque con puertos fijos se omitieron porque estaban ocupados por servicios existentes. Windows y la instalación desde un sistema sin herramientas quedan pendientes de verificación en equipos de destino.
+
+## 8/11 
+- Elaboración de Informe de Avance II
