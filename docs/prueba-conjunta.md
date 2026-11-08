@@ -16,7 +16,7 @@ El PIR tiene lectura nominal cada 500 ms y el detector CSI usa ventanas de 4 s. 
 
 ## Comunicaciones y compatibilidad
 
-Se reutilizan los tópicos `presence/pir/telemetry` y `presence/csi/router/raw`, el procesamiento del backend y la conexión WebSocket compartida. No se requiere flashear un programa nuevo llamado “Caso 3”.
+Se reutilizan los tópicos `sensores/pir/presencia` y `sensores/csi/amplitudes`, el procesamiento del backend y la conexión WebSocket compartida. No se requiere flashear un programa nuevo llamado “Caso 3”.
 
 Los casos individuales siguen en `/case/pir` y `/case/csi_router`. La antigua dirección `/case/csi_dedicated` redirige al caso conjunto. La pantalla `/test/pir-usb` se eliminó; esa dirección vuelve al resumen general. El diagnóstico Serial sigue disponible en PlatformIO a 115200 baud para los firmware MQTT.
 

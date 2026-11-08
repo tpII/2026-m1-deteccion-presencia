@@ -8,7 +8,7 @@ ESP32 → MQTT / Mosquitto → FastAPI
                             └── SQLite → REST de historial y métricas → React
 ```
 
-El firmware PIR de `firmware/pir/` publica por MQTT. `firmware/csi_router/` captura CSI del router y publica amplitudes por MQTT; la pantalla del Caso 2 permite calibrar el detector con la habitación vacía. El Caso 3 (`/case/combined`) muestra ambas fuentes con estados y gráficos separados, sin fusionar decisiones ni crear un tópico conjunto. Cada placa publica además su conexión en un tópico `status`, con QoS 1 y retain; ver el [contrato MQTT](docs/mqtt-topics.md). `prueba_CSI/` conserva la captura por Serial y las herramientas de análisis y reproducción de grabaciones por MQTT.
+El firmware PIR de `firmware/pir/` publica por MQTT. `firmware/csi_router/` captura CSI del router y publica amplitudes por MQTT; la pantalla del Caso 2 permite calibrar el detector con la habitación vacía. El Caso 3 (`/case/combined`) muestra ambas fuentes con estados y gráficos separados, sin fusionar decisiones ni crear un tópico conjunto. Cada placa publica además su conexión en un tópico `estado_esp32`, con QoS 1 y retain; ver el [contrato MQTT](docs/mqtt-topics.md). `prueba_CSI/` conserva la captura por Serial y las herramientas de análisis y reproducción de grabaciones por MQTT.
 
 ## Iniciar con un comando
 

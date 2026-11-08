@@ -50,7 +50,7 @@ async def test_invalid_status_does_not_change_connection(payload):
     source = MQTTDataSource()
     source._loop = asyncio.get_running_loop()
     source.set_status_handler(state.set_device_connection)
-    source._on_message(None, None, SimpleNamespace(topic="presence/pir/status", payload=payload))
+    source._on_message(None, None, SimpleNamespace(topic="sensores/pir/estado_esp32", payload=payload))
     await asyncio.sleep(0)
     assert statuses(state)["pir"].is_connected is False
 

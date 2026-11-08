@@ -5,7 +5,7 @@ Arrancá todo con `./start.sh` o `.\start.bat`; el comando prepara las dependenc
 ## Seguir una lectura del PIR
 
 1. `firmware/pir/src/main.cpp` lee GPIO27. `motion` vale `true` si el pin está en alto. Imprime el estado por USB y llama a `publishPresence`.
-2. `firmware/pir/src/network.cpp` mantiene Wi-Fi y MQTT. Publica un mensaje en `presence/pir/telemetry`:
+2. `firmware/pir/src/network.cpp` mantiene Wi-Fi y MQTT. Publica un mensaje en `sensores/pir/presencia`:
 
    ```json
    {"case_id":"pir","source":"pir-0123456789ab","presence":true,"raw_value":1}

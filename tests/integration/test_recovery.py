@@ -77,10 +77,10 @@ def test_burst_broker_reconnection_and_database_survive_restart(tmp_path):
             with connect(endpoint) as first, connect(endpoint) as second:
                 assert json.loads(first.recv(timeout=3))["type"] == "initial_state"
                 assert json.loads(second.recv(timeout=3))["type"] == "initial_state"
-                samples = [("presence/pir/telemetry", {
+                samples = [("sensores/pir/presencia", {
                     "case_id": "pir", "presence": bool(index % 2), "raw_value": index % 2,
                 }) for index in range(120)]
-                for case, topic in [("csi_router", "presence/csi/router/raw"), ("csi_dedicated", "presence/csi/dedicated/raw")]:
+                for case, topic in [("csi_router", "sensores/csi/amplitudes"), ("csi_dedicated", "sensores/csi/dedicado/amplitudes")]:
                     samples.extend((topic, {"case_id": case, "amplitudes": [20 + index % 5, 99]}) for index in range(30))
                 multiple([
                     {"topic": topic, "payload": json.dumps(sample), "qos": 1} for topic, sample in samples
@@ -103,7 +103,7 @@ def test_burst_broker_reconnection_and_database_survive_restart(tmp_path):
                 wait_for(lambda: not api.get("/health").json()["mqtt_connected"])
                 broker = start_broker()
                 wait_for(lambda: api.get("/health").json()["mqtt_connected"])
-                single("presence/pir/telemetry", json.dumps({"case_id": "pir", "presence": True, "raw_value": 1}),
+                single("sensores/pir/presencia", json.dumps({"case_id": "pir", "presence": True, "raw_value": 1}),
                        qos=1, hostname="127.0.0.1", port=broker_port)
                 wait_for(lambda: api.get("/telemetry/status").json()[0]["total_samples"] == 121)
 

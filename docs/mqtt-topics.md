@@ -6,10 +6,10 @@ El contrato de entrada está definido en `backend/app/constants.py`, `backend/ap
 
 | Caso | Publicador disponible | Entrada del backend |
 | --- | --- | --- |
-| PIR | `firmware/pir/`: JSON por MQTT y texto de diagnóstico por Serial. | `presence/pir/telemetry` |
-| CSI con router | `firmware/csi_router/`: captura Wi-Fi y publicación de amplitudes por MQTT. | `presence/csi/router/raw` |
+| PIR | `firmware/pir/`: JSON por MQTT y texto de diagnóstico por Serial. | `sensores/pir/presencia` |
+| CSI con router | `firmware/csi_router/`: captura Wi-Fi y publicación de amplitudes por MQTT. | `sensores/csi/amplitudes` |
 | Caso 3 conjunto | Reutiliza las placas PIR y CSI con router. | Los dos tópicos anteriores; no hay un tópico conjunto. |
-| Dedicado histórico | Contrato retenido por compatibilidad, fuera de la web actual. | `presence/csi/dedicated/raw` |
+| Dedicado histórico | Contrato retenido por compatibilidad, fuera de la web actual. | `sensores/csi/dedicado/amplitudes` |
 
 El CSV de `prueba_CSI/` no es el JSON que acepta el backend. Abrir su monitor no alimenta el dashboard. Para publicar en vivo se usa `firmware/csi_router/`; para reproducir una grabación se usa `prueba_CSI/analisis/reproducir_log_mqtt.py`. Su funcionamiento está explicado en [prueba_CSI/README.md](../prueba_CSI/README.md).
 
@@ -17,9 +17,9 @@ El CSV de `prueba_CSI/` no es el JSON que acepta el backend. Abrir su monitor no
 
 | Tópico | `case_id` obligatorio | Campos de datos obligatorios |
 | --- | --- | --- |
-| `presence/pir/telemetry` | `pir` | `presence`, `raw_value` |
-| `presence/csi/router/raw` | `csi_router` | `amplitudes` |
-| `presence/csi/dedicated/raw` | `csi_dedicated` | `amplitudes` |
+| `sensores/pir/presencia` | `pir` | `presence`, `raw_value` |
+| `sensores/csi/amplitudes` | `csi_router` | `amplitudes` |
+| `sensores/csi/dedicado/amplitudes` | `csi_dedicated` | `amplitudes` |
 
 La suscripción solicita QoS 0 para estos tres tópicos de muestras y QoS 1 para los dos tópicos de conexión descritos abajo. Un tópico desconocido se ignora. Un JSON inválido, campos obligatorios ausentes o un `case_id` distinto del indicado en la tabla se rechazan y se registran en consola. Los campos adicionales no definidos por el esquema se ignoran.
 
@@ -29,8 +29,8 @@ Las latencias deben ser finitas y no negativas. Las amplitudes deben formar una 
 
 | Tópico | Placa | Payload | QoS | Retain |
 | --- | --- | --- | --- | --- |
-| `presence/pir/status` | PIR | `online` / `offline` | 1 | `true` |
-| `presence/csi/router/status` | CSI con router | `online` / `offline` | 1 | `true` |
+| `sensores/pir/estado_esp32` | PIR | `online` / `offline` | 1 | `true` |
+| `sensores/csi/estado_esp32` | CSI con router | `online` / `offline` | 1 | `true` |
 
 Los payloads son texto plano, en minúsculas y sin comillas JSON. El firmware registra antes de conectarse una **última voluntad (LWT)** `offline`, con QoS 1 y retain. Después de cada conexión publica `online` con los mismos parámetros y espera la confirmación del broker; si falla, cierra la conexión y reintenta. Ambos tópicos retienen el último estado para los suscriptores nuevos, incluido un backend que se reinicia.
 
@@ -91,7 +91,7 @@ El firmware PIR incluido no envía `timestamp`, `latency_ms` ni `ground_truth`. 
 
 - El estado en memoria conserva hasta 500 puntos por caso; REST de telemetría en vivo y cada mensaje WebSocket incluyen los últimos 100 puntos crudos y hasta 300 puntos de cada indicador CSI.
 - `/ws/telemetry` envía `initial_state` al conectar y `telemetry_batch` aproximadamente cada 120 ms mientras haya clientes, aunque no hayan llegado muestras nuevas. La frecuencia de difusión no es la de adquisición.
-- `total_samples` cuenta mensajes procesados en la sesión; no es el total de filas histórico. La conexión se obtiene del tópico `status`; sin estado explícito se estima por muestras de menos de 10 segundos. Perder la conexión con el broker invalida ambas fuentes hasta que se reciban mensajes nuevos.
+- `total_samples` cuenta mensajes procesados en la sesión; no es el total de filas histórico. La conexión se obtiene del tópico `estado_esp32`; sin estado explícito se estima por muestras de menos de 10 segundos. Perder la conexión con el broker invalida ambas fuentes hasta que se reciban mensajes nuevos.
 - La cola SQLite se vacía aproximadamente cada 2 segundos, al consultar el historial de telemetría y durante el cierre normal. Difusión y escritura son independientes; no hace falta leer SQLite para actualizar el gráfico.
 - La API de historial es `/api/v1/telemetry/{case_id}/history`, con `limit` entre 1 y 500, predeterminado 50. Métricas y ensayos usan `/api/v1/metrics`.
 - El backend no publica resultados ni comandos por MQTT. El navegador no se suscribe a Mosquitto. La web inicia la calibración del detector CSI en el backend; no cambia la configuración del firmware.
@@ -107,7 +107,7 @@ El formato de almacenamiento y las métricas están en [data-model.md](data-mode
 Con la configuración local predeterminada, para observar mensajes:
 
 ```bash
-mosquitto_sub -h localhost -p 1883 -t 'presence/#' -v
+mosquitto_sub -h localhost -p 1883 -t 'sensores/#' -v
 ```
 
 Si el broker es otro, ajustar host y puerto. En la ESP32, `MQTT_HOST` debe ser la dirección del broker accesible desde la placa, normalmente la IP LAN de la computadora. `localhost` apuntaría a la propia ESP32. Los parámetros PIR se editan en `firmware/pir/include/config.h` y requieren recompilar y cargar la placa.

@@ -1,7 +1,7 @@
 """
 Reproduce una grabacion CSI (.log del monitor serie) por MQTT, como si la enviara el ESP32.
 
-Sirve para probar el backend y la web sin la placa: publica en presence/csi/router/raw las
+Sirve para probar el backend y la web sin la placa: publica en sensores/csi/amplitudes las
 mismas 55 amplitudes por paquete que calcula el firmware (firmware/csi_router), respetando
 los tiempos originales de la grabacion.
 
@@ -22,8 +22,8 @@ import paho.mqtt.client as mqtt
 
 from csi_parse import parse_log, amplitudes
 
-TOPIC = 'presence/csi/router/raw'
-STATUS_TOPIC = 'presence/csi/router/status'
+TOPIC = 'sensores/csi/amplitudes'
+STATUS_TOPIC = 'sensores/csi/estado_esp32'
 
 
 def main():

@@ -116,7 +116,7 @@ En este proyecto aparecen varios conceptos con la palabra “canal”. Conviene 
 | Subportadora OFDM | Componente del paquete sobre la que se estima el canal | Amplitudes del bloque HT-LTF |
 | Dirección IP | Equipo de la red | IP LAN de la computadora con Mosquitto |
 | Puerto TCP | Servicio dentro del equipo | 1883 para MQTT; 8000 para FastAPI |
-| Tópico MQTT | Nombre lógico para distribuir mensajes | `presence/csi/router/raw` |
+| Tópico MQTT | Nombre lógico para distribuir mensajes | `sensores/csi/amplitudes` |
 | Ruta HTTP | Operación de la API o pantalla web | `/api/v1/health` o `/case/pir` |
 
 Los tópicos MQTT no son frecuencias de radio. Cambiar de tópico no separa físicamente dos transmisiones Wi-Fi. Del mismo modo, el puerto 1883 no representa una versión del estándar inalámbrico.
@@ -139,9 +139,9 @@ La documentación de Espressif describe que los campos CSI presentes y su longit
 
 | Caso | Tópico | Contenido principal |
 | --- | --- | --- |
-| PIR | `presence/pir/telemetry` | `case_id`, `presence`, `raw_value` |
-| CSI router | `presence/csi/router/raw` | `case_id`, `amplitudes` |
-| Dedicado histórico | `presence/csi/dedicated/raw` | Contrato conservado; no forma parte de la muestra actual |
+| PIR | `sensores/pir/presencia` | `case_id`, `presence`, `raw_value` |
+| CSI router | `sensores/csi/amplitudes` | `case_id`, `amplitudes` |
+| Dedicado histórico | `sensores/csi/dedicado/amplitudes` | Contrato conservado; no forma parte de la muestra actual |
 
 Ejemplos ilustrativos del contrato, sin representar una medición:
 
@@ -156,7 +156,7 @@ El esquema acepta un vector no vacío; el firmware CSI disponible envía 55 valo
 
 **HTTP y REST.** Se usan para consultar historial y métricas, guardar ensayos y pedir calibración. REST funciona por petición y respuesta; WebSocket mantiene el intercambio para la visualización en vivo.
 
-**Entrega.** Las muestras usan QoS 0 y no son retenidas. Cada placa publica además `online/offline` en su tópico `status`, con QoS 1 y retain; el broker emite `offline` mediante última voluntad ante un corte. Ver [contrato MQTT](mqtt-topics.md). No hay confirmación de persistencia extremo a extremo ni recuperación de muestras tomadas durante una desconexión. El broker tiene su persistencia desactivada; SQLite es el almacenamiento de la aplicación.
+**Entrega.** Las muestras usan QoS 0 y no son retenidas. Cada placa publica además `online/offline` en su tópico `estado_esp32`, con QoS 1 y retain; el broker emite `offline` mediante última voluntad ante un corte. Ver [contrato MQTT](mqtt-topics.md). No hay confirmación de persistencia extremo a extremo ni recuperación de muestras tomadas durante una desconexión. El broker tiene su persistencia desactivada; SQLite es el almacenamiento de la aplicación.
 
 <!-- PAGE -->
 
@@ -224,7 +224,7 @@ Movete frente al sensor, observá el gráfico digital y dejá luego el ambiente 
 Comprobá en `/api/v1/telemetry/status` que el caso `pir` tenga muestras nuevas. Para mirar mensajes del broker, con sus herramientas disponibles:
 
 ```bash
-mosquitto_sub -h localhost -p 1883 -t presence/pir/telemetry -v
+mosquitto_sub -h localhost -p 1883 -t sensores/pir/presencia -v
 ```
 
 El GPIO se lee cada **500 ms nominales**. Si la salida cambia entre dos lecturas, la espera de muestreo puede ser aproximadamente de 0 a 500 ms con el bucle funcionando normalmente. Las reconexiones pueden demorar el bucle. Eso no mide el tiempo desde el movimiento físico hasta la activación del sensor o la pantalla.
@@ -361,7 +361,7 @@ ESP32 -- amplitudes por MQTT --> Mosquitto
 ```
 
 1. Conectá la computadora a la red del ensayo y obtené su IP LAN.
-2. Editá `firmware/csi_router/include/config.h`. Completá `WIFI_SSID`, `WIFI_PASSWORD` y `MQTT_HOST`. Verificá puerto 1883 y tópico `presence/csi/router/raw` si usás la configuración habitual.
+2. Editá `firmware/csi_router/include/config.h`. Completá `WIFI_SSID`, `WIFI_PASSWORD` y `MQTT_HOST`. Verificá puerto 1883 y tópico `sensores/csi/amplitudes` si usás la configuración habitual.
 3. Iniciá `start.sh` o `start.bat` y comprobá salud del backend.
 4. Abrí el proyecto en PlatformIO, compilá y cargá en la placa correspondiente. El entorno definido es `esp32doit-devkit-v1`.
 
@@ -378,7 +378,7 @@ pio device monitor --project-dir firmware/csi_router --baud 115200
 
 **Después del flasheo.** La conexión, captura y publicación empiezan automáticamente si la red y el broker están disponibles. La primera calibración no arranca sola. Apagar la placa no borra su firmware; reiniciar el backend sí borra su referencia de calibración en memoria.
 
-**Prueba de red.** Podés observar el tópico con `mosquitto_sub -h localhost -p 1883 -t presence/csi/router/raw -v`. Que haya JSON no prueba aún que los datos correspondan al formato de radio esperado ni que la detección sea exacta: verificá ambas cosas con ensayos.
+**Prueba de red.** Podés observar el tópico con `mosquitto_sub -h localhost -p 1883 -t sensores/csi/amplitudes -v`. Que haya JSON no prueba aún que los datos correspondan al formato de radio esperado ni que la detección sea exacta: verificá ambas cosas con ensayos.
 
 <!-- PAGE -->
 
@@ -453,7 +453,7 @@ CSI router y ESP32 ------+--> Mosquitto --> Backend
 5. Compará vacío, caminando y sentado quieto. PIR muestra movimiento o sin movimiento. CSI indica si está sin calibrar, calibrando o con una estimación válida de presencia.
 6. Registrá por separado los resultados de PIR y CSI en Sistema & Hardware. La comparación cuantitativa usa esos dos métodos, sin crear métricas artificiales de un tercer sensor.
 
-**No se necesita un tercer firmware.** Se reutilizan `presence/pir/telemetry` y `presence/csi/router/raw`. Tampoco hace falta volver a flashear las placas para pasar de las vistas individuales a la conjunta.
+**No se necesita un tercer firmware.** Se reutilizan `sensores/pir/presencia` y `sensores/csi/amplitudes`. Tampoco hace falta volver a flashear las placas para pasar de las vistas individuales a la conjunta.
 
 **Tiempos diferentes.** PIR se lee cada 500 ms nominales y CSI usa ventanas de 4 segundos. Compartir pantalla no sincroniza físicamente la adquisición. Las respuestas pueden cambiar en instantes distintos.
 
@@ -558,7 +558,7 @@ Buscá el primer punto del recorrido que no funciona. No uses el último gráfic
 Para mirar todos los tópicos del proyecto:
 
 ```bash
-mosquitto_sub -h localhost -p 1883 -t 'presence/#' -v
+mosquitto_sub -h localhost -p 1883 -t 'sensores/#' -v
 ```
 
 En Windows usá comillas dobles si tu terminal no interpreta las simples. Si el broker no está en esa computadora, reemplazá `localhost` por su host real.

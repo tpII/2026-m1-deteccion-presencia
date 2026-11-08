@@ -121,7 +121,7 @@ async def test_retained_status_lwt_and_backend_reconnection(tmp_path, monkeypatc
             await wait_for(lambda: not connected("csi_router"))
             assert replay_states == [("csi_router", True), ("csi_router", False)]
             retained = await asyncio.wait_for(asyncio.to_thread(
-                simple, "presence/csi/router/status", qos=1, hostname="127.0.0.1", port=port,
+                simple, "sensores/csi/estado_esp32", qos=1, hostname="127.0.0.1", port=port,
             ), 5)
             assert retained.payload == b"offline" and retained.qos == 1 and retained.retain
 

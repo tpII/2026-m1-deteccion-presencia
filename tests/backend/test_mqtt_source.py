@@ -36,7 +36,7 @@ async def test_minimal_firmware_payload_reaches_handler():
 
     source.set_sample_handler(handler)
     payload = {"case_id": "pir", "source": "pir-94e68605a918", "presence": False, "raw_value": 0}
-    source._on_message(None, None, SimpleNamespace(topic="presence/pir/telemetry", payload=json.dumps(payload).encode()))
+    source._on_message(None, None, SimpleNamespace(topic="sensores/pir/presencia", payload=json.dumps(payload).encode()))
     await asyncio.wait_for(received.wait(), timeout=1)
     case_id, sample = result[0]
     assert case_id == "pir"
@@ -57,7 +57,7 @@ def test_invalid_message_is_not_forwarded(payload):
     source._loop = Mock()
     handler = Mock()
     source.set_sample_handler(handler)
-    source._on_message(None, None, SimpleNamespace(topic="presence/pir/telemetry", payload=payload))
+    source._on_message(None, None, SimpleNamespace(topic="sensores/pir/presencia", payload=payload))
     handler.assert_not_called()
 
 

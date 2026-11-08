@@ -33,7 +33,7 @@ pio device monitor --project-dir firmware/pir --baud 115200
 
 PlatformIO detecta el puerto. Para elegir uno, agregá `--upload-port PUERTO` al comando de carga o `--port PUERTO` al monitor. No se fija `COM9` en el repositorio. La placa configurada es la misma que usaba Bernardo; para otro modelo, ajustá `board` en `platformio.ini`.
 
-Iniciá todo con `./start.sh` o `.\start.bat`; instala las dependencias faltantes. Con el sistema activo, las muestras llegan a `/case/pir` por MQTT. El tópico sigue siendo `presence/pir/telemetry`. Los mensajes `MOVIMIENTO` y `SIN MOVIMIENTO` siguen disponibles en el monitor de PlatformIO. La pantalla `/test/pir-usb` se retiró. El Caso 3 en `/case/combined` permite observar PIR y CSI con router juntos, sin otro firmware.
+Iniciá todo con `./start.sh` o `.\start.bat`; instala las dependencias faltantes. Con el sistema activo, las muestras llegan a `/case/pir` por MQTT. El tópico sigue siendo `sensores/pir/presencia`. Los mensajes `MOVIMIENTO` y `SIN MOVIMIENTO` siguen disponibles en el monitor de PlatformIO. La pantalla `/test/pir-usb` se retiró. El Caso 3 en `/case/combined` permite observar PIR y CSI con router juntos, sin otro firmware.
 
 Sin Wi-Fi o broker, el firmware sigue mostrando lecturas por Serial y reintenta la conexión. Las muestras desconectadas no se almacenan ni se reenvían. El intervalo de 500 ms es nominal: los intentos de conexión pueden demorar la lectura. No se inventa una latencia física; el backend conserva el valor por defecto de cero.
 
@@ -41,6 +41,6 @@ Cableado, adquisición y registro de ensayos: [guía de pruebas](../../docs/prue
 
 ## Estado de conexión MQTT
 
-La placa publica `online` en `presence/pir/status` al conectarse y registra una última voluntad `offline` para cortes de conexión. Ambos mensajes usan **QoS 1 y retain=true**. Las muestras en `presence/pir/telemetry` mantienen QoS 0 y retain=false. El keepalive es de 15 segundos; detectar un corte puede demorar aproximadamente 22,5 segundos sin tráfico.
+La placa publica `online` en `sensores/pir/estado_esp32` al conectarse y registra una última voluntad `offline` para cortes de conexión. Ambos mensajes usan **QoS 1 y retain=true**. Las muestras en `sensores/pir/presencia` mantienen QoS 0 y retain=false. El keepalive es de 15 segundos; detectar un corte puede demorar aproximadamente 22,5 segundos sin tráfico.
 
 Es necesario recompilar y cargar este firmware para habilitar los estados. PlatformIO instala `256dpi/MQTT@2.5.2`, que permite publicar con QoS 1. Ver [contrato MQTT](../../docs/mqtt-topics.md).

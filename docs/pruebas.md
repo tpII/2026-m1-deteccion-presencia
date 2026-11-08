@@ -8,8 +8,8 @@ La primera ejecución necesita Internet y puede pedir permisos. Para alcance por
 
 | Caso web | Hardware | Datos |
 | --- | --- | --- |
-| Caso 1 PIR | Sensor PIR y ESP32 con `firmware/pir/` | `presence/pir/telemetry` |
-| Caso 2 CSI router | Router y ESP32 con `firmware/csi_router/` | `presence/csi/router/raw` |
+| Caso 1 PIR | Sensor PIR y ESP32 con `firmware/pir/` | `sensores/pir/presencia` |
+| Caso 2 CSI router | Router y ESP32 con `firmware/csi_router/` | `sensores/csi/amplitudes` |
 | Caso 3 PIR + CSI | Los dos montajes anteriores encendidos | Mismas dos fuentes, estados y gráficos separados |
 
 La pantalla PIR USB se retiró. El monitor Serial de PlatformIO sigue disponible. El contrato `csi_dedicated` del backend se conserva por compatibilidad; no es el Caso 3 actual.
@@ -49,7 +49,7 @@ El entorno configurado es `upesy_wroom`; comprobar que corresponda a la placa ut
 Con el servidor iniciado, abrir `/case/pir`. No hay que pulsar Conectar ESP32: las lecturas llegan por MQTT. El monitor muestra `MOVIMIENTO` o `SIN MOVIMIENTO` cada 500 ms nominales. Comprobar también el broker:
 
 ```bash
-mosquitto_sub -h localhost -p 1883 -t presence/pir/telemetry -v
+mosquitto_sub -h localhost -p 1883 -t sensores/pir/presencia -v
 ```
 
 Una salida baja significa ausencia de movimiento detectado y no demuestra que no haya una persona quieta. La frecuencia de lectura no es una latencia medida. El firmware no calcula la latencia física y no reenvía muestras perdidas durante desconexiones.
@@ -69,7 +69,7 @@ El entorno es `esp32doit-devkit-v1`. Comprobar Wi-Fi, IP, canal, MQTT y contador
 Abrir `/case/csi_router`, pulsar Calibrar, salir durante los 10 s de espera y mantener el ambiente vacío durante los 30 s de registro. Comprobar el mensaje completo y después probar vacío, caminando y sentado quieto. La calibración necesita al menos 50 paquetes y se pierde al reiniciar el backend.
 
 ```bash
-mosquitto_sub -h localhost -p 1883 -t presence/csi/router/raw -v
+mosquitto_sub -h localhost -p 1883 -t sensores/csi/amplitudes -v
 ```
 
 Los resultados deben contrastarse con presencia observada independientemente. Una conexión exitosa o un gráfico que se mueve no demuestra exactitud.
