@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <PubSubClient.h>
+#include <MQTT.h>
 #include <WiFi.h>
 
 #include "config.h"
@@ -7,7 +7,7 @@
 
 namespace {
 WiFiClient wifiClient;
-PubSubClient mqttClient(wifiClient);
+MQTTClient mqttClient(1024);
 char nodeId[32];
 uint8_t bssid[6] = {0};
 unsigned long lastWifiAttempt = 0;
@@ -20,9 +20,10 @@ void beginNetwork() {
   WiFi.setSleep(false);  // sin ahorro de energía: recepción continua de paquetes
   WiFi.setAutoReconnect(true);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  mqttClient.setServer(MQTT_HOST, MQTT_PORT);
-  mqttClient.setBufferSize(1024);  // cada mensaje lleva 55 amplitudes (~450 bytes)
-  mqttClient.setSocketTimeout(2);
+  mqttClient.begin(MQTT_HOST, MQTT_PORT, wifiClient);
+  mqttClient.setWill(MQTT_STATUS_TOPIC, "offline", true, 1);
+  mqttClient.setKeepAlive(MQTT_KEEPALIVE_SECONDS);
+  mqttClient.setTimeout(2000);
 }
 
 void maintainNetwork() {
@@ -39,9 +40,16 @@ void maintainNetwork() {
   if (!mqttClient.connected() && now - lastMqttAttempt >= RECONNECT_INTERVAL_MS) {
     lastMqttAttempt = now;
     if (mqttClient.connect(nodeId)) {
+      // Reanunciar en cada conexión; el broker conserva el último estado.
+      if (!mqttClient.publish(MQTT_STATUS_TOPIC, "online", true, 1)) {
+        Serial.println("MQTT: no se pudo confirmar el estado online.");
+        // Cerrar sin DISCONNECT permite que el broker emita la última voluntad.
+        wifiClient.stop();
+        return;
+      }
       Serial.printf("MQTT conectado a %s:%u\n", MQTT_HOST, MQTT_PORT);
     } else {
-      Serial.printf("MQTT: fallo de conexion a %s:%u, codigo %d\n", MQTT_HOST, MQTT_PORT, mqttClient.state());
+      Serial.printf("MQTT: fallo de conexion a %s:%u, codigo %d\n", MQTT_HOST, MQTT_PORT, mqttClient.lastError());
     }
   }
   mqttClient.loop();
@@ -67,5 +75,5 @@ bool publishAmplitudes(const float *amplitudes, size_t count) {
     length += snprintf(payload + length, sizeof(payload) - length, i ? ",%.1f" : "%.1f", amplitudes[i]);
   }
   length += snprintf(payload + length, sizeof(payload) - length, "]}");
-  return mqttClient.publish(MQTT_TOPIC, payload, false);
+  return mqttClient.publish(MQTT_TOPIC, payload, false, 0);
 }

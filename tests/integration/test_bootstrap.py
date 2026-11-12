@@ -80,7 +80,7 @@ def test_one_command_prepares_backend_and_starts_stack_twice(tmp_path):
                     time.sleep(0.2)
                 else:
                     pytest.fail(log_path.read_text())
-                single('presence/pir/telemetry', json.dumps({'case_id': 'pir', 'presence': True, 'raw_value': 1}),
+                single('sensores/pir/presencia', json.dumps({'case_id': 'pir', 'presence': True, 'raw_value': 1}),
                        hostname='127.0.0.1', port=broker_port)
                 deadline = time.monotonic() + 5
                 while time.monotonic() < deadline:

@@ -4,24 +4,22 @@ Basado en [`PRUEBA_PIR` de Bernardo](https://github.com/tpII/2026-m1-deteccion-p
 
 | Archivo | Responsabilidad |
 | --- | --- |
-| `platformio.ini` | Placa `upesy_wroom`, plataforma ESP32 y PubSubClient. |
+| `platformio.ini` | Placa `upesy_wroom`, plataforma ESP32 y Arduino MQTT (`256dpi/MQTT`). |
 | `src/main.cpp` | Lectura del PIR y salida Serial. |
 | `src/network.cpp` | Conexión Wi-Fi, reconexión y publicación MQTT. |
-| `include/config.example.h` | Ejemplo de red, broker, pin e intervalos. |
-| `include/config.h` | Configuración local, excluida de Git. |
+| `include/config.h` | Red, broker, pin e intervalos; incluye valores genéricos. |
 
 ## Preparar y compilar
 
-Instalá PlatformIO IDE en VS Code y abrí esta carpeta como proyecto, o usá PlatformIO Core. Copiá `include/config.example.h` como `include/config.h` y completá Wi-Fi de 2.4 GHz e IP LAN del broker.
+Instalá PlatformIO IDE en VS Code y abrí esta carpeta como proyecto, o usá PlatformIO Core. Editá `include/config.h` y completá Wi-Fi de 2.4 GHz e IP LAN del broker.
 
 Desde la raíz del repositorio:
 
 ```bash
-cp -n firmware/pir/include/config.example.h firmware/pir/include/config.h
 pio run --project-dir firmware/pir
 ```
 
-En Windows, copiá y renombrá el archivo desde VS Code. No hace falta instalar bibliotecas a mano ni usar Arduino IDE. El proyecto usa el framework Arduino de ESP32 dentro de PlatformIO.
+El archivo ya está incluido; no subas las credenciales reales a Git. No hace falta instalar bibliotecas a mano ni usar Arduino IDE. El proyecto usa el framework Arduino de ESP32 dentro de PlatformIO.
 
 ## Cargar y comprobar
 
@@ -35,8 +33,14 @@ pio device monitor --project-dir firmware/pir --baud 115200
 
 PlatformIO detecta el puerto. Para elegir uno, agregá `--upload-port PUERTO` al comando de carga o `--port PUERTO` al monitor. No se fija `COM9` en el repositorio. La placa configurada es la misma que usaba Bernardo; para otro modelo, ajustá `board` en `platformio.ini`.
 
-Iniciá todo con `./start.sh` o `.\start.bat`; instala las dependencias faltantes. Con el sistema activo, las muestras llegan a `/case/pir` por MQTT. El tópico sigue siendo `presence/pir/telemetry`. Los mensajes `MOVIMIENTO` y `SIN MOVIMIENTO` siguen disponibles en el monitor de PlatformIO. La pantalla `/test/pir-usb` se retiró. El Caso 3 en `/case/combined` permite observar PIR y CSI con router juntos, sin otro firmware.
+Iniciá todo con `./start.sh` o `.\start.bat`; instala las dependencias faltantes. Con el sistema activo, las muestras llegan a `/case/pir` por MQTT. El tópico sigue siendo `sensores/pir/presencia`. Los mensajes `MOVIMIENTO` y `SIN MOVIMIENTO` siguen disponibles en el monitor de PlatformIO. La pantalla `/test/pir-usb` se retiró. El Caso 3 en `/case/combined` permite observar PIR y CSI con router juntos, sin otro firmware.
 
 Sin Wi-Fi o broker, el firmware sigue mostrando lecturas por Serial y reintenta la conexión. Las muestras desconectadas no se almacenan ni se reenvían. El intervalo de 500 ms es nominal: los intentos de conexión pueden demorar la lectura. No se inventa una latencia física; el backend conserva el valor por defecto de cero.
 
 Cableado, adquisición y registro de ensayos: [guía de pruebas](../../docs/pruebas.md).
+
+## Estado de conexión MQTT
+
+La placa publica `online` en `sensores/pir/estado_esp32` al conectarse y registra una última voluntad `offline` para cortes de conexión. Ambos mensajes usan **QoS 1 y retain=true**. Las muestras en `sensores/pir/presencia` mantienen QoS 0 y retain=false. El keepalive es de 15 segundos; detectar un corte puede demorar aproximadamente 22,5 segundos sin tráfico.
+
+Es necesario recompilar y cargar este firmware para habilitar los estados. PlatformIO instala `256dpi/MQTT@2.5.2`, que permite publicar con QoS 1. Ver [contrato MQTT](../../docs/mqtt-topics.md).

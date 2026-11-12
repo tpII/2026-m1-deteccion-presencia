@@ -74,9 +74,9 @@ def test_startup_mode_and_cleanup(args, tmp_path):
             with urllib.request.urlopen("http://127.0.0.1:8000/api/v1/metrics/pir", timeout=1) as response:
                 assert json.load(response)["total_tests"] == 0
             samples = [
-                ("presence/pir/telemetry", {"case_id": "pir", "presence": True, "raw_value": 1}),
-                ("presence/csi/router/raw", {"case_id": "csi_router", "amplitudes": [23, 99]}),
-                ("presence/csi/dedicated/raw", {"case_id": "csi_dedicated", "amplitudes": [21, 99]}),
+                ("sensores/pir/presencia", {"case_id": "pir", "presence": True, "raw_value": 1}),
+                ("sensores/csi/amplitudes", {"case_id": "csi_router", "amplitudes": [23, 99]}),
+                ("sensores/csi/dedicado/amplitudes", {"case_id": "csi_dedicated", "amplitudes": [21, 99]}),
             ]
             with connect("ws://127.0.0.1:8000/ws/telemetry") as websocket:
                 assert json.loads(websocket.recv(timeout=2))["type"] == "initial_state"

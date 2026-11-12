@@ -14,11 +14,17 @@ TOPIC_SCHEMAS = {
     SystemTopics.CSI_ROUTER_RAW: (CaseId.CSI_ROUTER, CsiRawSample),
     SystemTopics.CSI_DEDICATED_RAW: (CaseId.CSI_DEDICATED, CsiRawSample),
 }
+STATUS_TOPICS = {
+    SystemTopics.PIR_STATUS: CaseId.PIR,
+    SystemTopics.CSI_ROUTER_STATUS: CaseId.CSI_ROUTER,
+}
 
 
 class MQTTDataSource:
     def __init__(self):
         self._handler: SampleHandler | None = None
+        self._status_handler: Callable[[str, bool], None] | None = None
+        self._connection_handler: Callable[[bool], None] | None = None
         self._client: mqtt.Client | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
         self._pending: set[Future[None]] = set()
@@ -26,6 +32,17 @@ class MQTTDataSource:
 
     def set_sample_handler(self, handler: SampleHandler):
         self._handler = handler
+
+    def set_status_handler(self, handler: Callable[[str, bool], None]):
+        self._status_handler = handler
+
+    def set_connection_handler(self, handler: Callable[[bool], None]):
+        self._connection_handler = handler
+
+    def _notify_connection(self, connected: bool):
+        self._is_connected = connected
+        if self._connection_handler and self._loop and self._loop.is_running():
+            self._loop.call_soon_threadsafe(self._connection_handler, connected)
 
     async def start(self):
         self._loop = asyncio.get_running_loop()
@@ -51,26 +68,36 @@ class MQTTDataSource:
         if self._client:
             await asyncio.to_thread(self._client.disconnect)
             await asyncio.to_thread(self._client.loop_stop)
-            self._is_connected = False
+            self._notify_connection(False)
             await asyncio.gather(*(asyncio.wrap_future(task) for task in list(self._pending)), return_exceptions=True)
             logger.info("Cliente MQTT desconectado.")
 
     def _on_connect(self, client, userdata, flags, reason_code, properties=None):
         if reason_code != 0:
-            self._is_connected = False
+            self._notify_connection(False)
             logger.error(f"El broker rechazo la conexion MQTT (rc={reason_code})")
             return
         logger.info(f"Conectado a broker MQTT exitosamente (rc={reason_code})")
-        self._is_connected = True
+        self._notify_connection(True)
         topics = [(topic, 0) for topic in TOPIC_SCHEMAS]
+        topics.extend((topic, 1) for topic in STATUS_TOPICS)
         client.subscribe(topics)
         logger.info(f"Suscrito a tópicos: {[t[0] for t in topics]}")
 
     def _on_disconnect(self, client, userdata, disconnect_flags, reason_code, properties=None):
         logger.info("MQTT desconectado (rc=%s)", reason_code)
-        self._is_connected = False
+        self._notify_connection(False)
 
     def _on_message(self, client, userdata, msg):
+        if msg.topic in STATUS_TOPICS:
+            if msg.payload not in (b"online", b"offline"):
+                logger.warning("Estado MQTT inválido en %s: se espera online/offline", msg.topic)
+                return
+            if self._status_handler and self._loop and self._loop.is_running():
+                self._loop.call_soon_threadsafe(
+                    self._status_handler, STATUS_TOPICS[msg.topic], msg.payload == b"online",
+                )
+            return
         if msg.topic not in TOPIC_SCHEMAS:
             return
         case_id, schema = TOPIC_SCHEMAS[msg.topic]
