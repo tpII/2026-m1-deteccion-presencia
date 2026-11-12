@@ -1,7 +1,7 @@
 """
 Reproduce una grabacion CSI (.log del monitor serie) por MQTT, como si la enviara el ESP32.
 
-Sirve para probar el backend y la web sin la placa: publica en presence/csi/router/raw las
+Sirve para probar el backend y la web sin la placa: publica en sensores/csi/amplitudes las
 mismas 55 amplitudes por paquete que calcula el firmware (firmware/csi_router), respetando
 los tiempos originales de la grabacion.
 
@@ -14,6 +14,7 @@ Requiere: pip install numpy paho-mqtt (y Mosquitto + backend en marcha).
 """
 import argparse
 import json
+import threading
 import time
 
 import numpy as np
@@ -21,7 +22,8 @@ import paho.mqtt.client as mqtt
 
 from csi_parse import parse_log, amplitudes
 
-TOPIC = 'presence/csi/router/raw'
+TOPIC = 'sensores/csi/amplitudes'
+STATUS_TOPIC = 'sensores/csi/estado_esp32'
 
 
 def main():
@@ -44,9 +46,20 @@ def main():
     print(f'{len(t)} paquetes, {t[-1]:.0f} s, publicando en {args.host}:{args.port} {TOPIC}')
 
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id='reproductor-csi')
+    connected = threading.Event()
+
+    def on_connect(client, userdata, flags, reason_code, properties):
+        if reason_code == 0:
+            client.publish(STATUS_TOPIC, 'online', qos=1, retain=True)
+            connected.set()
+
+    client.on_connect = on_connect
+    client.will_set(STATUS_TOPIC, 'offline', qos=1, retain=True)
     client.connect(args.host, args.port)
     client.loop_start()
     try:
+        if not connected.wait(timeout=10):
+            raise TimeoutError('No se pudo conectar el reproductor al broker MQTT')
         while True:
             start = time.monotonic()
             for i, (ti, amps) in enumerate(zip(t, A)):
@@ -62,8 +75,19 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
-        client.loop_stop()
-        client.disconnect()
+        try:
+            if client.is_connected():
+                offline = client.publish(STATUS_TOPIC, 'offline', qos=1, retain=True)
+                offline.wait_for_publish(timeout=2)
+                if not offline.is_published():
+                    # Sin confirmación, cerrar TCP conserva la última voluntad.
+                    connection = client.socket()
+                    if connection is not None:
+                        connection.close()
+                    raise TimeoutError('El broker no confirmó el estado offline')
+        finally:
+            client.disconnect()
+            client.loop_stop()
 
 
 if __name__ == '__main__':
