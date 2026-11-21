@@ -47,19 +47,32 @@ async def test_failed_write_can_be_retried_without_losing_samples(monkeypatch):
     monkeypatch.setattr(telemetry_repository, "get_db_connection", failing_connection)
     with pytest.raises(OSError):
         await repository.flush()
+    failed = repository.get_persistence_stats()
+    assert failed["failed_writes"] == 1
+    assert failed["pending_samples"] == 1
+    assert failed["committed_samples"] == 0
     repository.enqueue("pir", False, 0, 0)
     monkeypatch.setattr(telemetry_repository, "get_db_connection", real_connection)
     await asyncio.gather(repository.flush(), repository.flush())
     history = await repository.get_history("pir")
     assert [record.presence for record in history] == [False, True]
+    recovered = repository.get_persistence_stats()
+    assert recovered["failed_writes"] == 1
+    assert recovered["pending_samples"] == 0
+    assert recovered["committed_samples"] == 2
+    assert recovered["timed_batches"] == 1
 
 
 async def test_samples_arriving_during_commit_stay_pending(monkeypatch):
+    clock = 1.0
+    monkeypatch.setattr(telemetry_repository, "monotonic", lambda: clock)
     repository = TelemetryRepository()
     repository.enqueue("pir", True, 1, 0)
     database = AsyncMock()
 
     async def commit():
+        nonlocal clock
+        clock = 3.005
         repository.enqueue("pir", False, 0, 0)
 
     database.commit.side_effect = commit
@@ -69,7 +82,16 @@ async def test_samples_arriving_during_commit_stay_pending(monkeypatch):
         yield database
 
     monkeypatch.setattr(telemetry_repository, "get_db_connection", connection)
+    clock = 3.0
+    assert repository.get_persistence_stats()["oldest_pending_ms"] == 2000
     await repository.flush()
+    stats = repository.get_persistence_stats()
+    assert stats["pending_samples"] == 1
+    assert stats["oldest_pending_ms"] == 0
+    assert stats["last_batch_size"] == 1
+    assert stats["last_write_ms"] == 5
+    assert stats["p95_write_ms"] == 5
+    assert stats["last_oldest_to_commit_ms"] == 2005
     database.commit.side_effect = None
     await repository.flush()
     assert [call.args[1][0][2] for call in database.executemany.call_args_list] == [1, 0]

@@ -4,7 +4,7 @@ import time
 from uuid import uuid4
 
 from app.calibration_tracking import CalibrationTracking
-from app.constants import CaseId
+from app.constants import TELEMETRY_FLUSH_INTERVAL_SECONDS, CaseId
 from app.logging_config import logger
 from app.mqtt import MQTTDataSource
 from app.repositories.calibration_repository import close_interrupted_calibrations, record_start
@@ -146,7 +146,7 @@ class TelemetryService:
                 logger.exception("No se pudo emitir la telemetría por WebSocket")
 
     async def _persist_samples(self) -> None:
-        while not await self._wait_for_shutdown(2):
+        while not await self._wait_for_shutdown(TELEMETRY_FLUSH_INTERVAL_SECONDS):
             try:
                 await self.repository.flush()
             except Exception:

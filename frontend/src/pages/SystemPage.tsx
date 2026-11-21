@@ -2,6 +2,7 @@ import { Settings } from 'lucide-react';
 import { GlassPanel } from '../components/ui/GlassPanel';
 import { SectionHeader } from '../components/ui/SectionHeader';
 import { SystemStatus } from '../components/system/SystemStatus';
+import { SqlitePersistence } from '../components/system/SqlitePersistence';
 import { TrialForm } from '../components/system/TrialForm';
 import { useApiQuery } from '../hooks/useApiQuery';
 import { api } from '../services/api';
@@ -20,6 +21,7 @@ export function SystemPage() {
         {error && <p role="alert" className="form-error">{error}</p>}
       </GlassPanel>
       <SystemStatus health={health} />
+      {!error && health?.sqlite_persistence && <SqlitePersistence stats={health.sqlite_persistence} />}
       <TrialForm />
     </div>
   );

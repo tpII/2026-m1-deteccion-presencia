@@ -16,6 +16,8 @@ async def test_health_endpoint():
     assert data["status"] == "healthy"
     assert "version" in data
     assert "data_source" in data
+    assert data["sqlite_persistence"]["flush_interval_seconds"] == 2
+    assert data["sqlite_persistence"]["pending_samples"] >= 0
 
 
 @pytest.mark.asyncio

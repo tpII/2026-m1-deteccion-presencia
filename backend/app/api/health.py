@@ -19,5 +19,6 @@ async def get_health_status():
             if telemetry_service.data_source else None
         ),
         "active_ws_clients": ws_manager.client_count,
+        "sqlite_persistence": telemetry_service.repository.get_persistence_stats(),
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }

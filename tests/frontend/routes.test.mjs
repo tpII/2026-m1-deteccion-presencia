@@ -117,13 +117,24 @@ for (const [path, heading] of [
   test(`la ruta ${path} carga sus componentes en StrictMode`, async () => {
     window.history.replaceState(null, '', path);
     globalThis.fetch = async (url) => {
-      if (url.endsWith('/health')) return json({ status: 'healthy', version: '1', data_source: 'mqtt', mqtt_connected: true, active_ws_clients: 1 });
+      if (url.endsWith('/health')) return json({
+        status: 'healthy', version: '1', data_source: 'mqtt', mqtt_connected: true, active_ws_clients: 1,
+        sqlite_persistence: {
+          flush_interval_seconds: 2, pending_samples: 3, pending_calibrations: 0, committed_samples: 120,
+          failed_writes: 0, oldest_pending_ms: 1200, last_batch_size: 24, last_write_ms: 4,
+          p95_write_ms: 8, timed_batches: 10, last_oldest_to_commit_ms: 2004,
+        },
+      });
       if (url.endsWith('/comparison')) return json({ metrics: [], table: [] });
       if (url.endsWith('/trials') || url.endsWith('/readings')) return json([]);
       return json({ case_id: path.includes('dedicated') ? 'csi_dedicated' : path.includes('router') ? 'csi_router' : 'pir', total_tests: 0 });
     };
     await mount(createElement(StrictMode, null, createElement(App)));
     assert.match(document.body.textContent, new RegExp(heading));
+    if (path === '/system') {
+      assert.match(document.body.textContent, /Muestras pendientes en memoria3/);
+      assert.match(document.body.textContent, /Escritura p95 \(10 lotes\)8 ms/);
+    }
     assert.doesNotMatch(document.querySelector('nav').textContent, /Prueba PIR|Dedicado/);
     assert.equal(document.querySelector('nav a[href="/case/combined"]').textContent, 'Caso 3 — PIR + CSI');
     assert.doesNotMatch(document.body.textContent, /Prueba PIR por USB|Conectar ESP32/);

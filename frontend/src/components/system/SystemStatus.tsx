@@ -25,7 +25,7 @@ export function SystemStatus({ health }: { health: HealthStatus | null }) {
         <h3><Database size={18} /> Almacenamiento</h3>
         <dl className="detail-list">
           <dt>Base de datos</dt><dd>SQLite</dd>
-          <dt>Buffer del backend</dt><dd>500 muestras por método; 100 en gráficos</dd>
+          <dt>Ventana de visualización</dt><dd>Hasta 500 muestras en memoria por método</dd>
           <dt>Broker</dt><dd>Mosquitto</dd>
         </dl>
       </GlassCard>
