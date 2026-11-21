@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from app.database import get_db_connection
 from app.constants import CASE_NAMES, CaseId
-from app.schemas.metrics import CaseMetrics, Trial, ComparisonTableEntry, SystemComparison
+from app.schemas.metrics import CaseMetrics, Trial, ComparisonTableEntry, SystemComparison, TrialScenario
 
 
 class MetricsRepository:
@@ -9,10 +9,12 @@ class MetricsRepository:
         async with get_db_connection() as db:
             cursor = await db.execute(
                 """
-                SELECT id, case_id, timestamp, ground_truth, detected_presence, is_correct, latency_ms, score, notes
+                SELECT id, case_id, timestamp, ground_truth, detected_presence, is_correct,
+                       latency_ms, score, notes, environment, scenario,
+                       observed_at, sample_received_at, telemetry_id
                 FROM trials
                 WHERE case_id = ?
-                ORDER BY id DESC
+                ORDER BY timestamp DESC, id DESC
                 LIMIT ?
                 """,
                 (case_id, limit),
@@ -28,25 +30,39 @@ class MetricsRepository:
         latency_ms: float,
         score: float | None = None,
         notes: str | None = None,
+        environment: str | None = None,
+        scenario: TrialScenario | None = None,
+        *,
+        received_at: str | None = None,
+        observed_at: str | None = None,
+        sample_received_at: str | None = None,
+        telemetry_id: int | None = None,
     ) -> Trial:
         is_correct = int(ground_truth == detected_presence)
-        now_iso = datetime.now(timezone.utc).isoformat()
+        timestamp = received_at or datetime.now(timezone.utc).isoformat(timespec="microseconds")
 
         async with get_db_connection() as db:
             cursor = await db.execute(
                 """
-                INSERT INTO trials (case_id, timestamp, ground_truth, detected_presence, is_correct, latency_ms, score, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO trials (case_id, timestamp, ground_truth, detected_presence, is_correct,
+                                    latency_ms, score, notes, environment, scenario,
+                                    observed_at, sample_received_at, telemetry_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     case_id,
-                    now_iso,
+                    timestamp,
                     int(ground_truth),
                     int(detected_presence),
                     is_correct,
                     latency_ms,
                     score,
                     notes,
+                    environment,
+                    scenario,
+                    observed_at,
+                    sample_received_at,
+                    telemetry_id,
                 ),
             )
             await db.commit()
@@ -55,13 +71,18 @@ class MetricsRepository:
             return Trial(
                 id=trial_id,
                 case_id=CaseId(case_id),
-                timestamp=now_iso,
+                timestamp=timestamp,
                 ground_truth=ground_truth,
                 detected_presence=detected_presence,
                 is_correct=bool(is_correct),
                 latency_ms=latency_ms,
                 score=score,
                 notes=notes,
+                environment=environment,
+                scenario=scenario,
+                observed_at=observed_at,
+                sample_received_at=sample_received_at,
+                telemetry_id=telemetry_id,
             )
 
     async def calculate_case_metrics(self, case_id: str) -> CaseMetrics:

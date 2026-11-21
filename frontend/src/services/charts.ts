@@ -1,11 +1,12 @@
 import { init, use, graphic } from 'echarts/core';
-import { BarChart, LineChart } from 'echarts/charts';
-import { GridComponent, LegendComponent, MarkLineComponent, TitleComponent, TooltipComponent } from 'echarts/components';
+import { BarChart, HeatmapChart, LineChart } from 'echarts/charts';
+import { GridComponent, LegendComponent, MarkLineComponent, TitleComponent, TooltipComponent, VisualMapComponent } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import { LegacyGridContainLabel } from 'echarts/features';
 import 'echarts/theme/v5';
 
-use([BarChart, LineChart, GridComponent, LegendComponent, MarkLineComponent, TitleComponent, TooltipComponent, CanvasRenderer, LegacyGridContainLabel]);
+use([BarChart, HeatmapChart, LineChart, GridComponent, LegendComponent, MarkLineComponent,
+  TitleComponent, TooltipComponent, VisualMapComponent, CanvasRenderer, LegacyGridContainLabel]);
 
 export { init, graphic };
 

@@ -1,7 +1,9 @@
 import { ENV } from '../config/env';
 import type { CalibrationInfo, CaseId } from '../types/telemetry';
-import type { CaseMetrics, SystemComparison, Trial, TrialInput } from '../types/metrics';
+import type { CaseMetrics, LiveTrialCase, SystemComparison, Trial, TrialInput } from '../types/metrics';
 import type { HealthStatus } from '../types/health';
+import type { CsiActivity, CsiCapture, CsiCaptureComparison, CsiCapturePreview } from '../types/csiCapture';
+import type { Observation, ObservationInput, ObservationReport } from '../types/observations';
 
 const API_URL = `${ENV.API_URL}/api/v1`;
 
@@ -27,5 +29,18 @@ export const api = {
     request<Trial[]>(`/metrics/${caseId}/trials`, { signal }),
   getSystemComparison: (signal?: AbortSignal) => request<SystemComparison>('/metrics/comparison', { signal }),
   recordTrial: (trial: TrialInput) => post<Trial>('/metrics/trial', trial),
-  startCsiCalibration: (caseId: Exclude<CaseId, 'pir'>) => post<CalibrationInfo>(`/csi/${caseId}/calibration`, {}),
+  recordObservation: (observation: ObservationInput) => post<Observation>('/observations', observation),
+  getObservationReport: (caseId: LiveTrialCase, environment: string, signal?: AbortSignal) =>
+    request<ObservationReport>(`/observations/${caseId}?environment=${encodeURIComponent(environment)}`, { signal }),
+  startCsiCalibration: (caseId: Exclude<CaseId, 'pir'>, environment: string) =>
+    post<CalibrationInfo>(`/csi/${caseId}/calibration`, { environment }),
+  getCsiCaptures: (environment: string, signal?: AbortSignal) => {
+    const query = environment ? `?environment=${encodeURIComponent(environment)}` : '';
+    return request<CsiCaptureComparison>(`/csi/captures${query}`, { signal });
+  },
+  startCsiCapture: (environment: string, activity: CsiActivity) =>
+    post<CsiCapture>('/csi/captures', { environment, activity }),
+  getCsiCapturePreview: (id: number, signal: AbortSignal) =>
+    request<CsiCapturePreview>(`/csi/captures/${id}/preview`, { signal }),
+  finishCsiCapture: (id: number) => post<CsiCapture>(`/csi/captures/${id}/finish`, {}),
 };

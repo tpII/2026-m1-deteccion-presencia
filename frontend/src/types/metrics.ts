@@ -1,5 +1,8 @@
 import { CaseId } from './telemetry';
 
+export type LiveTrialCase = 'pir' | 'csi_router';
+export type TrialScenario = 'absent' | 'present' | 'left_of_pir' | 'right_of_pir' | 'near_router';
+
 export interface CaseMetrics {
   case_id: CaseId;
   case_name: string;
@@ -24,6 +27,11 @@ export interface Trial {
   latency_ms: number;
   score?: number | null;
   notes?: string | null;
+  environment?: string | null;
+  scenario?: TrialScenario | null;
+  observed_at?: string | null;
+  sample_received_at?: string | null;
+  telemetry_id?: number | null;
 }
 
 export interface ComparisonTableEntry {
@@ -47,4 +55,5 @@ export interface TrialInput {
   latency_ms: number;
   score?: number;
   notes?: string;
+  environment?: string;
 }

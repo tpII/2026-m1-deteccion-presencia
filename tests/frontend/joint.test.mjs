@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { act, createElement, App, FakeSocket, mount, json } from './reactHarness.mjs';
+import { act, createElement, App, FakeSocket, mount, json, inputValue, deferred } from './reactHarness.mjs';
 
 test('la prueba conjunta muestra ambas fuentes sin crear una decisión combinada y calibra el caso router', async () => {
   window.history.replaceState(null, '', '/case/combined');
@@ -17,8 +17,8 @@ test('la prueba conjunta muestra ambas fuentes sin crear una decisión combinada
     type: 'telemetry_batch',
     data: {
       statuses: [
-        { case_id: 'pir', is_connected: true, presence: false, total_samples: 20, current_latency_ms: 0 },
-        { case_id: 'csi_router', is_connected: true, presence: true, total_samples: 90, current_latency_ms: 0 },
+        { case_id: 'pir', is_connected: true, can_record_trial: true, sample_key: 'a'.repeat(32), presence: false, total_samples: 20, current_latency_ms: 0 },
+        { case_id: 'csi_router', is_connected: true, can_record_trial: true, sample_key: 'b'.repeat(32), presence: true, total_samples: 90, current_latency_ms: 0 },
       ],
       cases: {
         pir: { raw_points: [{ timestamp: 1000, value: 0 }] },
@@ -32,13 +32,14 @@ test('la prueba conjunta muestra ambas fuentes sin crear una decisión combinada
     },
   };
   await act(async () => { socket.open(); socket.receive(message); });
-  assert.match(document.body.textContent, /2 de 2 sensores con lecturas/);
+  assert.match(document.body.textContent, /2 de 2 sensores en línea/);
   assert.match(pirPanel.textContent, /SIN MOVIMIENTO/);
   assert.match(pirPanel.textContent, /20/);
   assert.match(csiPanel.textContent, /PRESENCIA/);
   assert.match(csiPanel.textContent, /90/);
   assert.equal(document.querySelectorAll('[_echarts_instance_] svg').length, 3);
   const button = [...csiPanel.querySelectorAll('button')].find((item) => item.textContent.includes('Recalibrar'));
+  await act(async () => inputValue(document.querySelector('.trial-environment input'), 'Casa A'));
   await act(async () => button.click());
   assert.deepEqual(posts, ['http://localhost:8000/api/v1/csi/csi_router/calibration']);
 
@@ -49,8 +50,9 @@ test('la prueba conjunta muestra ambas fuentes sin crear una decisión combinada
   assert.doesNotMatch(pirPanel.textContent, /SIN MOVIMIENTO/);
   assert.match(csiPanel.textContent, /SIN CALIBRAR/);
   assert.doesNotMatch(csiPanel.textContent, /PRESENCIA/);
+  assert.equal(csiPanel.querySelector('fieldset'), null);
   await act(async () => socket.close());
-  assert.match(document.body.textContent, /0 de 2 sensores con lecturas/);
+  assert.match(document.body.textContent, /0 de 2 sensores en línea/);
   assert.match(pirPanel.textContent, /SIN LECTURA/);
   assert.match(csiPanel.textContent, /SIN LECTURA/);
   assert.equal([...csiPanel.querySelectorAll('button')][0].disabled, true);
@@ -68,10 +70,60 @@ test('la prueba conjunta funciona con una sola fuente y no habilita calibración
       cases: { pir: { raw_points: [{ timestamp: 1000, value: 1 }] } },
     } });
   });
-  assert.match(document.body.textContent, /1 de 2 sensores con lecturas/);
+  assert.match(document.body.textContent, /1 de 2 sensores en línea/);
   const csiPanel = document.querySelector('[aria-label="CSI en la prueba conjunta"]');
   assert.match(csiPanel.textContent, /SIN LECTURA/);
   assert.equal(csiPanel.querySelector('button').disabled, true);
+});
+
+test('la prueba conjunta usa un ambiente compartido y guarda la observación del método elegido', async () => {
+  window.history.replaceState(null, '', '/case/combined');
+  const requests = [];
+  const firstSave = deferred();
+  globalThis.fetch = async (url, options) => {
+    if (options?.method === 'POST') {
+      requests.push({ url, body: JSON.parse(options.body) });
+      if (requests.length === 1) return firstSave.promise;
+    }
+    return json({ id: 12, is_correct: false, ground_truth: true });
+  };
+  await mount(createElement(App));
+  const socket = FakeSocket.instances.at(-1);
+  const message = { type: 'telemetry_batch', data: {
+      statuses: [
+        { case_id: 'pir', is_connected: true, can_record_trial: false },
+        { case_id: 'csi_router', is_connected: true, can_record_trial: true, sample_key: 'c'.repeat(32) },
+      ],
+      cases: { csi_router: { calibration: { state: 'calibrado', progress: 1 } } },
+    } };
+  await act(async () => {
+    socket.open();
+    socket.receive(message);
+  });
+  const pir = document.querySelector('[aria-label="PIR en la prueba conjunta"] fieldset');
+  const csi = document.querySelector('[aria-label="CSI en la prueba conjunta"] fieldset');
+  assert.equal(document.querySelector('.trial-environment button'), null);
+  assert.match(document.querySelector('.sensor-topics').textContent, /PIR · Online/);
+  assert.equal(csi.disabled, true);
+  await act(async () => inputValue(document.querySelector('.trial-environment input'), ' Casa B '));
+  assert.equal(pir.disabled, false);
+  assert.equal(csi.disabled, false);
+  const nearRouter = [...csi.querySelectorAll('button')].find((button) => button.textContent.includes('router Wi-Fi'));
+  await act(async () => nearRouter.click());
+  message.data.statuses[1].sample_key = 'd'.repeat(32);
+  await act(async () => socket.receive(message));
+  const left = [...csi.querySelectorAll('button')].find((button) => button.textContent.includes('izquierda'));
+  await act(async () => left.click());
+  assert.deepEqual(requests.map(({ url, body: { observed_at: observedAt, ...body } }) => {
+    assert.match(observedAt, /\.\d{3}Z$/);
+    assert.ok(url.endsWith('/observations'));
+    return body;
+  }), [
+    { case_id: 'csi_router', scenario: 'near_router', environment: 'Casa B' },
+    { case_id: 'csi_router', scenario: 'left_of_pir', environment: 'Casa B' },
+  ]);
+  await act(async () => firstSave.resolve(json({ id: 11, is_correct: false, ground_truth: true })));
+  assert.match(document.querySelector('.form-notice').textContent, /Marca #12 guardada.*izquierda/);
 });
 
 test('el registro y la comparación solo ofrecen PIR y CSI router aunque exista historial dedicado', async () => {

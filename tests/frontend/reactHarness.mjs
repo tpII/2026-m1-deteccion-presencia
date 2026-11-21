@@ -1,4 +1,7 @@
 import { createRequire } from 'node:module';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, afterEach } from 'node:test';
 
@@ -19,8 +22,10 @@ export const { createElement, StrictMode, act } = require('react');
 const { createRoot } = require('react-dom/client');
 const { createServer } = await import(require.resolve('vite'));
 const frontendRoot = fileURLToPath(new URL('../../frontend', import.meta.url));
+const cacheDir = await mkdtemp(join(tmpdir(), 'presence-vite-test-'));
 const server = await createServer({
   root: frontendRoot,
+  cacheDir,
   server: { middlewareMode: true, hmr: false, ws: false, watch: null },
   appType: 'custom',
   ssr: {
@@ -49,6 +54,7 @@ export const { TelemetryProvider } = await server.ssrLoadModule('/src/context/Te
 export const { useTelemetry } = await server.ssrLoadModule('/src/hooks/useTelemetry.ts');
 export const { ComparisonBarChart } = await server.ssrLoadModule('/src/components/charts/ComparisonBarChart.tsx');
 export const { default: App } = await server.ssrLoadModule('/src/App.tsx');
+export const transformClientModule = (path) => server.transformRequest(path);
 const originalFetch = globalThis.fetch;
 const originalWebSocket = globalThis.WebSocket;
 export let root;
@@ -99,6 +105,7 @@ afterEach(async () => {
 
 after(async () => {
   await server.close();
+  await rm(cacheDir, { recursive: true, force: true });
   globalThis.WebSocket = originalWebSocket;
   for (const [name, descriptor] of originals) {
     if (descriptor) Object.defineProperty(globalThis, name, descriptor);

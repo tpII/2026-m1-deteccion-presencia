@@ -49,12 +49,14 @@ test('el formulario valida latencia y bloquea envíos duplicados mientras guarda
   assert.equal(requests.length, 0);
   assert.match(document.querySelector('[role="alert"]').textContent, /latencia válida/);
   await act(async () => inputValue(document.querySelector('input[type="number"]'), '123.5'));
+  await act(async () => inputValue(document.querySelector('input[required]:not([type])'), 'Casa A'));
   await act(async () => {
     form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
     form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
   });
   assert.equal(requests.length, 1);
   assert.equal(JSON.parse(requests[0].options.body).latency_ms, 123.5);
+  assert.equal(JSON.parse(requests[0].options.body).environment, 'Casa A');
   assert.equal(document.querySelector('button').disabled, true);
   await act(async () => result.resolve(json({ id: 1 })));
   assert.match(document.querySelector('[role="status"]').textContent, /registrado para PIR/);
@@ -65,6 +67,7 @@ test('el formulario muestra el error HTTP y permite reintentar', async () => {
   globalThis.fetch = async () => new Response('', { status: 503 });
   await mount(createElement(TrialForm));
   await act(async () => inputValue(document.querySelector('input[type="number"]'), '10'));
+  await act(async () => inputValue(document.querySelector('input[required]:not([type])'), 'Casa A'));
   await act(async () => document.querySelector('form').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true })));
   assert.match(document.querySelector('[role="alert"]').textContent, /503/);
   assert.equal(document.querySelector('button').disabled, false);

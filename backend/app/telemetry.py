@@ -1,9 +1,13 @@
 import asyncio
+from datetime import datetime, timezone
 import time
+from uuid import uuid4
 
+from app.calibration_tracking import CalibrationTracking
 from app.constants import CaseId
 from app.logging_config import logger
 from app.mqtt import MQTTDataSource
+from app.repositories.calibration_repository import close_interrupted_calibrations, record_start
 from app.repositories.telemetry_repository import TelemetryRepository, telemetry_repo
 from app.schemas.telemetry import CalibrationInfo, CsiRawSample, FeatureMetrics, SignalPoint, TelemetrySample
 from app.signal_processing.presence_detector import CsiPresenceDetector
@@ -19,6 +23,9 @@ class TelemetryService:
     ):
         self.state = state
         self.repository = repository
+        self.run_id = uuid4().hex
+        self.calibrations = CalibrationTracking(repository)
+        self._calibration_lock = asyncio.Lock()
         self.data_source: MQTTDataSource | None = None
         # Un detector por caso CSI: cada enlace tiene su propia calibración.
         self.detectors = {
@@ -31,6 +38,8 @@ class TelemetryService:
 
     async def initialize(self) -> None:
         self._stopping.clear()
+        self.run_id = uuid4().hex
+        await close_interrupted_calibrations()
         self.data_source = MQTTDataSource()
         self.data_source.set_sample_handler(self.handle_incoming_sample)
         self.data_source.set_status_handler(self.state.set_device_connection)
@@ -51,7 +60,9 @@ class TelemetryService:
         await self.repository.flush()
 
     async def handle_incoming_sample(self, case_id: str, sample: TelemetrySample | CsiRawSample) -> None:
-        timestamp = time.time() * 1000
+        received_at = datetime.now(timezone.utc)
+        timestamp = received_at.timestamp() * 1000
+        calibration_state = None
         if case_id == CaseId.PIR:
             if not isinstance(sample, TelemetrySample):
                 raise ValueError("El caso PIR requiere una muestra digital")
@@ -62,27 +73,47 @@ class TelemetryService:
         else:
             if not isinstance(sample, CsiRawSample):
                 raise ValueError("Los casos CSI requieren amplitudes")
-            result = self.detectors[case_id].process(time.monotonic(), sample.amplitudes)
+            detector = self.detectors[case_id]
+            now = time.monotonic()
+            detector.calibration_progress(now)
+            self.calibrations.check_completion(case_id, detector, received_at)
+            result = detector.process(now, sample.amplitudes)
             raw_value = result.mean_amplitude
             presence = result.presence
             features = self._build_features(case_id, result.movement_index, result.shape_index, result.detection_ratio)
             score = result.detection_ratio
             self.state.append_indicator_points(case_id, timestamp, features)
-            self.state.set_calibration(case_id, self.calibration_info(case_id))
+            calibration = self.calibration_info(case_id)
+            calibration_state = calibration.state
+            self.state.set_calibration(case_id, calibration)
 
         self.state.append_raw_point(case_id, SignalPoint(timestamp=timestamp, value=raw_value))
-        self.state.update_case_state(case_id, presence, sample.latency_ms, features)
-        self.repository.enqueue(case_id, presence, raw_value, sample.latency_ms, score)
+        calibration_case = CaseId.CSI_ROUTER if case_id == CaseId.PIR else case_id
+        calibration_id = self.calibrations.effective_id(calibration_case, self.detectors[calibration_case])
+        sample_key = self.repository.enqueue(
+            case_id, presence, raw_value, sample.latency_ms, score,
+            sample=sample, features=features, calibration_state=calibration_state,
+            received_at=received_at.isoformat(timespec="microseconds"),
+            run_id=self.run_id, calibration_id=calibration_id,
+        )
+        self.state.update_case_state(case_id, presence, sample.latency_ms, features, sample_key=sample_key)
 
-    def start_calibration(self, case_id: str, delay_seconds: float, duration_seconds: float) -> CalibrationInfo:
-        self.detectors[case_id].start_calibration(time.monotonic(), delay_seconds, duration_seconds)
-        info = self.calibration_info(case_id)
-        self.state.set_calibration(case_id, info)
-        return info
+    async def start_calibration(
+        self, case_id: str, delay_seconds: float, duration_seconds: float, environment: str | None,
+    ) -> CalibrationInfo:
+        async with self._calibration_lock:
+            event_id = await record_start(case_id, environment)
+            self.calibration_info(case_id)
+            self.calibrations.start(case_id, event_id, datetime.now(timezone.utc))
+            self.detectors[case_id].start_calibration(time.monotonic(), delay_seconds, duration_seconds)
+            info = self.calibration_info(case_id)
+            self.state.set_calibration(case_id, info)
+            return info
 
     def calibration_info(self, case_id: str) -> CalibrationInfo:
         detector = self.detectors[case_id]
         progress, seconds_remaining = detector.calibration_progress(time.monotonic())
+        self.calibrations.check_completion(case_id, detector, datetime.now(timezone.utc))
         return CalibrationInfo(
             state=detector.state.value,
             message=detector.message,

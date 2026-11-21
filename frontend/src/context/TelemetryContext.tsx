@@ -15,7 +15,12 @@ export function TelemetryProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribeMessages = wsClient.subscribe((message) => setData(message.data));
-    const unsubscribeState = wsClient.onStateChange(setConnectionState);
+    const unsubscribeState = wsClient.onStateChange((state) => {
+      setConnectionState(state);
+      if (state !== 'LIVE') {
+        setData((previous) => previous && { ...previous, statuses: [] });
+      }
+    });
     wsClient.connect();
     return () => {
       unsubscribeMessages();

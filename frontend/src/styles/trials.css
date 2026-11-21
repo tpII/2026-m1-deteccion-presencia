@@ -1,0 +1,61 @@
+.sensor-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin-block: 0.75rem;
+}
+
+.sensor-topic {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sensor-topic code {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;
+}
+
+.trial-environment {
+  grid-template-columns: minmax(0, 28rem);
+}
+
+.live-trial {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.live-trial-reading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.joint-sensor .live-trial {
+  margin-block: 0.75rem;
+}
+
+.live-trial-method {
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.live-trial-method legend {
+  padding-inline: 0.35rem;
+  font-weight: 600;
+}
+
+.live-trial-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.live-trial-method p {
+  margin-top: 0.5rem;
+}

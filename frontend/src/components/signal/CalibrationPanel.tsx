@@ -8,6 +8,7 @@ interface CalibrationPanelProps {
   caseId: Exclude<CaseId, 'pir'>;
   calibration?: CalibrationInfo | null;
   connected: boolean;
+  environment: string;
 }
 
 const STATE_LABELS = {
@@ -18,7 +19,7 @@ const STATE_LABELS = {
 } as const;
 
 /** Calibración en el lugar: registra la habitación vacía para fijar los umbrales del detector. */
-export function CalibrationPanel({ caseId, calibration, connected }: CalibrationPanelProps) {
+export function CalibrationPanel({ caseId, calibration, connected, environment }: CalibrationPanelProps) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const state = calibration?.state ?? 'sin_calibrar';
@@ -29,7 +30,7 @@ export function CalibrationPanel({ caseId, calibration, connected }: Calibration
     setSending(true);
     setError(null);
     try {
-      await api.startCsiCalibration(caseId);
+      await api.startCsiCalibration(caseId, environment);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'No se pudo iniciar la calibración');
     } finally {
@@ -45,13 +46,14 @@ export function CalibrationPanel({ caseId, calibration, connected }: Calibration
           variant={variant}
           pulsing={running}
         />
-        <button className="primary-button" onClick={start} disabled={sending || running || !connected}>
+        <button className="primary-button" onClick={start} disabled={sending || running || !connected || !environment}>
           <Crosshair size={15} /> {state === 'calibrado' ? 'Recalibrar' : 'Calibrar'}
         </button>
       </div>
       <p className="calibration-message">
         {connected ? calibration?.message ?? 'Esperando estado del detector.' : 'Conectá el ESP32 para poder calibrar.'}
       </p>
+      {connected && !environment && <p className="calibration-message">Ingresá el ambiente antes de calibrar.</p>}
       {running && (
         <div className="progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100}
           aria-valuenow={Math.round((calibration?.progress ?? 0) * 100)}>

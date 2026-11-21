@@ -5,6 +5,7 @@ import { SectionHeader } from '../ui/SectionHeader';
 import { ACTIVE_CASES, CASE_LABELS } from '../../config/cases';
 import { api } from '../../services/api';
 import type { CaseId } from '../../types/telemetry';
+import { EnvironmentField, useTrialEnvironment } from './EnvironmentField';
 
 export function TrialForm() {
   const [caseId, setCaseId] = useState<CaseId>('pir');
@@ -12,6 +13,7 @@ export function TrialForm() {
   const [detectedPresence, setDetectedPresence] = useState(true);
   const [latency, setLatency] = useState('');
   const [notes, setNotes] = useState('');
+  const [environment, setEnvironment] = useTrialEnvironment();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -25,6 +27,10 @@ export function TrialForm() {
       setError('Ingresá una latencia válida, mayor o igual a cero.');
       return;
     }
+    if (!environment.trim()) {
+      setError('Ingresá el ambiente donde se hizo el ensayo.');
+      return;
+    }
     pending.current = true;
     setSaving(true);
     setError(null);
@@ -36,6 +42,7 @@ export function TrialForm() {
         detected_presence: detectedPresence,
         latency_ms: latencyMs,
         notes,
+        environment: environment.trim(),
       });
       setNotice(`Ensayo registrado para ${CASE_LABELS[caseId]}.`);
     } catch (error) {
@@ -56,6 +63,7 @@ export function TrialForm() {
             {ACTIVE_CASES.map((id) => <option key={id} value={id}>{CASE_LABELS[id]}</option>)}
           </select>
         </label>
+        <EnvironmentField value={environment} onChange={setEnvironment} disabled={saving} />
         <label>
           Presencia observada
           <select value={Number(groundTruth)} onChange={(event) => setGroundTruth(event.target.value === '1')}>

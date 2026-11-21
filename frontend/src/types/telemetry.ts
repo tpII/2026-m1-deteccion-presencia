@@ -32,6 +32,8 @@ export interface CaseCurrentStatus {
   current_latency_ms: number;
   last_updated: string;
   total_samples: number;
+  can_record_trial?: boolean;
+  sample_key?: string | null;
   target_type?: string | null;
 }
 

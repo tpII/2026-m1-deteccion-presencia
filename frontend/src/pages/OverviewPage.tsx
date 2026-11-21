@@ -6,10 +6,11 @@ import { MethodCard } from '../components/metrics/MethodCard';
 import { SignalProcessingPipeline } from '../components/signal/SignalProcessingPipeline';
 import { useTelemetry } from '../hooks/useTelemetry';
 import { SensorStateBadge } from '../components/signal/SensorStateBadge';
+import { SensorTopicStatus } from '../components/system/SensorTopicStatus';
 import { ACTIVE_CASES } from '../config/cases';
 
 export function OverviewPage() {
-  const { statuses, getCaseStatus, getCaseData } = useTelemetry();
+  const { getCaseStatus, getCaseData } = useTelemetry();
   return (
     <div className="page-stack">
       <GlassPanel>
@@ -19,7 +20,11 @@ export function OverviewPage() {
             <h1>Detección de Presencia</h1>
             <p>Plataforma experimental para comparar sensores PIR y detección mediante Channel State Information (CSI) en redes Wi-Fi.</p>
           </div>
-          <span className="glass-badge">{statuses.some((status) => status.is_connected && ACTIVE_CASES.some((id) => id === status.case_id)) ? 'Recibiendo hardware' : 'Esperando hardware'}</span>
+        </div>
+        <div className="sensor-topics">
+          {ACTIVE_CASES.map((caseId) => (
+            <SensorTopicStatus key={caseId} caseId={caseId} connected={getCaseStatus(caseId)?.is_connected ?? false} />
+          ))}
         </div>
       </GlassPanel>
       <section>

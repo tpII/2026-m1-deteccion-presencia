@@ -1,6 +1,6 @@
 from typing import Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from app.schemas.telemetry import CalibrationInfo, CalibrationRequest
 from app.telemetry import telemetry_service
@@ -19,4 +19,8 @@ async def get_calibration(case_id: CsiCaseId):
 async def start_calibration(case_id: CsiCaseId, request: CalibrationRequest | None = None):
     """Calibra el detector: hay que dejar la habitación vacía durante toda la calibración."""
     request = request or CalibrationRequest()
-    return telemetry_service.start_calibration(case_id, request.delay_seconds, request.duration_seconds)
+    if case_id == "csi_router" and request.environment is None:
+        raise HTTPException(status_code=422, detail="Ingresá el ambiente antes de calibrar.")
+    return await telemetry_service.start_calibration(
+        case_id, request.delay_seconds, request.duration_seconds, request.environment,
+    )

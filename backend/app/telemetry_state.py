@@ -36,9 +36,12 @@ class TelemetryState:
         self._device_connections: dict[str, bool] = {}
         self._broker_connected = True
         self._fresh_cases: set[str] = set()
+        self._calibrated_samples: set[str] = set()
 
     def set_device_connection(self, case_id: str, connected: bool) -> None:
         """El estado MQTT tiene prioridad sobre la llegada de muestras."""
+        if not connected or self._device_connections.get(case_id) is False:
+            self._fresh_cases.discard(case_id)
         self._device_connections[case_id] = connected
 
     def set_broker_connection(self, connected: bool) -> None:
@@ -58,6 +61,8 @@ class TelemetryState:
 
     def set_calibration(self, case_id: str, calibration: CalibrationInfo) -> None:
         self._calibration[case_id] = calibration
+        if calibration.state != "calibrado":
+            self._calibrated_samples.discard(case_id)
 
     def update_case_state(
         self,
@@ -65,13 +70,19 @@ class TelemetryState:
         presence: bool,
         latency_ms: float,
         features: FeatureMetrics | None = None,
+        *,
+        sample_key: str | None = None,
     ) -> None:
         status = self._statuses[case_id]
         status.presence = presence
         status.current_latency_ms = round(latency_ms, 1)
         status.last_updated = datetime.now(timezone.utc).isoformat()
+        status.sample_key = sample_key
         status.total_samples += 1
         self._fresh_cases.add(case_id)
+        calibration = self._calibration.get(case_id)
+        if calibration and calibration.state == "calibrado":
+            self._calibrated_samples.add(case_id)
         status.is_connected = True
         status.target_type = "person_active" if presence else "empty"
         if features is not None:
@@ -79,12 +90,18 @@ class TelemetryState:
 
     def get_all_statuses(self) -> list[CaseCurrentStatus]:
         now = datetime.now(timezone.utc)
-        for case_id, status in self._statuses.items():
-            age = (now - datetime.fromisoformat(status.last_updated)).total_seconds()
-            # Compatibilidad con publicadores antiguos y reproducción sin tópico de estado.
-            recent_sample = case_id in self._fresh_cases and age < CONNECTION_TIMEOUT_SECONDS
-            status.is_connected = self._broker_connected and self._device_connections.get(case_id, recent_sample)
-        return list(self._statuses.values())
+        return [self.get_case_status(case_id, now) for case_id in self._statuses]
+
+    def get_case_status(self, case_id: str, now: datetime | None = None) -> CaseCurrentStatus:
+        status = self._statuses[case_id]
+        age = ((now or datetime.now(timezone.utc)) - datetime.fromisoformat(status.last_updated)).total_seconds()
+        recent_sample = case_id in self._fresh_cases and age < CONNECTION_TIMEOUT_SECONDS
+        # Compatibilidad con publicadores antiguos y reproducción sin tópico de estado.
+        status.is_connected = self._broker_connected and self._device_connections.get(case_id, recent_sample)
+        status.can_record_trial = status.is_connected and recent_sample and (
+            case_id == CaseId.PIR or case_id in self._calibrated_samples
+        )
+        return status
 
     def get_payload(self, case_id: str) -> CaseTelemetryPayload:
         status = self._statuses[case_id]

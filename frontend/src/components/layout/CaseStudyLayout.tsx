@@ -2,13 +2,14 @@ import type { ReactNode } from 'react';
 import { Activity, History, Layers } from 'lucide-react';
 import { GlassPanel } from '../ui/GlassPanel';
 import { SectionHeader } from '../ui/SectionHeader';
-import { PresenceBadge } from '../ui/PresenceBadge';
 import { MetricsGrid } from '../metrics/MetricsGrid';
 import { TrialsTable } from '../metrics/TrialsTable';
-import type { CaseMetrics, Trial } from '../../types/metrics';
+import { SensorTopicStatus } from '../system/SensorTopicStatus';
+import type { CaseMetrics, LiveTrialCase, Trial } from '../../types/metrics';
 import type { CaseCurrentStatus } from '../../types/telemetry';
 
 interface CaseStudyLayoutProps {
+  caseId: LiveTrialCase;
   title: string;
   subtitle: string;
   description: string;
@@ -20,10 +21,11 @@ interface CaseStudyLayoutProps {
   error?: string | null;
   chartContent: ReactNode;
   pipelineContent?: ReactNode;
+  trialContent: ReactNode;
 }
 
-export function CaseStudyLayout({ title, subtitle, description, technology, status, metrics, trials,
-  metricsLoading = false, error, chartContent, pipelineContent }: CaseStudyLayoutProps) {
+export function CaseStudyLayout({ caseId, title, subtitle, description, technology, status, metrics, trials,
+  metricsLoading = false, error, chartContent, pipelineContent, trialContent }: CaseStudyLayoutProps) {
   const latency = status?.current_latency_ms ?? 0;
   return (
     <div className="page-stack">
@@ -35,11 +37,14 @@ export function CaseStudyLayout({ title, subtitle, description, technology, stat
             <p className="case-description">{description}</p>
           </div>
           <div className="case-live-state">
-            <PresenceBadge presence={status?.presence ?? false} connected={status?.is_connected ?? false} size="lg" />
-            <span>Latencia: <strong>{latency > 0 ? `${latency} ms` : 'Sin medir'}</strong></span>
+            <span>Latencia: <strong>{status?.is_connected && latency > 0 ? `${latency} ms` : 'Sin medir'}</strong></span>
           </div>
         </div>
+        <div className="sensor-topics">
+          <SensorTopicStatus caseId={caseId} connected={status?.is_connected ?? false} />
+        </div>
       </GlassPanel>
+      {trialContent}
       {error && <p role="alert" className="form-error">{error}</p>}
       <section>
         <SectionHeader title="Métricas experimentales" subtitle="Ensayos registrados frente a la presencia observada" icon={<Layers size={18} />} />

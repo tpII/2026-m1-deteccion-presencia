@@ -63,6 +63,8 @@ class CsiPresenceDetector:
         self._calibration_start = 0.0
         self._calibration_end = 0.0
         self._calibration_samples: list[tuple[float, np.ndarray]] = []
+        self.calibration_sample_count: int | None = None
+        self.calibration_succeeded = False
 
     def start_calibration(
         self,
@@ -75,6 +77,8 @@ class CsiPresenceDetector:
         self._calibration_start = now + delay_seconds
         self._calibration_end = self._calibration_start + duration_seconds
         self._calibration_samples = []
+        self.calibration_sample_count = None
+        self.calibration_succeeded = False
 
     def calibration_progress(self, now: float) -> tuple[float, float]:
         """Devuelve (progreso entre 0 y 1, segundos restantes) de la etapa actual."""
@@ -97,10 +101,15 @@ class CsiPresenceDetector:
     def _finish_calibration(self) -> None:
         samples = self._calibration_samples
         self._calibration_samples = []
+        self.calibration_sample_count = len(samples)
         if len(samples) < MIN_CALIBRATION_SAMPLES:
             self.state = CalibrationState.READY if self.reference_profile is not None else CalibrationState.NOT_CALIBRATED
             self.message = (f"Calibración fallida: llegaron {len(samples)} paquetes (mínimo {MIN_CALIBRATION_SAMPLES}). "
                             "Revisá que el ESP32 esté enviando datos.")
+            return
+        if any(len(amplitudes) != len(samples[0][1]) for _, amplitudes in samples):
+            self.state = CalibrationState.READY if self.reference_profile is not None else CalibrationState.NOT_CALIBRATED
+            self.message = "Calibración fallida: cambió la cantidad de subportadoras durante la captura."
             return
 
         reference = np.mean([profile(amplitudes) for _, amplitudes in samples], axis=0)
@@ -114,11 +123,17 @@ class CsiPresenceDetector:
                 movement_values.append(movement)
                 shape_values.append(shape)
 
+        if not movement_values:
+            self.state = CalibrationState.READY if self.reference_profile is not None else CalibrationState.NOT_CALIBRATED
+            self.message = "Calibración fallida: no llegaron suficientes paquetes dentro de una misma ventana."
+            return
+
         self.reference_profile = reference
         self.movement_threshold = threshold_from(movement_values)
         self.shape_threshold = threshold_from(shape_values)
         self._shape_window.clear()  # la forma se mide contra la referencia nueva
         self.state = CalibrationState.READY
+        self.calibration_succeeded = True
         self.message = f"Calibrado con {len(samples)} paquetes de la habitación vacía."
 
     def process(self, now: float, amplitudes: list[float]) -> DetectionResult:

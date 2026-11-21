@@ -2,6 +2,8 @@
 @import './glass.css';
 @import './components.css';
 @import './metrics.css';
+@import './trials.css';
+@import './csi-heatmaps.css';
 @import './calibration.css';
 @import './pipeline.css';
 @import './layout.css';

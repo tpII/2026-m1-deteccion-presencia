@@ -1,6 +1,8 @@
 import { Trial } from '../../types/metrics';
 import { PresenceBadge } from '../ui/PresenceBadge';
 import { CheckCircle2, XCircle } from 'lucide-react';
+import { SCENARIO_LABELS } from '../../config/trials';
+import { formatTimestamp } from '../../services/formatTimestamp';
 
 interface TrialsTableProps {
   trials: Trial[];
@@ -30,7 +32,11 @@ export function TrialsTable({ trials, loading = false }: TrialsTableProps) {
         <thead>
           <tr>
             <th>ID</th>
-            <th>Fecha / Hora</th>
+            <th>Hora de la marca</th>
+            <th>Hora de la muestra</th>
+            <th>Recepción de la marca</th>
+            <th>Ambiente</th>
+            <th>Escenario</th>
             <th>Ground Truth</th>
             <th>Resultado Algoritmo</th>
             <th>Evaluación</th>
@@ -40,14 +46,6 @@ export function TrialsTable({ trials, loading = false }: TrialsTableProps) {
         </thead>
         <tbody>
           {trials.map((trial) => {
-            const dateStr = new Date(trial.timestamp).toLocaleString('es-AR', {
-              month: 'short',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-            });
-
             return (
               <tr key={trial.id}>
                 <td>
@@ -55,7 +53,11 @@ export function TrialsTable({ trials, loading = false }: TrialsTableProps) {
                     #{trial.id}
                   </span>
                 </td>
-                <td style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{dateStr}</td>
+                <td>{formatTimestamp(trial.observed_at ?? trial.timestamp)}</td>
+                <td>{trial.sample_received_at ? formatTimestamp(trial.sample_received_at) : '—'}</td>
+                <td>{trial.observed_at ? formatTimestamp(trial.timestamp) : '—'}</td>
+                <td>{trial.environment ?? '—'}</td>
+                <td>{trial.scenario ? SCENARIO_LABELS[trial.scenario] : '—'}</td>
                 <td>
                   <PresenceBadge presence={trial.ground_truth} size="sm" />
                 </td>
@@ -87,7 +89,7 @@ export function TrialsTable({ trials, loading = false }: TrialsTableProps) {
                         fontSize: '0.8rem',
                       }}
                     >
-                      <XCircle size={14} /> Incorrecto
+                      <XCircle size={14} /> {trial.ground_truth ? 'Falso negativo' : 'Falso positivo'}
                     </span>
                   )}
                 </td>

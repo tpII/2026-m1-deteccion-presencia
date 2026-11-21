@@ -3,6 +3,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, FiniteFloat
 from app.constants import CaseId
+from app.schemas.metrics import Environment
 from app.signal_processing.presence_detector import CALIBRATION_DELAY_SECONDS, CALIBRATION_SECONDS
 
 
@@ -30,6 +31,7 @@ class CalibrationInfo(BaseModel):
 class CalibrationRequest(BaseModel):
     delay_seconds: float = Field(CALIBRATION_DELAY_SECONDS, ge=0, le=120, description="Tiempo para salir de la habitación")
     duration_seconds: float = Field(CALIBRATION_SECONDS, ge=10, le=300, description="Tiempo registrando la habitación vacía")
+    environment: Environment | None = None
 
 
 class TelemetrySample(BaseModel):
@@ -60,6 +62,8 @@ class CaseCurrentStatus(BaseModel):
     last_updated: str
     total_samples: int
     target_type: str | None = None
+    can_record_trial: bool = False
+    sample_key: str | None = None
 
 
 class CaseTelemetryPayload(BaseModel):

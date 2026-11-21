@@ -100,14 +100,28 @@ def test_a_different_number_of_subcarriers_asks_for_a_new_calibration():
 
 
 async def test_calibration_endpoints():
+    from app.database import get_db_connection, init_db
+
+    await init_db()
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         started = await client.post("/api/v1/csi/csi_router/calibration",
-                                    json={"delay_seconds": 5, "duration_seconds": 30})
+                                    json={"delay_seconds": 5, "duration_seconds": 30, "environment": " Casa A "})
         status = await client.get("/api/v1/csi/csi_router/calibration")
         rejected = await client.post("/api/v1/csi/pir/calibration")
-        invalid = await client.post("/api/v1/csi/csi_router/calibration", json={"duration_seconds": 1})
+        invalid = await client.post("/api/v1/csi/csi_router/calibration",
+                                    json={"duration_seconds": 1, "environment": "Casa A"})
+        missing_environment = await client.post("/api/v1/csi/csi_router/calibration")
+        again = await client.post("/api/v1/csi/csi_router/calibration", json={"environment": "Casa B"})
     assert started.status_code == 200
     assert started.json()["state"] == "esperando"
     assert status.json()["seconds_remaining"] > 0
     assert rejected.status_code == 422
     assert invalid.status_code == 422
+    assert missing_environment.status_code == 422
+    assert again.status_code == 200
+    async with get_db_connection() as db:
+        async with db.execute("SELECT * FROM csi_calibration_events ORDER BY id") as cursor:
+            rows = await cursor.fetchall()
+    assert [row["environment"] for row in rows] == ["Casa A", "Casa B"]
+    assert all(row["case_id"] == "csi_router" for row in rows)
+    assert all(len(row["started_at"].split(".")[1].split("+")[0]) == 6 for row in rows)

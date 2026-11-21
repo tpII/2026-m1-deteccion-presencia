@@ -1,5 +1,10 @@
-from pydantic import BaseModel, Field, FiniteFloat
+from typing import Annotated, Literal, Self
+
+from pydantic import AwareDatetime, BaseModel, Field, FiniteFloat, StringConstraints, model_validator
 from app.constants import CaseId
+
+Environment = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+TrialScenario = Literal["absent", "present", "left_of_pir", "right_of_pir", "near_router"]
 
 
 class CaseMetrics(BaseModel):
@@ -26,6 +31,11 @@ class Trial(BaseModel):
     latency_ms: float
     score: float | None = None
     notes: str | None = None
+    environment: str | None = None
+    scenario: TrialScenario | None = None
+    observed_at: str | None = None
+    sample_received_at: str | None = None
+    telemetry_id: int | None = None
 
 
 class ComparisonTableEntry(BaseModel):
@@ -49,3 +59,18 @@ class RecordTrialRequest(BaseModel):
     latency_ms: FiniteFloat = Field(ge=0)
     score: FiniteFloat | None = Field(default=None, ge=0, le=1)
     notes: str | None = None
+    environment: Environment | None = None
+
+
+class RecordLiveTrialRequest(BaseModel):
+    case_id: Literal[CaseId.PIR, CaseId.CSI_ROUTER]
+    environment: Environment
+    scenario: TrialScenario
+    sample_key: str = Field(pattern=r"^[0-9a-f]{32}$")
+    observed_at: AwareDatetime
+
+    @model_validator(mode="after")
+    def validate_scenario(self) -> Self:
+        if self.case_id == CaseId.PIR and self.scenario not in ("present", "absent"):
+            raise ValueError("El PIR admite presencia o ausencia observada")
+        return self

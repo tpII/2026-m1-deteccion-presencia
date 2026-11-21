@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { act, createElement, StrictMode, App, FakeSocket, mount, json } from './reactHarness.mjs';
+import { act, createElement, StrictMode, App, FakeSocket, mount, json, inputValue } from './reactHarness.mjs';
 
 test('la página CSI muestra los indicadores, sus umbrales y el estado de calibración', async () => {
   window.history.replaceState(null, '', '/case/csi_router');
@@ -8,18 +8,21 @@ test('la página CSI muestra los indicadores, sus umbrales y el estado de calibr
   globalThis.fetch = async (url, options) => {
     if (options?.method === 'POST') {
       posts.push(url);
+      assert.deepEqual(JSON.parse(options.body), { environment: 'Casa A' });
       return json({ state: 'esperando', message: 'Salí de la habitación', progress: 0, seconds_remaining: 10 });
     }
     return url.endsWith('/trials') ? json([]) : url.endsWith('/health') ? json({ data_source: 'mqtt' }) : json({ total_tests: 0 });
   };
   await mount(createElement(App));
+  assert.equal(document.querySelector('.live-trial fieldset'), null);
   await act(async () => {
     const socket = FakeSocket.instances.at(-1);
     socket.open();
     socket.receive({
       type: 'telemetry_batch',
       data: {
-        statuses: [{ case_id: 'csi_router', is_connected: true, presence: true, current_latency_ms: 10 }],
+        statuses: [{ case_id: 'csi_router', is_connected: true, can_record_trial: true,
+          sample_key: 'a'.repeat(32), presence: true, current_latency_ms: 10 }],
         cases: {
           csi_router: {
             case_id: 'csi_router', presence: true,
@@ -38,9 +41,67 @@ test('la página CSI muestra los indicadores, sus umbrales y el estado de calibr
   assert.match(document.body.textContent, /0\.0474/);
   assert.match(document.body.textContent, /4\.22/);
   assert.match(document.body.textContent, /Calibrado con 300 paquetes/);
+  const live = document.querySelector('.calibration-panel + .live-trial');
+  assert.match(live.querySelector('.live-trial-reading').textContent, /PRESENCIA/);
+  assert.match(live.querySelector('fieldset').textContent, /Presencia cerca del router Wi-Fi/);
   const button = [...document.querySelectorAll('button')].find((element) => element.textContent.includes('Recalibrar'));
+  assert.equal(button.disabled, true);
+  await act(async () => inputValue(document.querySelector('.trial-environment input'), 'Casa A'));
   await act(async () => button.click());
   assert.deepEqual(posts, ['http://localhost:8000/api/v1/csi/csi_router/calibration']);
+});
+
+test('el PIR registra una marca en la línea de tiempo desde la telemetría', async () => {
+  window.history.replaceState(null, '', '/case/pir');
+  let savedTrial;
+  globalThis.fetch = async (url, options) => {
+    if (options?.method === 'POST') {
+      assert.ok(url.endsWith('/observations'));
+      const observation = JSON.parse(options.body);
+      const { observed_at: observedAt, ...fields } = observation;
+      assert.match(observedAt, /\.\d{3}Z$/);
+      assert.deepEqual(fields, { case_id: 'pir', scenario: 'present', environment: 'Casa A' });
+      savedTrial = { ...observation, id: 1, received_at: observedAt };
+      return json(savedTrial);
+    }
+    if (url.includes('/observations/pir?')) return json({
+      marks: [savedTrial],
+      samples: [{
+        id: 9, timestamp: savedTrial.observed_at, observation_id: 1, scenario: 'present',
+        detected_presence: false, result: 'false_negative',
+      }],
+      calibrations: [{
+        id: 5, started_at: savedTrial.observed_at, finished_at: savedTrial.observed_at,
+        outcome: 'exitosa', sample_count: 50, evaluated: 1, false_positives: 0, false_negatives: 1,
+      }],
+    });
+    if (url.endsWith('/trials')) return json([]);
+    return json({ total_tests: 0 });
+  };
+  await mount(createElement(App));
+  await act(async () => {
+    const socket = FakeSocket.instances.at(-1);
+    socket.open();
+    socket.receive({ type: 'telemetry_batch', data: {
+      statuses: [{ case_id: 'pir', is_connected: true, can_record_trial: true,
+        sample_key: 'b'.repeat(32), presence: false }],
+      cases: {},
+    } });
+    inputValue(document.querySelector('.trial-environment input'), 'Casa A');
+  });
+  const telemetry = document.querySelector('.live-trial').closest('section');
+  assert.match(telemetry.querySelector('h2').textContent, /Telemetría en vivo/);
+  assert.match(telemetry.querySelector('.live-trial-reading').textContent, /SIN MOVIMIENTO/);
+  await act(async () => telemetry.querySelector('fieldset button').click());
+  assert.match(telemetry.querySelector('.form-notice').textContent, /Marca #1 guardada/);
+  await act(async () => {
+    const details = telemetry.querySelector('details');
+    details.open = true;
+    details.dispatchEvent(new window.Event('toggle'));
+  });
+  assert.match(telemetry.querySelector('tbody').textContent, /#1.*Presencia/);
+  assert.match(telemetry.querySelector('details').textContent, /Falso negativo/);
+  assert.match(telemetry.querySelector('details').textContent, /#5.*Exitosa/);
 });
 
 for (const [path, heading] of [
