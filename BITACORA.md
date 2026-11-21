@@ -148,3 +148,9 @@ Es requisito que la computadora donde corren el broker MQTT y el backend esté c
 
 ## 8/11 
 - Elaboración de Informe de Avance II
+
+## 21/11 — Registro de mediciones y visualización del Caso 3
+
+- Se reorganizó la vista conjunta de PIR y CSI para consultar en una misma pantalla la señal del PIR, los indicadores de movimiento y forma del canal, la amplitud media de las subportadoras y los mapas de calor de ambiente vacío, caminando y sentado quieto.
+- El backend recibe las muestras por MQTT, calcula los indicadores y la detección de presencia de CSI, y guarda automáticamente las lecturas y los resultados en SQLite. También se guarda cada perfil de calibración de CSI con su fecha, hora y ambiente.
+- Se incorporaron botones para registrar lo observado durante la prueba, con ambiente y hora con milisegundos. Las marcas se vinculan con las muestras siguientes para identificar falsos positivos y falsos negativos por período de calibración.
