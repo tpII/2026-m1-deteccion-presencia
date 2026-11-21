@@ -79,12 +79,12 @@ async def test_marks_apply_to_subsequent_samples_even_if_database_write_arrived_
 
 async def calibrate(service, seconds, amplitudes):
     ExperimentClock.elapsed = seconds
-    await service.start_calibration("csi_router", 0, 10, "Casa A")
+    await service.start_calibration(0, 10, "Casa A")
     for index in range(52):
         ExperimentClock.elapsed = seconds + (index + 1) / 10
         await service.handle_incoming_sample("csi_router", CsiRawSample(case_id="csi_router", amplitudes=amplitudes))
     ExperimentClock.elapsed = seconds + 10
-    assert service.calibration_info("csi_router").state == "calibrado"
+    assert service.calibration_info().state == "calibrado"
 
 
 async def test_successful_profiles_persist_and_counts_are_separated_by_calibration(service):
@@ -125,9 +125,9 @@ async def test_successful_profiles_persist_and_counts_are_separated_by_calibrati
 async def test_failed_calibration_is_recorded_without_overwriting_a_previous_profile(service):
     await calibrate(service, 0, [2, 4] * 27 + [2])
     ExperimentClock.elapsed = 20
-    await service.start_calibration("csi_router", 0, 10, "Casa A")
+    await service.start_calibration(0, 10, "Casa A")
     ExperimentClock.elapsed = 30
-    service.calibration_info("csi_router")
+    service.calibration_info()
     await pir_sample(service, 30.1, True)
     await service.repository.flush()
     async with get_db_connection() as db:

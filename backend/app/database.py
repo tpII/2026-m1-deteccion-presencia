@@ -66,7 +66,6 @@ async def init_db() -> None:
         await add_missing_columns(db, "telemetry", {
             "source": "TEXT", "sample_timestamp": "TEXT", "ground_truth": "INTEGER",
             "amplitudes_json": "TEXT", "features_json": "TEXT", "calibration_state": "TEXT",
-            "sample_key": "TEXT",
             "run_id": "TEXT",
             "calibration_id": "INTEGER REFERENCES csi_calibration_events(id)",
         })
@@ -76,8 +75,8 @@ async def init_db() -> None:
             ON telemetry(case_id, id DESC)
         """)
         await db.execute("""
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_telemetry_sample_key
-            ON telemetry(sample_key) WHERE sample_key IS NOT NULL
+            CREATE INDEX IF NOT EXISTS idx_telemetry_history_time
+            ON telemetry(timestamp DESC, id DESC)
         """)
         await db.execute("""
             CREATE TABLE IF NOT EXISTS csi_calibration_events (
@@ -151,19 +150,6 @@ async def init_db() -> None:
         await db.execute("""
             CREATE INDEX IF NOT EXISTS idx_csi_captures_environment
             ON csi_captures(environment, activity, id DESC)
-        """)
-
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS pir_usb_readings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                received_at TEXT NOT NULL,
-                motion INTEGER NOT NULL CHECK (motion IN (0, 1)),
-                UNIQUE (received_at, motion)
-            )
-        """)
-        await db.execute("""
-            CREATE INDEX IF NOT EXISTS idx_pir_usb_received_at
-            ON pir_usb_readings (received_at DESC, id DESC)
         """)
 
         await db.commit()

@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Detección de Presencia — PIR y CSI Wi-Fi</title>
     <meta name="description" content="Dashboard universitario para comparar PIR y CSI con router, con estados y gráficos separados en una prueba conjunta." />
+    <style>
+      #app-startup { max-width: 34rem; margin: 10vh auto; padding: 1.5rem; font: 1rem/1.5 system-ui, sans-serif; }
+      #app-startup h1 { font-size: 1.5rem; }
+      #app-startup a { display: inline-block; margin-top: 0.5rem; text-decoration: underline; }
+    </style>
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,6 +17,11 @@
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <main id="app-startup" role="status">
+      <h1>Detección de Presencia</h1>
+      <p id="app-startup-status">Cargando el panel de PIR y CSI…</p>
+      <a href="">Volver a cargar</a>
+    </main>
+    <script type="module" src="/src/bootstrap.ts"></script>
   </body>
 </html>

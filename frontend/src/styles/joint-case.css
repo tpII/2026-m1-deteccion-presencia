@@ -1,0 +1,196 @@
+.joint-page {
+  --joint-signal-height: 126px;
+  gap: 0.7rem;
+}
+
+.joint-overview, .joint-preparation, .joint-sensor, .joint-subcarriers {
+  padding: 0.75rem 1rem;
+}
+
+.joint-sensors {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.joint-overview-heading, .joint-sensor-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 1rem;
+}
+
+.joint-overview h1, .joint-sensor h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.joint-overview h1 { font-size: 1.2rem; }
+.joint-page h2 { font-size: 1.05rem; }
+.joint-overview h1 svg, .joint-sensor h2 svg { color: var(--accent-blue); }
+
+.joint-overview .sensor-topics {
+  gap: 0.4rem 1rem;
+  margin-block: 0.4rem 0;
+}
+
+.joint-chart-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.joint-chart-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+}
+
+.joint-chart-section { scroll-margin-top: 6rem; }
+
+.joint-preparation {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.8fr) minmax(0, 2fr);
+  align-items: center;
+  gap: 0.65rem 1.25rem;
+}
+
+.joint-preparation-heading p {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.joint-preparation-controls {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  align-items: start;
+  gap: 0.6rem 1rem;
+}
+
+.joint-calibration {
+  padding-inline-start: 1rem;
+  border-inline-start: 1px solid var(--glass-border-subtle);
+}
+
+.joint-calibration h3 {
+  margin-bottom: 0.3rem;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  letter-spacing: normal;
+}
+
+.joint-calibration .calibration-panel {
+  padding: 0;
+  gap: 0.25rem;
+  background: transparent;
+}
+
+.joint-calibration .calibration-header { justify-content: flex-start; }
+
+.joint-preparation .trial-environment input,
+.joint-calibration .primary-button {
+  min-height: 2.4rem;
+}
+
+.joint-sensor {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.joint-sensor-heading .method-readings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.85rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.joint-sensor-heading .method-readings div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.joint-sensor-heading .method-readings dd { font-size: 0.85rem; }
+
+.joint-sensor .live-trial {
+  grid-template-columns: minmax(0, 8.75rem) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+}
+
+.joint-sensor .live-trial-reading {
+  font-size: 0.82rem;
+  flex-direction: column;
+  align-items: start;
+}
+
+.joint-sensor .live-trial > :not(.live-trial-reading, .joint-signal) { grid-column: 1 / -1; }
+
+.joint-sensor .live-trial-method {
+  padding: 0.2rem 0.5rem 0.5rem;
+  font-size: 0.82rem;
+}
+
+.joint-sensor .muted, .joint-subcarriers .csi-capture-panel > p { font-size: 0.82rem; }
+
+.joint-signal {
+  min-width: 0;
+  border-inline-start: 1px solid var(--glass-border-subtle);
+}
+
+.joint-csi-indicators {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+@media (min-width: 1260px) {
+  .joint-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.3rem 1rem;
+  }
+
+  .joint-overview-heading { grid-column: 1 / -1; }
+  .joint-overview .sensor-topics { margin-block: 0; }
+
+  .joint-sensor .live-trial:has(> .live-trial-method) {
+    grid-template-columns: minmax(0, 8.75rem) minmax(0, 1fr) minmax(0, 20rem);
+  }
+
+  .joint-sensor .live-trial > .live-trial-method {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .joint-sensor .live-trial-buttons {
+    gap: 0.3rem;
+  }
+
+  .joint-sensor .live-trial-buttons button {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .joint-preparation { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .joint-page { --joint-signal-height: 150px; }
+  .joint-chart-links a { min-height: 2.75rem; }
+  .joint-chart-section { scroll-margin-top: 9rem; }
+  .joint-preparation-controls, .joint-sensor .live-trial { grid-template-columns: minmax(0, 1fr); }
+  .joint-calibration { padding-inline-start: 0; border: 0; }
+  .joint-signal { border-inline-start: 0; }
+}
+
+@media (max-width: 580px) {
+  .joint-csi-indicators { grid-template-columns: minmax(0, 1fr); }
+}

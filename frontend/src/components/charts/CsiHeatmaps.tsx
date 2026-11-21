@@ -25,7 +25,7 @@ const Heatmap = memo(function Heatmap({ heatmap, min, max }: { heatmap: CsiHeatm
       nameGap: 27,
       nameTextStyle: { color: textColor },
       axisLine: { lineStyle: { color: axisLineColor } },
-      axisLabel: { color: textColor, interval: Math.floor(times.length / 5) },
+      axisLabel: { color: textColor, interval: Math.floor(times.length / 5), hideOverlap: true },
       splitArea: { show: false },
     },
     yAxis: {
@@ -54,13 +54,14 @@ const Heatmap = memo(function Heatmap({ heatmap, min, max }: { heatmap: CsiHeatm
         relative_amplitudes.map((amplitude, carrier) => [times[index], SUBCARRIERS[carrier], amplitude])),
     }],
   };
-  return <Chart option={option} height={270} />;
+  return <Chart option={option} height="var(--csi-heatmap-height)" />;
 });
 
-export function CsiHeatmaps({ heatmaps, activeActivity, renderControl }: {
+export function CsiHeatmaps({ heatmaps, activeActivity, renderControl, children }: {
   heatmaps: CsiHeatmap[];
   activeActivity?: CsiActivity;
   renderControl: (activity: CsiActivity) => ReactNode;
+  children?: ReactNode;
 }) {
   let min = 1;
   let max = 1;
@@ -79,6 +80,7 @@ export function CsiHeatmaps({ heatmaps, activeActivity, renderControl }: {
   return (
     <>
       <div className="csi-heatmaps">
+        {children}
         {ACTIVITIES.map((activity) => {
           const heatmap = heatmaps.find((item) => item.capture.activity === activity);
           const isLive = activeActivity === activity;

@@ -31,7 +31,7 @@ class CalibrationInfo(BaseModel):
 class CalibrationRequest(BaseModel):
     delay_seconds: float = Field(CALIBRATION_DELAY_SECONDS, ge=0, le=120, description="Tiempo para salir de la habitación")
     duration_seconds: float = Field(CALIBRATION_SECONDS, ge=10, le=300, description="Tiempo registrando la habitación vacía")
-    environment: Environment | None = None
+    environment: Environment
 
 
 class TelemetrySample(BaseModel):
@@ -61,9 +61,7 @@ class CaseCurrentStatus(BaseModel):
     current_latency_ms: float
     last_updated: str
     total_samples: int
-    target_type: str | None = None
     can_record_trial: bool = False
-    sample_key: str | None = None
 
 
 class CaseTelemetryPayload(BaseModel):
@@ -75,8 +73,6 @@ class CaseTelemetryPayload(BaseModel):
     shape_points: list[SignalPoint] | None = None
     features: FeatureMetrics | None = None
     calibration: CalibrationInfo | None = None
-    ground_truth: bool | None = None
-    target_type: str | None = None
 
 
 class TelemetryHistoryRecord(BaseModel):
@@ -87,3 +83,13 @@ class TelemetryHistoryRecord(BaseModel):
     raw_value: float
     latency_ms: float
     score: float | None = None
+
+
+class StoredSample(TelemetryHistoryRecord):
+    calibration_state: str | None = None
+    calibration_id: int | None = None
+
+
+class StoredSamplePage(BaseModel):
+    samples: list[StoredSample]
+    next_cursor: int | None = None

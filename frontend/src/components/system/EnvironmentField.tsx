@@ -4,10 +4,13 @@ import { SectionHeader } from '../ui/SectionHeader';
 
 const STORAGE_KEY = 'presence-trials.environment.v1';
 
-export function useTrialEnvironment() {
+type EnvironmentScope = 'pir' | 'csi_router' | 'combined';
+
+export function useTrialEnvironment(scope: EnvironmentScope) {
+  const storageKey = `${STORAGE_KEY}.${scope}`;
   const [environment, setEnvironment] = useState(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY) ?? '';
+      return localStorage.getItem(storageKey) ?? '';
     } catch {
       return '';
     }
@@ -16,7 +19,7 @@ export function useTrialEnvironment() {
   function updateEnvironment(value: string) {
     setEnvironment(value);
     try {
-      localStorage.setItem(STORAGE_KEY, value);
+      localStorage.setItem(storageKey, value);
     } catch {
       // El ensayo también se puede registrar sin almacenamiento local.
     }
@@ -29,14 +32,15 @@ interface EnvironmentFieldProps {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  required?: boolean;
 }
 
-export function EnvironmentField({ value, onChange, disabled }: EnvironmentFieldProps) {
+export function EnvironmentField({ value, onChange, disabled, required = true }: EnvironmentFieldProps) {
   return (
     <label>
       Ambiente
       <input value={value} onChange={(event) => onChange(event.target.value)}
-        placeholder="Ej. Casa A · living" maxLength={100} required disabled={disabled} />
+        placeholder="Ej. Casa A · living" maxLength={100} required={required} disabled={disabled} />
     </label>
   );
 }

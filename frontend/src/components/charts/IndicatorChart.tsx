@@ -9,7 +9,7 @@ interface IndicatorChartProps {
   points: SignalPoint[];
   /** Umbral calibrado; sin calibración no se dibuja. */
   threshold?: number | null;
-  height?: number;
+  height?: number | string;
 }
 
 /** Un indicador del detector CSI en el tiempo, con su umbral como línea punteada. */

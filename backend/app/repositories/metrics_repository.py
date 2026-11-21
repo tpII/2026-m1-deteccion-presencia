@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from app.database import get_db_connection
 from app.constants import CASE_NAMES, CaseId
-from app.schemas.metrics import CaseMetrics, Trial, ComparisonTableEntry, SystemComparison, TrialScenario
+from app.schemas.metrics import CaseMetrics, Trial, ComparisonTableEntry, SystemComparison
 
 
 class MetricsRepository:
@@ -31,23 +31,16 @@ class MetricsRepository:
         score: float | None = None,
         notes: str | None = None,
         environment: str | None = None,
-        scenario: TrialScenario | None = None,
-        *,
-        received_at: str | None = None,
-        observed_at: str | None = None,
-        sample_received_at: str | None = None,
-        telemetry_id: int | None = None,
     ) -> Trial:
         is_correct = int(ground_truth == detected_presence)
-        timestamp = received_at or datetime.now(timezone.utc).isoformat(timespec="microseconds")
+        timestamp = datetime.now(timezone.utc).isoformat(timespec="microseconds")
 
         async with get_db_connection() as db:
             cursor = await db.execute(
                 """
                 INSERT INTO trials (case_id, timestamp, ground_truth, detected_presence, is_correct,
-                                    latency_ms, score, notes, environment, scenario,
-                                    observed_at, sample_received_at, telemetry_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    latency_ms, score, notes, environment)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     case_id,
@@ -59,10 +52,6 @@ class MetricsRepository:
                     score,
                     notes,
                     environment,
-                    scenario,
-                    observed_at,
-                    sample_received_at,
-                    telemetry_id,
                 ),
             )
             await db.commit()
@@ -79,10 +68,6 @@ class MetricsRepository:
                 score=score,
                 notes=notes,
                 environment=environment,
-                scenario=scenario,
-                observed_at=observed_at,
-                sample_received_at=sample_received_at,
-                telemetry_id=telemetry_id,
             )
 
     async def calculate_case_metrics(self, case_id: str) -> CaseMetrics:

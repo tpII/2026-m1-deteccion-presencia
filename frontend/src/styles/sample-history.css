@@ -1,0 +1,29 @@
+.sample-history-header .sample-history-filters {
+  max-width: 28rem;
+  margin-top: 1rem;
+}
+
+.sample-history {
+  min-width: 0;
+}
+
+.sample-history td {
+  white-space: nowrap;
+}
+
+.sample-history td:nth-child(1),
+.sample-history td:nth-child(2),
+.sample-history td:nth-child(5),
+.sample-history td:nth-child(6),
+.sample-history td:nth-child(7) {
+  font-variant-numeric: tabular-nums;
+}
+
+.sample-history-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}

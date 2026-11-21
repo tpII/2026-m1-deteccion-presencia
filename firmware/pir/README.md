@@ -37,10 +37,10 @@ Iniciá todo con `./start.sh` o `.\start.bat`; instala las dependencias faltante
 
 Sin Wi-Fi o broker, el firmware sigue mostrando lecturas por Serial y reintenta la conexión. Las muestras desconectadas no se almacenan ni se reenvían. El intervalo de 500 ms es nominal: los intentos de conexión pueden demorar la lectura. No se inventa una latencia física; el backend conserva el valor por defecto de cero.
 
-Cableado, adquisición y registro de ensayos: [guía de pruebas](../../docs/pruebas.md).
+Arranque y registro de ensayos en el [README del proyecto](../../README.md).
 
 ## Estado de conexión MQTT
 
 La placa publica `online` en `sensores/pir/estado_esp32` al conectarse y registra una última voluntad `offline` para cortes de conexión. Ambos mensajes usan **QoS 1 y retain=true**. Las muestras en `sensores/pir/presencia` mantienen QoS 0 y retain=false. El keepalive es de 15 segundos; detectar un corte puede demorar aproximadamente 22,5 segundos sin tráfico.
 
-Es necesario recompilar y cargar este firmware para habilitar los estados. PlatformIO instala `256dpi/MQTT@2.5.2`, que permite publicar con QoS 1. Ver [contrato MQTT](../../docs/mqtt-topics.md).
+Es necesario recompilar y cargar este firmware para habilitar los estados. PlatformIO instala `256dpi/MQTT@2.5.2`, que permite publicar con QoS 1.

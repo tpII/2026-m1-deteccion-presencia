@@ -1,12 +1,13 @@
 # Arranque con un comando en Windows: .\start.bat
 param([ValidateSet('mqtt')][string]$Mode = 'mqtt')
 $ErrorActionPreference = 'Stop'
-Set-Location -Path $PSScriptRoot
+$projectRoot = Split-Path -Parent $PSScriptRoot
+Set-Location -Path $projectRoot
 $BackendPort = 8000
 $FrontendPort = 5173
 $started = @()
 
-. (Join-Path $PSScriptRoot "scripts/setup.ps1")
+. (Join-Path $PSScriptRoot 'setup.ps1')
 
 function Test-Port($address, $port) {
     $client = New-Object System.Net.Sockets.TcpClient
@@ -29,7 +30,15 @@ try {
     foreach ($port in @($BackendPort, $FrontendPort)) {
         if (Test-Port '127.0.0.1' $port) { Stop-WithError "El puerto $port esta ocupado. Cerra la instancia anterior antes de ejecutar otra." }
     }
-    $venvPython = Prepare-Dependencies $PSScriptRoot
+    $venvPython = Prepare-Dependencies $projectRoot
+
+    Write-Step 'Compilando la web para la sesion'
+    Push-Location frontend
+    try {
+        & npm.cmd run build -- --outDir ../.runtime/frontend --emptyOutDir
+        $buildResult = $LASTEXITCODE
+    } finally { Pop-Location }
+    if ($buildResult -ne 0) { Stop-WithError 'No se pudo compilar la web.' }
 
     # Leer la configuracion real despues de instalar el backend.
     Push-Location backend
@@ -56,10 +65,10 @@ try {
         if (Test-Port $brokerAddress $brokerPort) {
             Write-Step 'Reutilizando el broker iniciado durante la instalacion'
         } else {
-            $brokerConfig = Join-Path $PSScriptRoot 'mosquitto\mosquitto.conf'
+            $brokerConfig = Join-Path $projectRoot 'mosquitto\mosquitto.conf'
             if ($brokerPort -ne 1883) {
                 New-Item -ItemType Directory -Force '.runtime' | Out-Null
-                $brokerConfig = Join-Path $PSScriptRoot ".runtime\mosquitto-$brokerPort.conf"
+                $brokerConfig = Join-Path $projectRoot ".runtime\mosquitto-$brokerPort.conf"
                 Set-Content $brokerConfig "listener $brokerPort 0.0.0.0`nallow_anonymous true`npersistence false`nlog_dest stdout"
             }
             Write-Step "Iniciando Mosquitto en $brokerPort; permite acceso en redes privadas si Windows lo solicita"
@@ -76,8 +85,8 @@ try {
     }
 
     Write-Step 'Iniciando backend'
-    $backend = Start-Process $venvPython -WorkingDirectory (Join-Path $PSScriptRoot 'backend') -NoNewWindow -PassThru `
-        -ArgumentList '-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', "$BackendPort", '--reload'
+    $backend = Start-Process $venvPython -WorkingDirectory (Join-Path $projectRoot 'backend') -NoNewWindow -PassThru `
+        -ArgumentList '-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', "$BackendPort"
     $started += $backend
     $mqttConnected = $false
     for ($i = 0; $i -lt 40; $i++) {
@@ -91,8 +100,8 @@ try {
     if (-not $mqttConnected) { Stop-WithError 'El backend no se conecto a MQTT.' }
 
     Write-Step 'Iniciando frontend'
-    $frontend = Start-Process (Get-Command node).Source -WorkingDirectory (Join-Path $PSScriptRoot 'frontend') -NoNewWindow -PassThru `
-        -ArgumentList 'node_modules\vite\bin\vite.js', '--host', '127.0.0.1', '--port', "$FrontendPort", '--strictPort'
+    $frontend = Start-Process (Get-Command node).Source -WorkingDirectory (Join-Path $projectRoot 'frontend') -NoNewWindow -PassThru `
+        -ArgumentList 'node_modules\vite\bin\vite.js', 'preview', '--outDir', '../.runtime/frontend', '--host', '127.0.0.1', '--port', "$FrontendPort", '--strictPort'
     $started += $frontend
     $frontendReady = $false
     for ($i = 0; $i -lt 40; $i++) {

@@ -13,7 +13,7 @@ SOURCE_EXTENSIONS = {'.py', '.ts', '.tsx', '.css', '.cpp', '.h', '.sh', '.ps1', 
 
 
 def test_project_modules_have_fewer_than_200_lines():
-    paths = [ROOT / name for name in ('start.sh', 'start.ps1', 'start.bat')]
+    paths = [ROOT / name for name in ('start.sh', 'start.bat')]
     paths.extend(
         path for folder in SOURCE_DIRS for path in (ROOT / folder).rglob('*')
         if path.is_file() and path.suffix in SOURCE_EXTENSIONS

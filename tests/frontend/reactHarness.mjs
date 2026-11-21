@@ -48,12 +48,11 @@ const server = await createServer({
   }],
 });
 export const { useApiQuery } = await server.ssrLoadModule('/src/hooks/useApiQuery.ts');
-export const { TrialForm } = await server.ssrLoadModule('/src/components/system/TrialForm.tsx');
 export const { ThemeProvider } = await server.ssrLoadModule('/src/context/ThemeContext.tsx');
 export const { TelemetryProvider } = await server.ssrLoadModule('/src/context/TelemetryContext.tsx');
 export const { useTelemetry } = await server.ssrLoadModule('/src/hooks/useTelemetry.ts');
-export const { ComparisonBarChart } = await server.ssrLoadModule('/src/components/charts/ComparisonBarChart.tsx');
 export const { default: App } = await server.ssrLoadModule('/src/App.tsx');
+export const { ScreenErrorBoundary } = await server.ssrLoadModule('/src/components/ui/ScreenErrorBoundary.tsx');
 export const transformClientModule = (path) => server.transformRequest(path);
 const originalFetch = globalThis.fetch;
 const originalWebSocket = globalThis.WebSocket;

@@ -115,7 +115,7 @@ async def test_calibration_endpoints():
     assert started.status_code == 200
     assert started.json()["state"] == "esperando"
     assert status.json()["seconds_remaining"] > 0
-    assert rejected.status_code == 422
+    assert rejected.status_code == 404
     assert invalid.status_code == 422
     assert missing_environment.status_code == 422
     assert again.status_code == 200

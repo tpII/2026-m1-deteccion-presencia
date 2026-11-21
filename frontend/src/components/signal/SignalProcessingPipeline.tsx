@@ -1,6 +1,6 @@
 import { Activity, BarChart3, CheckCircle2, Crosshair, Sliders } from 'lucide-react';
 import { PipelineStage } from './PipelineStage';
-import { SignalChart } from '../charts/SignalChart';
+import { CsiRawSignalChart } from '../charts/CsiRawSignalChart';
 import { PresenceBadge } from '../ui/PresenceBadge';
 import type { CaseTelemetryPayload } from '../../types/telemetry';
 
@@ -17,7 +17,7 @@ export function SignalProcessingPipeline({ data }: { data?: CaseTelemetryPayload
   return (
     <div className="pipeline-flow-wrapper">
       <PipelineStage stepNumber={1} title="SEÑAL CRUDA" subtitle="Amplitud media de las subportadoras" icon={<Activity size={16} />}>
-        <SignalChart rawPoints={raw_points.slice(-30)} height={130} yAxisName="|H|" />
+        <CsiRawSignalChart points={raw_points} height={130} />
       </PipelineStage>
       <PipelineStage stepNumber={2} title="NORMALIZADO" subtitle="Se divide por el promedio del paquete" icon={<Sliders size={16} />}>
         <dl className="pipeline-values">

@@ -10,10 +10,7 @@ export function useTelemetry() {
   const casesData = data?.cases ?? {};
 
   return {
-    statuses,
-    casesData,
     connectionState,
-    loading: data === null,
     getCaseStatus: (caseId: CaseId) => statuses.find((status) => status.case_id === caseId),
     getCaseData: (caseId: CaseId) => casesData[caseId],
   };

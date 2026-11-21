@@ -1,5 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock
 
 import pytest
@@ -7,9 +8,28 @@ import pytest
 from app.database import init_db
 from app.repositories import telemetry_repository
 from app.repositories.telemetry_repository import TelemetryRepository
-from app.schemas.telemetry import CsiRawSample, TelemetrySample
+from app.schemas.telemetry import CalibrationInfo, CsiRawSample, TelemetrySample
 from app.telemetry import TelemetryService
 from app.telemetry_state import TelemetryState
+
+
+def test_csi_readiness_requires_a_recent_calibrated_sample():
+    state = TelemetryState()
+    case_id = "csi_router"
+    state.set_device_connection(case_id, True)
+    state.update_case_state(case_id, False, 0)
+    calibrated = CalibrationInfo(state="calibrado", message="", progress=1, seconds_remaining=0)
+    state.set_calibration(case_id, calibrated)
+    assert not state.get_case_status(case_id).can_record_trial
+    state.update_case_state(case_id, False, 0)
+    assert state.get_case_status(case_id).can_record_trial
+    state.set_calibration(case_id, calibrated.model_copy(update={"state": "calibrando"}))
+    assert not state.get_case_status(case_id).can_record_trial
+    state.set_calibration(case_id, calibrated)
+    state.update_case_state(case_id, True, 0)
+    status = state.get_case_status(case_id, datetime.now(timezone.utc) + timedelta(seconds=11))
+    assert status.is_connected
+    assert not status.can_record_trial
 
 
 async def test_pir_and_csi_samples_reach_state_and_storage():
@@ -18,19 +38,17 @@ async def test_pir_and_csi_samples_reach_state_and_storage():
     repository = TelemetryRepository()
     service = TelemetryService(state, repository)
     await service.handle_incoming_sample("pir", TelemetrySample(case_id="pir", presence=True, raw_value=1))
-    for case_id in ("csi_router", "csi_dedicated"):
-        for value in range(5):
-            await service.handle_incoming_sample(case_id, CsiRawSample(case_id=case_id, amplitudes=[value, 99]))
-        payload = state.get_payload(case_id)
-        # raw_points guarda la amplitud media de cada paquete
-        assert [point.value for point in payload.raw_points] == [50.5, 51, 51.5]
-        assert len(payload.movement_points) == 1  # el indicador necesita 5 paquetes en la ventana
-        assert payload.features is not None
-        assert payload.calibration.state == "sin_calibrar"
-        assert len(await repository.get_history(case_id)) == 5
+    for value in range(5):
+        await service.handle_incoming_sample("csi_router", CsiRawSample(case_id="csi_router", amplitudes=[value, 99]))
+    payload = state.get_payload("csi_router")
+    assert [point.value for point in payload.raw_points] == [50.5, 51, 51.5]
+    assert len(payload.movement_points) == 1  # el indicador necesita 5 paquetes en la ventana
+    assert payload.features is not None
+    assert payload.calibration.state == "sin_calibrar"
+    assert len(await repository.get_history("csi_router")) == 5
     assert state.get_payload("pir").presence is True
     assert (await repository.get_history("pir"))[0].score == 1
-    assert [status.total_samples for status in state.get_all_statuses()] == [1, 5, 5]
+    assert [status.total_samples for status in state.get_all_statuses()] == [1, 5]
 
 
 async def test_failed_write_can_be_retried_without_losing_samples(monkeypatch):

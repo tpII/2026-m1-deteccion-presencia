@@ -55,7 +55,7 @@ for name in ['vite/bin/vite.js', 'typescript/bin/tsc']:
 ''')
     npm.chmod(0o755)
     node = commands / 'node'
-    node.write_text('#!/bin/sh\necho linux/x64/24\n')
+    node.write_text('#!/bin/sh\necho darwin/arm64/24\n')
     node.chmod(0o755)
     environment = dict(os.environ, PATH=f'{commands}:{os.environ["PATH"]}', SETUP_TEST_LOG=str(log))
 
@@ -128,3 +128,11 @@ def test_start_help_does_not_install_anything():
     result = subprocess.run(['bash', str(ROOT / 'start.sh'), '--help'], text=True, capture_output=True)
     assert result.returncode == 0
     assert 'Instala lo que falte' in result.stdout
+
+
+def test_windows_launcher_uses_scripts_directory():
+    launcher = (ROOT / 'start.bat').read_text()
+    assert r'%~dp0scripts\start-windows.ps1' in launcher
+    windows_script = ROOT / 'scripts/start-windows.ps1'
+    assert windows_script.is_file()
+    assert (windows_script.parent / 'setup.ps1').is_file()

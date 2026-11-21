@@ -9,7 +9,7 @@ import { useCaseMetrics } from '../hooks/useCaseMetrics';
 export const PirCasePage: React.FC = () => {
   const { getCaseStatus, getCaseData } = useTelemetry();
   const { metrics, trials, loading: metricsLoading, error } = useCaseMetrics('pir');
-  const [environment, setEnvironment] = useTrialEnvironment();
+  const [environment, setEnvironment] = useTrialEnvironment('pir');
 
   const status = getCaseStatus('pir');
   const caseData = getCaseData('pir');

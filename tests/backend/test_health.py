@@ -36,8 +36,8 @@ def test_websocket_initial_state_heartbeat_and_disconnect():
     with client.websocket_connect("/ws/telemetry") as websocket:
         initial = websocket.receive_json()
         assert initial["type"] == "initial_state"
-        assert set(initial["data"]["cases"]) == {"pir", "csi_router", "csi_dedicated"}
-        assert len(initial["data"]["statuses"]) == 3
+        assert set(initial["data"]["cases"]) == {"pir", "csi_router"}
+        assert {status["case_id"] for status in initial["data"]["statuses"]} == {"pir", "csi_router"}
         assert client.get("/api/v1/health").json()["active_ws_clients"] == 1
         websocket.send_text("ping")
         assert websocket.receive_text() == "pong"

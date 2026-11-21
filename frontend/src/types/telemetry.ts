@@ -1,4 +1,4 @@
-export type CaseId = 'pir' | 'csi_router' | 'csi_dedicated';
+export type CaseId = 'pir' | 'csi_router';
 
 export interface SignalPoint {
   timestamp: number;
@@ -33,8 +33,6 @@ export interface CaseCurrentStatus {
   last_updated: string;
   total_samples: number;
   can_record_trial?: boolean;
-  sample_key?: string | null;
-  target_type?: string | null;
 }
 
 export interface CaseTelemetryPayload {
@@ -46,8 +44,22 @@ export interface CaseTelemetryPayload {
   shape_points?: SignalPoint[] | null;
   features?: FeatureMetrics | null;
   calibration?: CalibrationInfo | null;
-  ground_truth?: boolean | null;
-  target_type?: string | null;
+}
+
+export interface StoredSample {
+  id: number;
+  case_id: CaseId;
+  timestamp: string;
+  presence: boolean;
+  raw_value: number;
+  latency_ms: number;
+  calibration_state: CalibrationState | null;
+  calibration_id: number | null;
+}
+
+export interface StoredSamplePage {
+  samples: StoredSample[];
+  next_cursor: number | null;
 }
 
 export type ConnectionState = 'LIVE' | 'RECONNECTING' | 'OFFLINE';

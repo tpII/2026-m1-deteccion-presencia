@@ -27,11 +27,7 @@ class TelemetryService:
         self.calibrations = CalibrationTracking(repository)
         self._calibration_lock = asyncio.Lock()
         self.data_source: MQTTDataSource | None = None
-        # Un detector por caso CSI: cada enlace tiene su propia calibración.
-        self.detectors = {
-            CaseId.CSI_ROUTER: CsiPresenceDetector(),
-            CaseId.CSI_DEDICATED: CsiPresenceDetector(),
-        }
+        self.detector = CsiPresenceDetector()
         self._tasks: list[asyncio.Task] = []
         self._stopping = asyncio.Event()
         self._refresh_calibration()
@@ -72,48 +68,47 @@ class TelemetryService:
             score = float(presence)
         else:
             if not isinstance(sample, CsiRawSample):
-                raise ValueError("Los casos CSI requieren amplitudes")
-            detector = self.detectors[case_id]
+                raise ValueError("El caso CSI requiere amplitudes")
+            detector = self.detector
             now = time.monotonic()
             detector.calibration_progress(now)
-            self.calibrations.check_completion(case_id, detector, received_at)
+            self.calibrations.check_completion(detector, received_at)
             result = detector.process(now, sample.amplitudes)
             raw_value = result.mean_amplitude
             presence = result.presence
-            features = self._build_features(case_id, result.movement_index, result.shape_index, result.detection_ratio)
+            features = self._build_features(result.movement_index, result.shape_index, result.detection_ratio)
             score = result.detection_ratio
             self.state.append_indicator_points(case_id, timestamp, features)
-            calibration = self.calibration_info(case_id)
+            calibration = self.calibration_info()
             calibration_state = calibration.state
             self.state.set_calibration(case_id, calibration)
 
         self.state.append_raw_point(case_id, SignalPoint(timestamp=timestamp, value=raw_value))
-        calibration_case = CaseId.CSI_ROUTER if case_id == CaseId.PIR else case_id
-        calibration_id = self.calibrations.effective_id(calibration_case, self.detectors[calibration_case])
-        sample_key = self.repository.enqueue(
+        calibration_id = self.calibrations.effective_id(self.detector)
+        self.repository.enqueue(
             case_id, presence, raw_value, sample.latency_ms, score,
             sample=sample, features=features, calibration_state=calibration_state,
             received_at=received_at.isoformat(timespec="microseconds"),
             run_id=self.run_id, calibration_id=calibration_id,
         )
-        self.state.update_case_state(case_id, presence, sample.latency_ms, features, sample_key=sample_key)
+        self.state.update_case_state(case_id, presence, sample.latency_ms, features)
 
     async def start_calibration(
-        self, case_id: str, delay_seconds: float, duration_seconds: float, environment: str | None,
+        self, delay_seconds: float, duration_seconds: float, environment: str,
     ) -> CalibrationInfo:
         async with self._calibration_lock:
-            event_id = await record_start(case_id, environment)
-            self.calibration_info(case_id)
-            self.calibrations.start(case_id, event_id, datetime.now(timezone.utc))
-            self.detectors[case_id].start_calibration(time.monotonic(), delay_seconds, duration_seconds)
-            info = self.calibration_info(case_id)
-            self.state.set_calibration(case_id, info)
+            event_id = await record_start(environment)
+            self.calibration_info()
+            self.calibrations.start(event_id, datetime.now(timezone.utc))
+            self.detector.start_calibration(time.monotonic(), delay_seconds, duration_seconds)
+            info = self.calibration_info()
+            self.state.set_calibration(CaseId.CSI_ROUTER, info)
             return info
 
-    def calibration_info(self, case_id: str) -> CalibrationInfo:
-        detector = self.detectors[case_id]
+    def calibration_info(self) -> CalibrationInfo:
+        detector = self.detector
         progress, seconds_remaining = detector.calibration_progress(time.monotonic())
-        self.calibrations.check_completion(case_id, detector, datetime.now(timezone.utc))
+        self.calibrations.check_completion(detector, datetime.now(timezone.utc))
         return CalibrationInfo(
             state=detector.state.value,
             message=detector.message,
@@ -121,8 +116,8 @@ class TelemetryService:
             seconds_remaining=round(seconds_remaining, 1),
         )
 
-    def _build_features(self, case_id: str, movement: float | None, shape: float | None, ratio: float) -> FeatureMetrics:
-        detector = self.detectors[case_id]
+    def _build_features(self, movement: float | None, shape: float | None, ratio: float) -> FeatureMetrics:
+        detector = self.detector
         return FeatureMetrics(
             movement_index=movement,
             movement_threshold=detector.movement_threshold,
@@ -133,8 +128,7 @@ class TelemetryService:
 
     def _refresh_calibration(self) -> None:
         """La cuenta regresiva avanza aunque no lleguen paquetes."""
-        for case_id in self.detectors:
-            self.state.set_calibration(case_id, self.calibration_info(case_id))
+        self.state.set_calibration(CaseId.CSI_ROUTER, self.calibration_info())
 
     async def _broadcast_updates(self) -> None:
         while not await self._wait_for_shutdown(0.12):

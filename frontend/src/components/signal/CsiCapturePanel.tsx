@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { CsiHeatmaps } from '../charts/CsiHeatmaps';
 import { useApiQuery } from '../../hooks/useApiQuery';
 import { api } from '../../services/api';
@@ -6,9 +6,10 @@ import { CSI_ACTIVITIES, type CsiActivity, type CsiHeatmap } from '../../types/c
 
 const PREVIEW_INTERVAL_MS = 1000;
 
-export const CsiCapturePanel = memo(function CsiCapturePanel({ environment, connected }: {
+export const CsiCapturePanel = memo(function CsiCapturePanel({ environment, connected, children }: {
   environment: string;
   connected: boolean;
+  children?: ReactNode;
 }) {
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState('');
@@ -88,7 +89,7 @@ export const CsiCapturePanel = memo(function CsiCapturePanel({ environment, conn
 
   return (
     <section className="csi-capture-panel">
-      <h3>Amplitud por subportadora</h3>
+      {!children && <h3>Amplitud por subportadora</h3>}
       <p>El mapa de la actividad en curso se actualiza en vivo. Los otros muestran la última captura del ambiente.</p>
       {active && <p role="status">Grabando {CSI_ACTIVITIES[active.activity]} en {active.environment}. La captura finaliza a los 5 minutos si no la detenés antes.</p>}
       {!active && !environment && <p className="muted">Ingresá el ambiente para comparar o registrar capturas.</p>}
@@ -116,7 +117,7 @@ export const CsiCapturePanel = memo(function CsiCapturePanel({ environment, conn
             {label}
           </button>
         );
-      }} />
+      }}>{children}</CsiHeatmaps>
     </section>
   );
 });

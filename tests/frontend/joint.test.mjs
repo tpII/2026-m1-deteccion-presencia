@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { act, createElement, App, FakeSocket, mount, json, inputValue, deferred } from './reactHarness.mjs';
+import { act, createElement, App, FakeSocket, mount, unmount, json, inputValue, deferred } from './reactHarness.mjs';
 
 test('la prueba conjunta muestra ambas fuentes sin crear una decisión combinada y calibra el caso router', async () => {
   window.history.replaceState(null, '', '/case/combined');
@@ -13,16 +13,22 @@ test('la prueba conjunta muestra ambas fuentes sin crear una decisión combinada
   const socket = FakeSocket.instances.at(-1);
   const pirPanel = document.querySelector('[aria-label="PIR en la prueba conjunta"]');
   const csiPanel = document.querySelector('[aria-label="CSI en la prueba conjunta"]');
+  const calibrationPanel = document.querySelector('[aria-label="Calibración CSI de la prueba conjunta"]');
+  const environmentInput = document.querySelector('.joint-preparation-controls .trial-environment input');
+  assert.ok(environmentInput);
+  assert.equal(calibrationPanel.contains(environmentInput), false);
+  assert.equal(environmentInput.required, false);
   const message = {
     type: 'telemetry_batch',
     data: {
       statuses: [
-        { case_id: 'pir', is_connected: true, can_record_trial: true, sample_key: 'a'.repeat(32), presence: false, total_samples: 20, current_latency_ms: 0 },
-        { case_id: 'csi_router', is_connected: true, can_record_trial: true, sample_key: 'b'.repeat(32), presence: true, total_samples: 90, current_latency_ms: 0 },
+        { case_id: 'pir', is_connected: true, can_record_trial: true, presence: false, total_samples: 20, current_latency_ms: 0 },
+        { case_id: 'csi_router', is_connected: true, can_record_trial: true, presence: true, total_samples: 90, current_latency_ms: 0 },
       ],
       cases: {
         pir: { raw_points: [{ timestamp: 1000, value: 0 }] },
         csi_router: {
+          raw_points: [{ timestamp: 1000, value: 20 }],
           movement_points: [{ timestamp: 1000, value: 0.1 }],
           shape_points: [{ timestamp: 1000, value: 0.2 }],
           features: { movement_threshold: 0.01, shape_threshold: 0.05 },
@@ -37,13 +43,29 @@ test('la prueba conjunta muestra ambas fuentes sin crear una decisión combinada
   assert.match(pirPanel.textContent, /20/);
   assert.match(csiPanel.textContent, /PRESENCIA/);
   assert.match(csiPanel.textContent, /90/);
-  assert.equal(document.querySelectorAll('[_echarts_instance_] svg').length, 3);
-  const button = [...csiPanel.querySelectorAll('button')].find((item) => item.textContent.includes('Recalibrar'));
-  await act(async () => inputValue(document.querySelector('.trial-environment input'), 'Casa A'));
+  assert.equal(pirPanel.querySelectorAll('[_echarts_instance_] svg').length, 1);
+  assert.equal(csiPanel.querySelectorAll('.joint-csi-indicators [_echarts_instance_] svg').length, 2);
+  assert.match(csiPanel.textContent, /Movimiento del canal.*Forma del canal/);
+  const subcarriers = document.querySelector('#mapas-csi');
+  assert.equal(document.querySelector('#senales-en-vivo').nextElementSibling, subcarriers);
+  assert.match(subcarriers.querySelector('.csi-heatmaps > .joint-mean-amplitude svg').textContent, /Amplitud media/);
+  assert.equal(subcarriers.querySelectorAll('.csi-heatmap').length, 3);
+  assert.deepEqual([...document.querySelectorAll('.joint-chart-links a')].map((link) => link.hash),
+    ['#senales-en-vivo', '#mapas-csi']);
+  const button = calibrationPanel.querySelector('button');
+  assert.match(button.textContent, /Recalibrar/);
+  await act(async () => inputValue(environmentInput, 'Casa A'));
   await act(async () => button.click());
   assert.deepEqual(posts, ['http://localhost:8000/api/v1/csi/csi_router/calibration']);
 
-  // A fresh PIR result and CSI calibration update are reflected independently.
+  message.data.cases.csi_router.calibration.state = 'calibrando';
+  await act(async () => socket.receive(message));
+  assert.equal(csiPanel.querySelector('fieldset'), null);
+  assert.equal(pirPanel.querySelector('fieldset').disabled, false);
+  message.data.cases.csi_router.calibration.state = 'calibrado';
+  await act(async () => socket.receive(message));
+  assert.equal(csiPanel.querySelector('fieldset').disabled, false);
+
   message.data.statuses[0].presence = true;
   message.data.cases.csi_router.calibration.state = 'sin_calibrar';
   await act(async () => socket.receive(message));
@@ -55,7 +77,7 @@ test('la prueba conjunta muestra ambas fuentes sin crear una decisión combinada
   assert.match(document.body.textContent, /0 de 2 sensores en línea/);
   assert.match(pirPanel.textContent, /SIN LECTURA/);
   assert.match(csiPanel.textContent, /SIN LECTURA/);
-  assert.equal([...csiPanel.querySelectorAll('button')][0].disabled, true);
+  assert.equal(calibrationPanel.querySelector('button').disabled, true);
 });
 
 test('la prueba conjunta funciona con una sola fuente y no habilita calibración sin CSI', async () => {
@@ -73,7 +95,8 @@ test('la prueba conjunta funciona con una sola fuente y no habilita calibración
   assert.match(document.body.textContent, /1 de 2 sensores en línea/);
   const csiPanel = document.querySelector('[aria-label="CSI en la prueba conjunta"]');
   assert.match(csiPanel.textContent, /SIN LECTURA/);
-  assert.equal(csiPanel.querySelector('button').disabled, true);
+  assert.match(document.querySelector('#mapas-csi .joint-mean-amplitude svg').textContent, /Amplitud media/);
+  assert.equal(document.querySelector('.joint-preparation .calibration-panel button').disabled, true);
 });
 
 test('la prueba conjunta usa un ambiente compartido y guarda la observación del método elegido', async () => {
@@ -92,7 +115,7 @@ test('la prueba conjunta usa un ambiente compartido y guarda la observación del
   const message = { type: 'telemetry_batch', data: {
       statuses: [
         { case_id: 'pir', is_connected: true, can_record_trial: false },
-        { case_id: 'csi_router', is_connected: true, can_record_trial: true, sample_key: 'c'.repeat(32) },
+        { case_id: 'csi_router', is_connected: true, can_record_trial: true },
       ],
       cases: { csi_router: { calibration: { state: 'calibrado', progress: 1 } } },
     } };
@@ -110,10 +133,11 @@ test('la prueba conjunta usa un ambiente compartido y guarda la observación del
   assert.equal(csi.disabled, false);
   const nearRouter = [...csi.querySelectorAll('button')].find((button) => button.textContent.includes('router Wi-Fi'));
   await act(async () => nearRouter.click());
-  message.data.statuses[1].sample_key = 'd'.repeat(32);
+  message.data.statuses[1].presence = true;
   await act(async () => socket.receive(message));
   const left = [...csi.querySelectorAll('button')].find((button) => button.textContent.includes('izquierda'));
   await act(async () => left.click());
+  await act(async () => pir.querySelector('button').click());
   assert.deepEqual(requests.map(({ url, body: { observed_at: observedAt, ...body } }) => {
     assert.match(observedAt, /\.\d{3}Z$/);
     assert.ok(url.endsWith('/observations'));
@@ -121,21 +145,37 @@ test('la prueba conjunta usa un ambiente compartido y guarda la observación del
   }), [
     { case_id: 'csi_router', scenario: 'near_router', environment: 'Casa B' },
     { case_id: 'csi_router', scenario: 'left_of_pir', environment: 'Casa B' },
+    { case_id: 'pir', scenario: 'present', environment: 'Casa B' },
   ]);
   await act(async () => firstSave.resolve(json({ id: 11, is_correct: false, ground_truth: true })));
-  assert.match(document.querySelector('.form-notice').textContent, /Marca #12 guardada.*izquierda/);
+  assert.match(csi.closest('.live-trial').querySelector('.form-notice').textContent, /Marca #12 guardada.*izquierda/);
 });
 
-test('el registro y la comparación solo ofrecen PIR y CSI router aunque exista historial dedicado', async () => {
-  window.history.replaceState(null, '', '/system');
-  globalThis.fetch = async (url) => url.endsWith('/comparison') ? json({
-    metrics: [{ case_id: 'csi_dedicated', total_tests: 5, detection_rate: 90 }],
-    table: [{ metric: 'Exactitud', unit: '%', pir: 'Sin ensayos', csi_router: 'Sin ensayos', csi_dedicated: '90 %' }],
-  }) : json({ data_source: 'mqtt' });
-  await mount(createElement(App));
-  assert.deepEqual([...document.querySelectorAll('select')[0].options].map((item) => item.value), ['pir', 'csi_router']);
-  await act(async () => document.querySelector('nav a[href="/comparison"]').click());
-  assert.doesNotMatch(document.body.textContent, /CSI Dedicado|90 %/);
-  assert.match(document.body.textContent, /Sin ensayos registrados para comparar/);
-  assert.equal(document.querySelectorAll('thead th').length, 4);
+test('los casos guardan ambientes independientes al cambiar de pantalla', async () => {
+  globalThis.fetch = async (url) => {
+    if (url.endsWith('/trials')) return json([]);
+    if (url.includes('/csi/captures')) return json({ heatmaps: [], active_capture: null });
+    return json({ total_tests: 0 });
+  };
+  const cases = [
+    ['/case/pir', 'Ambiente PIR'],
+    ['/case/csi_router', 'Ambiente CSI'],
+    ['/case/combined', 'Ambiente conjunto'],
+  ];
+
+  for (const [path, environment] of cases) {
+    window.history.replaceState(null, '', path);
+    await mount(createElement(App));
+    const input = document.querySelector('.trial-environment input');
+    assert.equal(input.value, '');
+    await act(async () => inputValue(input, environment));
+    await unmount();
+  }
+
+  for (const [path, environment] of cases) {
+    window.history.replaceState(null, '', path);
+    await mount(createElement(App));
+    assert.equal(document.querySelector('.trial-environment input').value, environment);
+    await unmount();
+  }
 });

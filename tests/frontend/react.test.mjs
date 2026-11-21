@@ -1,9 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
-  act, createElement, mount, unmount, root, deferred, json, inputValue,
-  useApiQuery, TrialForm, TelemetryProvider, useTelemetry, FakeSocket,
-  ThemeProvider, ComparisonBarChart,
+  act, createElement, mount, unmount, root, deferred,
+  useApiQuery, TelemetryProvider, useTelemetry, FakeSocket,
 } from './reactHarness.mjs';
 
 test('una consulta cancelada no reemplaza los datos del caso nuevo', async () => {
@@ -39,40 +38,6 @@ test('una consulta fallida permite actualizar y recuperarse', async () => {
   assert.equal(query.data, 'recuperado');
 });
 
-test('el formulario valida latencia y bloquea envíos duplicados mientras guarda', async () => {
-  const result = deferred();
-  const requests = [];
-  globalThis.fetch = (url, options) => { requests.push({ url, options }); return result.promise; };
-  await mount(createElement(TrialForm));
-  const form = document.querySelector('form');
-  await act(async () => form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true })));
-  assert.equal(requests.length, 0);
-  assert.match(document.querySelector('[role="alert"]').textContent, /latencia válida/);
-  await act(async () => inputValue(document.querySelector('input[type="number"]'), '123.5'));
-  await act(async () => inputValue(document.querySelector('input[required]:not([type])'), 'Casa A'));
-  await act(async () => {
-    form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
-    form.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
-  });
-  assert.equal(requests.length, 1);
-  assert.equal(JSON.parse(requests[0].options.body).latency_ms, 123.5);
-  assert.equal(JSON.parse(requests[0].options.body).environment, 'Casa A');
-  assert.equal(document.querySelector('button').disabled, true);
-  await act(async () => result.resolve(json({ id: 1 })));
-  assert.match(document.querySelector('[role="status"]').textContent, /registrado para PIR/);
-  assert.equal(document.querySelector('button').disabled, false);
-});
-
-test('el formulario muestra el error HTTP y permite reintentar', async () => {
-  globalThis.fetch = async () => new Response('', { status: 503 });
-  await mount(createElement(TrialForm));
-  await act(async () => inputValue(document.querySelector('input[type="number"]'), '10'));
-  await act(async () => inputValue(document.querySelector('input[required]:not([type])'), 'Casa A'));
-  await act(async () => document.querySelector('form').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true })));
-  assert.match(document.querySelector('[role="alert"]').textContent, /503/);
-  assert.equal(document.querySelector('button').disabled, false);
-});
-
 test('la telemetría comparte la conexión y marca el sensor desconectado si cae el canal', async () => {
   function Sensor() {
     const { getCaseStatus } = useTelemetry();
@@ -88,15 +53,4 @@ test('la telemetría comparte la conexión y marca el sensor desconectado si cae
   assert.equal(document.body.textContent, 'truetrue');
   await act(async () => socket.close());
   assert.equal(document.body.textContent, 'falsefalse');
-});
-
-test('el gráfico etiqueta el método que realmente tiene ensayos', async () => {
-  await mount(createElement(ThemeProvider, null, createElement(ComparisonBarChart, {
-    metrics: [{ case_id: 'csi_router', detection_rate: 73 }],
-    metricKey: 'detection_rate', title: 'Tasa de detección', unit: '%',
-  })));
-  assert.ok(document.querySelector('svg'));
-  assert.match(document.body.textContent, /CSI Router/);
-  assert.doesNotMatch(document.body.textContent, /PIR/);
-  assert.match(document.body.textContent, /73 %/);
 });

@@ -70,21 +70,17 @@ class TelemetryState:
         presence: bool,
         latency_ms: float,
         features: FeatureMetrics | None = None,
-        *,
-        sample_key: str | None = None,
     ) -> None:
         status = self._statuses[case_id]
         status.presence = presence
         status.current_latency_ms = round(latency_ms, 1)
         status.last_updated = datetime.now(timezone.utc).isoformat()
-        status.sample_key = sample_key
         status.total_samples += 1
         self._fresh_cases.add(case_id)
         calibration = self._calibration.get(case_id)
         if calibration and calibration.state == "calibrado":
             self._calibrated_samples.add(case_id)
         status.is_connected = True
-        status.target_type = "person_active" if presence else "empty"
         if features is not None:
             self._features[case_id] = features
 
@@ -115,7 +111,6 @@ class TelemetryState:
             shape_points=list(self._shape[case_id])[-INDICATOR_DISPLAY_POINTS:] if case_id in self._shape else None,
             features=features,
             calibration=self._calibration.get(case_id),
-            target_type=status.target_type or "empty",
         )
 
     def get_message(self, message_type: Literal["initial_state", "telemetry_batch"]) -> dict:

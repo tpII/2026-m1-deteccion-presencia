@@ -4,30 +4,27 @@ import { chartColors, formatSignalTime } from '../../services/charts';
 import { SignalPoint } from '../../types/telemetry';
 import { useTheme } from '../../context/ThemeContext';
 
-interface SignalChartProps {
-  rawPoints: SignalPoint[];
+interface CsiRawSignalChartProps {
   title?: string;
-  height?: string | number;
-  yAxisName?: string;
+  points?: SignalPoint[];
+  height?: number | string;
 }
 
-export function SignalChart({
-  rawPoints,
-  title,
-  height = 280,
-  yAxisName = 'Amplitud (dB)',
-}: SignalChartProps) {
+export function CsiRawSignalChart({ title, points, height = 240 }: CsiRawSignalChartProps) {
   const { isDark } = useTheme();
 
+  if (!title && !points?.length) return <p className="muted">Esperando muestras de CSI.</p>;
   const { titleColor, textColor, axisLineColor, splitLineColor, tooltipBg, tooltipBorder, tooltipText } = chartColors(isDark);
+  const rawPoints = points?.slice(-30) ?? [];
   const rawData = rawPoints.map((point) => [formatSignalTime(point.timestamp), point.value]);
 
   const option: EChartsOption = {
-    series: rawPoints.length ? [{
-      name: 'Señal Cruda',
+    title: title ? { text: title, left: 10, top: 5, textStyle: { fontSize: 12, fontWeight: 500, color: titleColor } } : undefined,
+    series: [{
+      name: title ?? 'Señal Cruda',
       type: 'line',
       data: rawData,
-      showSymbol: false,
+      showSymbol: rawPoints.length === 1,
       smooth: false,
       lineStyle: {
         width: 1.2,
@@ -36,19 +33,7 @@ export function SignalChart({
       itemStyle: {
         color: isDark ? '#38bdf8' : '#0ea5e9',
       },
-    }] : [],
-    title: title
-      ? {
-          text: title,
-          textStyle: {
-            fontSize: 12,
-            fontWeight: 500,
-            color: titleColor,
-          },
-          left: 10,
-          top: 5,
-        }
-      : undefined,
+    }],
     tooltip: {
       trigger: 'axis',
       backgroundColor: tooltipBg,
@@ -58,7 +43,7 @@ export function SignalChart({
         fontSize: 12,
       },
     },
-    legend: {
+    legend: title ? undefined : {
       right: 15,
       top: 5,
       textStyle: {
@@ -70,7 +55,7 @@ export function SignalChart({
       left: '3%',
       right: '4%',
       bottom: '3%',
-      top: title ? '18%' : '14%',
+      top: title ? 40 : '14%',
       containLabel: true,
     },
     xAxis: {
@@ -85,7 +70,7 @@ export function SignalChart({
     },
     yAxis: {
       type: 'value',
-      name: yAxisName,
+      name: '|H|',
       nameTextStyle: {
         color: textColor,
         fontSize: 10,

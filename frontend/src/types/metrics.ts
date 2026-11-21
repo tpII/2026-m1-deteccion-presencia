@@ -33,27 +33,3 @@ export interface Trial {
   sample_received_at?: string | null;
   telemetry_id?: number | null;
 }
-
-export interface ComparisonTableEntry {
-  metric: string;
-  unit: string;
-  pir: string | number;
-  csi_router: string | number;
-  csi_dedicated: string | number;
-}
-
-export interface SystemComparison {
-  metrics: CaseMetrics[];
-  table: ComparisonTableEntry[];
-  last_updated: string;
-}
-
-export interface TrialInput {
-  case_id: CaseId;
-  ground_truth: boolean;
-  detected_presence: boolean;
-  latency_ms: number;
-  score?: number;
-  notes?: string;
-  environment?: string;
-}

@@ -12,7 +12,6 @@ SampleHandler = Callable[[str, TelemetrySample | CsiRawSample], Awaitable[None]]
 TOPIC_SCHEMAS = {
     SystemTopics.PIR_TELEMETRY: (CaseId.PIR, TelemetrySample),
     SystemTopics.CSI_ROUTER_RAW: (CaseId.CSI_ROUTER, CsiRawSample),
-    SystemTopics.CSI_DEDICATED_RAW: (CaseId.CSI_DEDICATED, CsiRawSample),
 }
 STATUS_TOPICS = {
     SystemTopics.PIR_STATUS: CaseId.PIR,

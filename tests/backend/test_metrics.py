@@ -2,10 +2,41 @@
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from app.database import init_db
+from app.database import get_db_connection, init_db
 from app.main import app
 from app.repositories.metrics_repository import metrics_repo
 from app.constants import CaseId
+
+
+async def test_migration_preserves_old_trials_and_usb_readings():
+    async with get_db_connection() as db:
+        await db.execute("""
+            CREATE TABLE trials (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, case_id TEXT, timestamp TEXT,
+                ground_truth INTEGER, detected_presence INTEGER, is_correct INTEGER,
+                latency_ms REAL, score REAL, notes TEXT
+            )
+        """)
+        await db.execute("INSERT INTO trials VALUES (1, 'pir', '2026-01-01', 1, 1, 1, 90, NULL, 'Anterior')")
+        await db.execute("INSERT INTO trials VALUES (2, 'csi_dedicated', '2026-01-01', 1, 1, 1, 90, NULL, 'Histórico')")
+        await db.execute("""
+            CREATE TABLE pir_usb_readings (id INTEGER PRIMARY KEY, received_at TEXT, motion INTEGER)
+        """)
+        await db.execute("INSERT INTO pir_usb_readings VALUES (1, '2026-01-01T12:00:00+00:00', 1)")
+        await db.commit()
+    await init_db()
+    await init_db()
+    [trial] = await metrics_repo.get_trials_by_case("pir")
+    assert trial.notes == "Anterior"
+    assert trial.environment is None
+    assert trial.scenario is None
+    comparison = await metrics_repo.get_system_comparison()
+    assert {metric.case_id for metric in comparison.metrics} == {"pir", "csi_router"}
+    async with get_db_connection() as db:
+        async with db.execute("SELECT motion FROM pir_usb_readings WHERE id = 1") as cursor:
+            assert (await cursor.fetchone())["motion"] == 1
+        async with db.execute("SELECT case_id FROM trials WHERE id = 2") as cursor:
+            assert (await cursor.fetchone())["case_id"] == "csi_dedicated"
 
 
 @pytest.mark.parametrize("observed, detected", [(True, False), (False, True)])
@@ -90,4 +121,3 @@ async def test_trial_api_updates_history_metrics_and_comparison():
         by_case = {row["case_id"]: row for row in comparison.json()["metrics"]}
         assert by_case["pir"]["total_tests"] == 2
         assert by_case["csi_router"]["total_tests"] == 0
-        assert by_case["csi_dedicated"]["total_tests"] == 0

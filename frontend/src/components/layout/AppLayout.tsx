@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
+import { ScreenErrorBoundary } from '../ui/ScreenErrorBoundary';
 
 export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -31,7 +32,9 @@ export function AppLayout() {
         <Sidebar menuOpen={menuOpen} onNavigate={() => setMenuOpen(false)} />
         <main className="app-main">
           <div className="app-content">
-            <Outlet />
+            <ScreenErrorBoundary key={pathname}>
+              <Outlet />
+            </ScreenErrorBoundary>
           </div>
         </main>
       </div>

@@ -6,7 +6,7 @@ mode="${1:-mqtt}"
 if [[ "$mode" == "--help" || "$mode" == "-h" ]]; then
   echo "Uso: ./start.sh [mqtt]"
   echo "Instala lo que falte y levanta broker, backend y web. Ctrl+C detiene sus procesos."
-  echo "macOS: Homebrew. Linux: apt para herramientas y Node oficial local."
+  echo "En macOS instala las herramientas faltantes con Homebrew."
   echo "La primera instalacion necesita Internet y puede pedir permisos de administrador."
   echo "Las placas se configuran y programan por separado; no se generan lecturas ficticias."
   exit 0
@@ -51,6 +51,8 @@ for port in 8000 5173; do
 done
 
 prepare_dependencies
+setup_step 'Compilando la web para la sesión'
+(cd frontend && npm run build -- --outDir ../.runtime/frontend --emptyOutDir)
 
 export DATA_SOURCE=mqtt
 read -r broker_host broker_port < <(cd backend && .venv/bin/python -c 'from app.config import settings; print(settings.MQTT_HOST, settings.MQTT_PORT)')
@@ -61,11 +63,7 @@ if ! port_is_open "$broker_host" "$broker_port"; then
   fi
   if ! command -v mosquitto >/dev/null 2>&1; then
     setup_step 'Instalando Mosquitto'
-    if [[ "$(uname -s)" == Darwin ]]; then
-      install_system_packages mosquitto
-    else
-      install_system_packages mosquitto mosquitto-clients
-    fi
+    install_brew_packages mosquitto
     setup_path
   fi
   if port_is_open "$broker_host" "$broker_port"; then
@@ -90,7 +88,7 @@ else
   echo "Reutilizando broker en $broker_host:$broker_port. No se detendra al salir."
 fi
 
-(cd backend && exec .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload) &
+(cd backend && exec .venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000) &
 pids+=("$!")
 backend_ready=false
 for attempt in {1..20}; do
@@ -114,7 +112,7 @@ else:
 PYTHON
 )
 
-(cd frontend && exec node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5173 --strictPort) &
+(cd frontend && exec node node_modules/vite/bin/vite.js preview --outDir ../.runtime/frontend --host 127.0.0.1 --port 5173 --strictPort) &
 pids+=("$!")
 frontend_ready=false
 for attempt in {1..20}; do
@@ -130,8 +128,6 @@ echo "Ctrl+C detiene los procesos iniciados por este script."
 if [[ "${PRESENCE_OPEN_BROWSER:-1}" != 0 ]]; then
   if command -v open >/dev/null 2>&1 && [[ "$(uname -s)" == Darwin ]]; then
     open http://localhost:5173 >/dev/null 2>&1 || true
-  elif command -v xdg-open >/dev/null 2>&1; then
-    xdg-open http://localhost:5173 >/dev/null 2>&1 || true
   fi
 fi
 while true; do

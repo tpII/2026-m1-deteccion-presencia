@@ -1,6 +1,6 @@
 import { ENV } from '../config/env';
-import type { CalibrationInfo, CaseId } from '../types/telemetry';
-import type { CaseMetrics, LiveTrialCase, SystemComparison, Trial, TrialInput } from '../types/metrics';
+import type { CalibrationInfo, CaseId, StoredSamplePage } from '../types/telemetry';
+import type { CaseMetrics, LiveTrialCase, Trial } from '../types/metrics';
 import type { HealthStatus } from '../types/health';
 import type { CsiActivity, CsiCapture, CsiCaptureComparison, CsiCapturePreview } from '../types/csiCapture';
 import type { Observation, ObservationInput, ObservationReport } from '../types/observations';
@@ -27,13 +27,20 @@ export const api = {
     request<CaseMetrics>(`/metrics/${caseId}`, { signal }),
   getCaseTrials: (caseId: CaseId, signal?: AbortSignal) =>
     request<Trial[]>(`/metrics/${caseId}/trials`, { signal }),
-  getSystemComparison: (signal?: AbortSignal) => request<SystemComparison>('/metrics/comparison', { signal }),
-  recordTrial: (trial: TrialInput) => post<Trial>('/metrics/trial', trial),
+  getStoredSamples: async (day: string, caseId: CaseId | '', before: number | null, signal: AbortSignal) => {
+    const start = new Date(`${day}T00:00:00`);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    const query = new URLSearchParams({ start: start.toISOString(), end: end.toISOString() });
+    if (caseId) query.set('case_id', caseId);
+    if (before !== null) query.set('before', String(before));
+    return request<StoredSamplePage>(`/telemetry/history?${query}`, { signal });
+  },
   recordObservation: (observation: ObservationInput) => post<Observation>('/observations', observation),
   getObservationReport: (caseId: LiveTrialCase, environment: string, signal?: AbortSignal) =>
     request<ObservationReport>(`/observations/${caseId}?environment=${encodeURIComponent(environment)}`, { signal }),
-  startCsiCalibration: (caseId: Exclude<CaseId, 'pir'>, environment: string) =>
-    post<CalibrationInfo>(`/csi/${caseId}/calibration`, { environment }),
+  startCsiCalibration: (environment: string) =>
+    post<CalibrationInfo>('/csi/csi_router/calibration', { environment }),
   getCsiCaptures: (environment: string, signal?: AbortSignal) => {
     const query = environment ? `?environment=${encodeURIComponent(environment)}` : '';
     return request<CsiCaptureComparison>(`/csi/captures${query}`, { signal });

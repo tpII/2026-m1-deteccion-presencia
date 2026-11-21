@@ -6,6 +6,7 @@
 }
 
 .csi-heatmaps {
+  --csi-heatmap-height: 270px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
@@ -33,7 +34,7 @@
   display: grid;
   align-items: center;
   min-width: 0;
-  min-height: 270px;
+  min-height: var(--csi-heatmap-height);
 }
 
 .csi-heatmap-scale {
@@ -51,8 +52,38 @@
   border-radius: var(--radius-full);
 }
 
+.joint-subcarriers .csi-capture-panel {
+  padding-top: 0.2rem;
+  border: 0;
+  gap: 0.4rem;
+}
+
+.joint-subcarriers .csi-heatmaps {
+  --csi-heatmap-height: 146px;
+  grid-template-columns: repeat(auto-fit, minmax(min(12.5rem, 100%), 1fr));
+  gap: 0.5rem;
+}
+
+.joint-subcarriers .csi-heatmap, .joint-mean-amplitude {
+  min-width: 0;
+  padding: 0.4rem;
+  border: 1px solid var(--glass-border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.joint-mean-amplitude {
+  display: grid;
+  align-items: center;
+  border-color: var(--glass-border);
+  background: var(--surface-subtle);
+}
+
 @media (max-width: 1000px) {
   .csi-heatmaps {
     grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
   }
+}
+
+@media (max-width: 580px) {
+  .joint-subcarriers .csi-heatmaps { --csi-heatmap-height: 175px; }
 }

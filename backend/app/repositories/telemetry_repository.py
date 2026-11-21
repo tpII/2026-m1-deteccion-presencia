@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 import json
 from math import ceil
 from time import monotonic
-from uuid import uuid4
 
 from app.constants import TELEMETRY_FLUSH_INTERVAL_SECONDS
 from app.database import get_db_connection
@@ -43,8 +42,7 @@ class TelemetryRepository:
         received_at: str | None = None,
         run_id: str | None = None,
         calibration_id: int | None = None,
-    ) -> str:
-        sample_key = uuid4().hex
+    ) -> None:
         values = (
             case_id,
             received_at or datetime.now(timezone.utc).isoformat(timespec="microseconds"),
@@ -58,12 +56,10 @@ class TelemetryRepository:
             json.dumps(sample.amplitudes, separators=(",", ":")) if isinstance(sample, CsiRawSample) else None,
             features.model_dump_json() if features else None,
             calibration_state,
-            sample_key,
             run_id,
             calibration_id,
         )
         self._pending.append(PendingSample(values, monotonic()))
-        return sample_key
 
     def enqueue_calibration(self, event_id, finished_at, outcome, profile, movement, shape, count):
         self._pending_calibrations.append((finished_at, outcome, profile, movement, shape, count, event_id))
@@ -86,8 +82,8 @@ class TelemetryRepository:
                         await db.executemany("""
                             INSERT INTO telemetry (case_id, timestamp, presence, raw_value, latency_ms, score,
                                            source, sample_timestamp, ground_truth, amplitudes_json,
-                                           features_json, calibration_state, sample_key, run_id, calibration_id)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                           features_json, calibration_state, run_id, calibration_id)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """, [sample.values for sample in batch])
                     await db.commit()
                     committed_at = monotonic()
@@ -118,15 +114,6 @@ class TelemetryRepository:
             "timed_batches": len(durations),
             "last_oldest_to_commit_ms": self._last_oldest_to_commit_ms,
         }
-
-    async def get_trial_sample(self, case_id: str, sample_key: str):
-        await self.flush()
-        async with get_db_connection() as db:
-            async with db.execute("""
-                SELECT id, timestamp, presence, latency_ms, calibration_state
-                FROM telemetry WHERE case_id = ? AND sample_key = ?
-            """, (case_id, sample_key)) as cursor:
-                return await cursor.fetchone()
 
     async def get_history(self, case_id: str, limit: int = 50) -> list[TelemetryHistoryRecord]:
         await self.flush()

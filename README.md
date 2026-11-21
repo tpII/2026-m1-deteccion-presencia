@@ -8,11 +8,11 @@ ESP32 → MQTT / Mosquitto → FastAPI
                             └── SQLite → REST de historial y métricas → React
 ```
 
-El firmware PIR de `firmware/pir/` publica por MQTT. `firmware/csi_router/` captura CSI del router y publica amplitudes por MQTT; la pantalla del Caso 2 permite calibrar el detector con la habitación vacía. El Caso 3 (`/case/combined`) muestra ambas fuentes con estados y gráficos separados, sin fusionar decisiones ni crear un tópico conjunto. Cada placa publica además su conexión en un tópico `estado_esp32`, con QoS 1 y retain; ver el [contrato MQTT](docs/mqtt-topics.md). `prueba_CSI/` conserva la captura por Serial y las herramientas de análisis y reproducción de grabaciones por MQTT.
+El firmware PIR de `firmware/pir/` publica por MQTT. `firmware/csi_router/` captura CSI del router y publica amplitudes por MQTT. El Caso 2 permite calibrar el detector con la habitación vacía. El Caso 3 (`/case/combined`) muestra ambas fuentes con estados y gráficos separados. Cada placa publica su estado de conexión en un tópico `estado_esp32` con QoS 1 y retain. `prueba_CSI/` conserva la captura por Serial y las herramientas de análisis y reproducción de grabaciones por MQTT.
 
 ## Iniciar con un comando
 
-Desde la raíz del repositorio:
+En macOS, desde la raíz del repositorio:
 
 ```bash
 ./start.sh
@@ -24,9 +24,11 @@ En Windows:
 .\start.bat
 ```
 
-El comando instala las herramientas faltantes que pueda gestionar el sistema, crea `.env` y el entorno Python, instala las dependencias y levanta Mosquitto, backend y frontend. Espera a que respondan y abre **http://localhost:5173**. **Ctrl+C** detiene sus procesos. Para macOS/Linux también sirve `bash start.sh` si falta permiso de ejecución.
+El comando instala las herramientas faltantes que pueda gestionar el sistema, crea `.env` y el entorno Python, instala las dependencias y levanta Mosquitto, backend y frontend. Espera a que respondan y abre **http://localhost:5173**. **Ctrl+C** detiene sus procesos. En macOS también sirve `bash start.sh` si falta permiso de ejecución.
 
-La primera vez necesita Internet y puede pedir permisos de administrador. En macOS usa Homebrew y puede instalarlo; en Linux con apt requiere Python 3.12+ disponible en la distribución; en Windows usa WinGet. Las instalaciones existentes y las dependencias que no cambiaron se reutilizan. Más detalles y solución de problemas en [arranque con un comando](docs/arranque.md).
+El arranque compila la web para la sesión y aplica los cambios de código en el próximo arranque. Para editar la web con recarga automática en una sesión de desarrollo, se puede usar `npm --prefix frontend run dev` con el puerto web libre.
+
+La primera vez necesita Internet y puede pedir permisos de administrador. En macOS usa Homebrew y en Windows usa WinGet. Las instalaciones existentes y las dependencias que no cambiaron se reutilizan. `start.bat` llama al script interno de PowerShell en `scripts/start-windows.ps1`.
 
 - Web: http://localhost:5173
 - API: http://localhost:8000/docs
@@ -38,7 +40,7 @@ La preparación del servidor no configura ni flashea los ESP32. Programá las pl
 
 | Carpeta | Para qué sirve |
 | --- | --- |
-| `scripts/setup.sh` | Detección e instalación de herramientas y dependencias para `start.sh`. |
+| `scripts/` | Implementación del arranque en Windows y preparación de dependencias para ambos sistemas. |
 | `backend/app/` | Recibir mensajes MQTT, procesarlos y servir la API. |
 | `backend/app/api/` | Direcciones HTTP y WebSocket que consulta la web. |
 | `backend/app/telemetry_state.py` | Estado en vivo y buffers de las señales. |
@@ -56,7 +58,6 @@ La preparación del servidor no configura ni flashea los ESP32. Programá las pl
 | `prueba_CSI/` | Captura por Serial, análisis y reproducción de grabaciones por MQTT. |
 | `mosquitto/` | Configuración del broker MQTT. |
 | `tests/` | Pruebas automáticas del backend, frontend y arranque. |
-| `docs/` | Guías técnicas e informes del trabajo en `informes/`. |
 
 `backend/.venv/` y `frontend/node_modules/` son dependencias instaladas automáticamente. No se editan ni se suben a Git. `frontend/dist/` se genera con `npm run build`.
 
@@ -69,7 +70,9 @@ La preparación del servidor no configura ni flashea los ESP32. Programá las pl
 - **Frontend:** usa `localhost:8000`; se puede cambiar con `VITE_API_URL` y `VITE_WS_URL` en `frontend/.env.local`.
 - **Mediciones:** SQLite, normalmente `backend/presence-hardware.db` al iniciar con `start.sh`. Una ruta relativa en `DATABASE_URL` se resuelve desde la carpeta en que se ejecuta el backend.
 
-La telemetría MQTT se guarda automáticamente. Los ensayos con presencia observada se registran por separado para PIR y CSI en **Sistema & Hardware** y alimentan **Comparación**. La pantalla de prueba PIR por USB se retiró; el monitor Serial de PlatformIO sigue disponible para diagnóstico. Los datos históricos USB y del antiguo caso dedicado se conservan en el backend y no se reinterpretan como resultados del caso conjunto.
+La telemetría MQTT se guarda automáticamente. En **Comparación** podés consultar las muestras de SQLite por día y sensor, según la hora local del navegador. Las marcas de presencia observada se registran en las vistas de PIR y CSI. Cada marca se aplica a las muestras siguientes hasta la próxima marca o el fin de la observación.
+
+Para las pruebas por USB, el monitor Serial de PlatformIO muestra las lecturas del PIR y `prueba_CSI/` permite capturar CSI por Serial. La web recibe las mediciones por MQTT. Las mediciones históricas permanecen en sus archivos SQLite.
 
 ## Compilar y cargar el PIR
 
@@ -100,16 +103,7 @@ Los tests usan bases temporales. La prueba física requiere conectar y programar
 
 ## Documentación
 
-- [Arranque completo con un comando e instalación automática](docs/arranque.md).
-- [Preparar y realizar el Caso 3 de PIR + CSI en conjunto](docs/prueba-conjunta.md).
-- [Guía completa para preparar y explicar el sistema en la muestra](docs/guia-completa-muestra.md).
-- [Pruebas con hardware, cableado, PlatformIO y solución de problemas](docs/pruebas.md).
-- [Arquitectura y recorrido del código](docs/architecture.md).
-- [Cómo leer y modificar el código, paso a paso](docs/recorrido-codigo.md).
-- [Qué comprueban las pruebas automáticas](docs/pruebas-automaticas.md).
-- [Tópicos y mensajes MQTT](docs/mqtt-topics.md).
-- [Detector y calibración CSI](docs/signal-processing.md).
-- [Datos y métricas](docs/data-model.md).
-- [Auditoría y limpieza del repositorio](docs/auditoria.md).
-- [Auditoría final y comprobaciones realizadas](docs/auditoria-final.md).
+- [Firmware PIR](firmware/pir/README.md).
+- [Firmware CSI con router](firmware/csi_router/README.md).
+- [Captura por Serial, análisis y reproducción de CSI](prueba_CSI/README.md).
 - [Bitácora del trabajo](BITACORA.md).

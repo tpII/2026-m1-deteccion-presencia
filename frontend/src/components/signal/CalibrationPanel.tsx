@@ -2,10 +2,9 @@ import { useState } from 'react';
 import { Crosshair } from 'lucide-react';
 import { StatusBadge } from '../ui/StatusBadge';
 import { api } from '../../services/api';
-import type { CalibrationInfo, CaseId } from '../../types/telemetry';
+import type { CalibrationInfo } from '../../types/telemetry';
 
 interface CalibrationPanelProps {
-  caseId: Exclude<CaseId, 'pir'>;
   calibration?: CalibrationInfo | null;
   connected: boolean;
   environment: string;
@@ -19,7 +18,7 @@ const STATE_LABELS = {
 } as const;
 
 /** Calibración en el lugar: registra la habitación vacía para fijar los umbrales del detector. */
-export function CalibrationPanel({ caseId, calibration, connected, environment }: CalibrationPanelProps) {
+export function CalibrationPanel({ calibration, connected, environment }: CalibrationPanelProps) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const state = calibration?.state ?? 'sin_calibrar';
@@ -30,7 +29,7 @@ export function CalibrationPanel({ caseId, calibration, connected, environment }
     setSending(true);
     setError(null);
     try {
-      await api.startCsiCalibration(caseId, environment);
+      await api.startCsiCalibration(environment);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'No se pudo iniciar la calibración');
     } finally {
@@ -46,8 +45,8 @@ export function CalibrationPanel({ caseId, calibration, connected, environment }
           variant={variant}
           pulsing={running}
         />
-        <button className="primary-button" onClick={start} disabled={sending || running || !connected || !environment}>
-          <Crosshair size={15} /> {state === 'calibrado' ? 'Recalibrar' : 'Calibrar'}
+        <button type="button" className="primary-button" onClick={start} disabled={sending || running || !connected || !environment}>
+          <Crosshair size={15} /> {state === 'calibrado' ? 'Recalibrar CSI' : 'Calibrar CSI'}
         </button>
       </div>
       <p className="calibration-message">

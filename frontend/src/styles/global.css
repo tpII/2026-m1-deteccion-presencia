@@ -8,6 +8,8 @@
 @import './pipeline.css';
 @import './layout.css';
 @import './responsive.css';
+@import './joint-case.css';
+@import './sample-history.css';
 
 *, *::before, *::after {
   box-sizing: border-box;

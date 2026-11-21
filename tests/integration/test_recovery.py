@@ -80,8 +80,9 @@ def test_burst_broker_reconnection_and_database_survive_restart(tmp_path):
                 samples = [("sensores/pir/presencia", {
                     "case_id": "pir", "presence": bool(index % 2), "raw_value": index % 2,
                 }) for index in range(120)]
-                for case, topic in [("csi_router", "sensores/csi/amplitudes"), ("csi_dedicated", "sensores/csi/dedicado/amplitudes")]:
-                    samples.extend((topic, {"case_id": case, "amplitudes": [20 + index % 5, 99]}) for index in range(30))
+                samples.extend(("sensores/csi/amplitudes", {
+                    "case_id": "csi_router", "amplitudes": [20 + index % 5, 99],
+                }) for index in range(30))
                 multiple([
                     {"topic": topic, "payload": json.dumps(sample), "qos": 1} for topic, sample in samples
                 ], hostname="127.0.0.1", port=broker_port)
@@ -90,12 +91,12 @@ def test_burst_broker_reconnection_and_database_survive_restart(tmp_path):
                     while time.monotonic() < deadline:
                         message = json.loads(client.recv(timeout=3))
                         counts = {status["case_id"]: status["total_samples"] for status in message["data"]["statuses"]}
-                        if counts == {"pir": 120, "csi_router": 30, "csi_dedicated": 30}:
+                        if counts == {"pir": 120, "csi_router": 30}:
                             break
                     else:
                         pytest.fail("Las muestras no llegaron a ambos clientes")
                     assert len(message["data"]["cases"]["pir"]["raw_points"]) == 100
-                for case, count in [("pir", 120), ("csi_router", 30), ("csi_dedicated", 30)]:
+                for case, count in [("pir", 120), ("csi_router", 30)]:
                     assert len(api.get(f"/telemetry/{case}/history?limit=500").json()) == count
                     assert api.get(f"/metrics/{case}").json()["total_tests"] == 0
 

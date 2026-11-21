@@ -6,7 +6,7 @@ setup_step() { echo "==> $*"; }
 
 setup_path() {
   # Homebrew puede haberse instalado sin estar en el PATH de esta terminal.
-  for directory in /opt/homebrew/bin /usr/local/bin /opt/homebrew/sbin /usr/local/sbin /opt/homebrew/opt/node@24/bin /usr/local/opt/node@24/bin "$PWD/.tools/node/bin"; do
+  for directory in /opt/homebrew/bin /usr/local/bin /opt/homebrew/sbin /usr/local/sbin /opt/homebrew/opt/node@24/bin /usr/local/opt/node@24/bin; do
     if [[ -d "$directory" ]]; then export PATH="$directory:$PATH"; fi
   done
 }
@@ -46,71 +46,23 @@ ensure_brew() {
   setup_path
 }
 
-install_system_packages() {
-  if [[ "$(uname -s)" == Darwin ]]; then
-    ensure_brew || return 1
-    brew install "$@"
-  elif command -v apt-get >/dev/null 2>&1; then
-    local privilege=()
-    if [[ "$(id -u)" != 0 ]]; then
-      command -v sudo >/dev/null 2>&1 || { setup_error 'La instalacion necesita sudo o permisos de administrador.'; return 1; }
-      privilege=(sudo)
-    fi
-    "${privilege[@]}" apt-get update || return 1
-    "${privilege[@]}" apt-get install -y "$@"
-  else
-    setup_error 'Instalacion automatica disponible en macOS y Linux con apt. Instala Python 3.12+, Node 20.19+ y Mosquitto con el gestor de tu sistema.'
-    return 1
-  fi
-}
-
-install_linux_node() {
-  # Node oficial en el proyecto, sin cambiar el Node del sistema.
-  local architecture archive checksum temporary
-  case "$(uname -m)" in
-    x86_64) architecture=x64 ;;
-    aarch64|arm64) architecture=arm64 ;;
-    *) setup_error 'Node automatico admite Linux x64 o arm64. Instala Node 20.19+ y npm.'; return 1 ;;
-  esac
-  command -v xz >/dev/null 2>&1 || install_system_packages xz-utils || return 1
-  temporary=$(mktemp -d "${TMPDIR:-/tmp}/presence-node.XXXXXX")
-  if ! curl -fsSL https://nodejs.org/dist/latest-v24.x/SHASUMS256.txt -o "$temporary/SHASUMS256.txt"; then
-    setup_error "No se pudo consultar Node.js; descarga temporal en $temporary. Revisa Internet."
-    return 1
-  fi
-  archive=$(awk -v architecture="$architecture" '$2 ~ ("^node-v24\\.[0-9]+\\.[0-9]+-linux-" architecture "\\.tar\\.xz$") { print $2; exit }' "$temporary/SHASUMS256.txt")
-  [[ -n "$archive" ]] || { setup_error 'No se encontro el paquete oficial de Node para esta arquitectura.'; return 1; }
-  setup_step 'Descargando Node.js 24 y npm desde nodejs.org'
-  curl -fsSL "https://nodejs.org/dist/latest-v24.x/$archive" -o "$temporary/$archive" || return 1
-  checksum=$(awk -v archive="$archive" '$2 == archive { print $1 }' "$temporary/SHASUMS256.txt")
-  printf '%s  %s\n' "$checksum" "$temporary/$archive" | sha256sum --check --status || { setup_error 'La descarga de Node no coincide con su SHA256.'; return 1; }
-  mkdir -p .tools/node
-  tar -xJf "$temporary/$archive" -C .tools/node --strip-components=1 || return 1
-  rm -f "$temporary/$archive" "$temporary/SHASUMS256.txt"
-  rmdir "$temporary"
-  setup_path
+install_brew_packages() {
+  ensure_brew || return 1
+  brew install "$@"
 }
 
 ensure_runtime_tools() {
   setup_path
   if ! find_python; then
     setup_step 'Instalando Python'
-    if [[ "$(uname -s)" == Darwin ]]; then
-      install_system_packages python@3.12 || return 1
-    else
-      install_system_packages python3 python3-venv python3-pip || return 1
-    fi
+    install_brew_packages python@3.12 || return 1
     setup_path
-    find_python || { setup_error 'La distribucion no ofrece Python 3.12+. Usa Ubuntu 24.04+, Debian 13+ o instala Python 3.12+ y repeti ./start.sh.'; return 1; }
+    find_python || { setup_error 'Python 3.12+ no esta disponible despues de instalar. Repeti ./start.sh.'; return 1; }
   fi
-  command -v curl >/dev/null 2>&1 || install_system_packages curl ca-certificates || return 1
+  command -v curl >/dev/null 2>&1 || { setup_error 'Falta curl en macOS.'; return 1; }
   if ! node_is_ready; then
-    if [[ "$(uname -s)" == Darwin ]]; then
-      install_system_packages node@24 || return 1
-      export PATH="$(brew --prefix node@24)/bin:$PATH"
-    else
-      install_linux_node || return 1
-    fi
+    install_brew_packages node@24 || return 1
+    export PATH="$(brew --prefix node@24)/bin:$PATH"
     node_is_ready || { setup_error 'No se pudo preparar Node y npm.'; return 1; }
   fi
 }
@@ -124,15 +76,10 @@ prepare_dependencies() {
       mv backend/.venv "$backup" || return 1
     fi
     setup_step 'Creando el entorno Python del backend'
-    if ! "$presence_python" -m venv backend/.venv; then
-      if [[ "$(uname -s)" == Linux ]]; then
-        install_system_packages python3-venv || return 1
-        "$presence_python" -m venv backend/.venv || return 1
-      else
-        setup_error 'No se pudo crear el entorno virtual de Python.'
-        return 1
-      fi
-    fi
+    "$presence_python" -m venv backend/.venv || {
+      setup_error 'No se pudo crear el entorno virtual de Python.'
+      return 1
+    }
   fi
   local requirements_hash packages_hash node_signature
   requirements_hash=$(backend/.venv/bin/python -c 'import hashlib; print(hashlib.sha256(open("backend/requirements.txt", "rb").read()).hexdigest())')

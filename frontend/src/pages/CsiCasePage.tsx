@@ -5,22 +5,22 @@ import { CsiCapturePanel } from '../components/signal/CsiCapturePanel';
 import { SignalProcessingPipeline } from '../components/signal/SignalProcessingPipeline';
 import { TrialEnvironmentPanel, useTrialEnvironment } from '../components/system/EnvironmentField';
 import { LiveTrialControls } from '../components/system/LiveTrialControls';
-import { CSI_CASES } from '../config/cases';
+import { CSI_CASE } from '../config/cases';
 import { useTelemetry } from '../hooks/useTelemetry';
 import { useCaseMetrics } from '../hooks/useCaseMetrics';
 
-export function CsiCasePage({ caseId }: { caseId: 'csi_router' }) {
+export function CsiCasePage() {
+  const caseId = 'csi_router';
   const { getCaseStatus, getCaseData } = useTelemetry();
   const { metrics, trials, loading, error } = useCaseMetrics(caseId);
-  const [environment, setEnvironment] = useTrialEnvironment();
+  const [environment, setEnvironment] = useTrialEnvironment(caseId);
   const data = getCaseData(caseId);
   const status = getCaseStatus(caseId);
-  const config = CSI_CASES[caseId];
   const features = data?.features;
 
   return (
     <CaseStudyLayout
-      {...config}
+      {...CSI_CASE}
       caseId={caseId}
       status={status}
       metrics={metrics}
@@ -30,7 +30,7 @@ export function CsiCasePage({ caseId }: { caseId: 'csi_router' }) {
       trialContent={<TrialEnvironmentPanel value={environment} onChange={setEnvironment} />}
       chartContent={
         <div className="signal-content">
-          <CalibrationPanel caseId={caseId} calibration={data?.calibration}
+          <CalibrationPanel calibration={data?.calibration}
             connected={status?.is_connected ?? false} environment={environment.trim()} />
           <LiveTrialControls caseId={caseId} status={status} calibration={data?.calibration}
             environment={environment} showReport />
@@ -47,7 +47,7 @@ export function CsiCasePage({ caseId }: { caseId: 'csi_router' }) {
             />
           </div>
           <div className="signal-details">
-            <span>Enlace: <strong>{config.details}</strong></span>
+            <span>Enlace: <strong>{CSI_CASE.details}</strong></span>
             <span>Ventana: <strong>4 s</strong></span>
             <span>Relación con el umbral: <strong>{features ? `${features.detection_ratio.toFixed(2)} (≥ 1 es presencia)` : 'Sin muestras'}</strong></span>
           </div>

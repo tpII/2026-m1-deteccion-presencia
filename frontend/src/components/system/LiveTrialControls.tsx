@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { SCENARIOS, SCENARIO_LABELS } from '../../config/trials';
 import { api } from '../../services/api';
 import type { LiveTrialCase, TrialScenario } from '../../types/metrics';
@@ -12,9 +12,13 @@ interface LiveTrialControlsProps {
   environment: string;
   calibration?: CalibrationInfo | null;
   showReport?: boolean;
+  showObservationHelp?: boolean;
+  children?: ReactNode;
 }
 
-export function LiveTrialControls({ caseId, status, environment, calibration, showReport = false }: LiveTrialControlsProps) {
+export function LiveTrialControls({
+  caseId, status, environment, calibration, showReport = false, showObservationHelp = true, children,
+}: LiveTrialControlsProps) {
   const [pendingCount, setPendingCount] = useState(0);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -54,10 +58,11 @@ export function LiveTrialControls({ caseId, status, environment, calibration, sh
         <SensorStateBadge kind={isPir ? 'pir' : 'csi'}
           status={canShowButtons && !hasReading ? undefined : status} calibration={calibration} />
       </div>
+      {children}
       {canShowButtons && (
         <fieldset className="live-trial-method" disabled={!hasEnvironment}>
           <legend>Presencia observada</legend>
-          <p>La marca se aplica a las muestras siguientes hasta que la cambies o termines la observación.</p>
+          {showObservationHelp && <p>La marca se aplica a las muestras siguientes hasta que la cambies o termines la observación.</p>}
           <div className="live-trial-buttons">
             {SCENARIOS[caseId].map((scenario) => (
               <button key={scenario} type="button" className="secondary-button"

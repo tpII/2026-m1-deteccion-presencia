@@ -51,7 +51,6 @@ def test_comparison_table_entry():
         unit="%",
         pir="97 %",
         csi_router="94 %",
-        csi_dedicated="91 %",
     )
     assert entry.metric == "Tasa de detección"
     assert entry.pir == "97 %"

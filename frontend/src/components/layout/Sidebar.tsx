@@ -5,7 +5,6 @@ import {
   Wifi,
   Share2,
   BarChart3,
-  Settings,
   Layers,
 } from 'lucide-react';
 
@@ -21,7 +20,6 @@ export function Sidebar({ menuOpen, onNavigate }: SidebarProps) {
     { to: '/case/csi_router', label: 'Caso 2 — CSI + Router', icon: <Wifi size={18} /> },
     { to: '/case/combined', label: 'Caso 3 — PIR + CSI', icon: <Share2 size={18} /> },
     { to: '/comparison', label: 'Comparación', icon: <BarChart3 size={18} /> },
-    { to: '/system', label: 'Sistema & Hardware', icon: <Settings size={18} /> },
   ];
 
   return (

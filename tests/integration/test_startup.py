@@ -76,7 +76,6 @@ def test_startup_mode_and_cleanup(args, tmp_path):
             samples = [
                 ("sensores/pir/presencia", {"case_id": "pir", "presence": True, "raw_value": 1}),
                 ("sensores/csi/amplitudes", {"case_id": "csi_router", "amplitudes": [23, 99]}),
-                ("sensores/csi/dedicado/amplitudes", {"case_id": "csi_dedicated", "amplitudes": [21, 99]}),
             ]
             with connect("ws://127.0.0.1:8000/ws/telemetry") as websocket:
                 assert json.loads(websocket.recv(timeout=2))["type"] == "initial_state"

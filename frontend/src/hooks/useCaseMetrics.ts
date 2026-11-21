@@ -11,6 +11,6 @@ export function useCaseMetrics(caseId: CaseId) {
     ]);
     return { metrics, trials };
   }, [caseId]);
-  const query = useApiQuery(load);
-  return { ...query, metrics: query.data?.metrics ?? null, trials: query.data?.trials ?? [] };
+  const { data, loading, error } = useApiQuery(load);
+  return { metrics: data?.metrics ?? null, trials: data?.trials ?? [], loading, error };
 }

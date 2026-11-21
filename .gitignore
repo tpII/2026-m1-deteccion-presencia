@@ -10,7 +10,6 @@ frontend/yarn-error.log*
 # Python / Backend
 backend/.venv/
 backend/.venv.backup-*/
-.tools/
 .runtime/
 __pycache__/
 *.py[cod]
@@ -31,7 +30,13 @@ backend/*.sqlite
 # Environment variables
 .env
 prueba_CSI/include/wifi_secrets.h
-firmware/**/.pio/
+.pio/
+
+# Capturas locales y salidas regenerables del análisis CSI
+/prueba_CSI/logs/
+/prueba_CSI/resultados/
+/prueba_CSI/analisis/resultados/
+/resultados/
 
 # IDE / OS
 .DS_Store
