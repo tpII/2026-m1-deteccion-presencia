@@ -161,10 +161,11 @@ Al repetir las pruebas del Caso 2 usando un iPhone como punto de acceso, la dete
 
 <img width="1107" height="498" alt="image" src="https://github.com/user-attachments/assets/bbbd5a41-1b5f-4171-a158-fa9a4a3def5c" />
 
+
 <img width="1030" height="455" alt="image" src="https://github.com/user-attachments/assets/7ac91c2d-dac7-4266-9181-f6283c08d31d" />
 
 
-En la primer anterior, con la habitación vacía, el indicador de movimiento queda todo el tiempo por encima de su umbral y el de forma salta de golpe entre dos niveles (0,55 y 0,09) sin que haya nadie. En la segunda imagen, con una persona caminando, el indicador de forma toma el mismo valor (0,55) que tenía con la habitación vacía, por lo que no permite distinguir entre ambas situaciones.
+En la primer imagen, con la habitación vacía, el indicador de movimiento queda todo el tiempo por encima de su umbral y el de forma salta de golpe entre dos niveles (0,55 y 0,09) sin que haya nadie. En la segunda imagen, con una persona caminando, el indicador de forma toma el mismo valor (0,55) que tenía con la habitación vacía, por lo que no permite distinguir entre ambas situaciones.
 
 Para diagnosticarlo, se agregó al firmware un registro de los tipos de paquete recibidos. Se observó que el iPhone cambia constantemente la velocidad de transmisión (MCS) paquete a paquete, y que los paquetes llegan con amplitudes y perfiles distintos según esa velocidad. El sistema interpreta esos cambios como si fueran producidos por una persona. Filtrar los paquetes por velocidad mejoró solo parcialmente el resultado, mejoro el indicador de movimiento pero no el de forma.
 
