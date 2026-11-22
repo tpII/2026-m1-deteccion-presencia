@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 constexpr uint8_t PIR_PIN = 27;
-constexpr unsigned long SAMPLE_INTERVAL_MS = 500;
+constexpr unsigned long SAMPLE_INTERVAL_MS = 100; //antes era 500ms, se modifica a 100 para igualarlo al del csi.
 constexpr unsigned long RECONNECT_INTERVAL_MS = 5000;
 
 constexpr char WIFI_SSID[] = "Iphone de Emiliano";

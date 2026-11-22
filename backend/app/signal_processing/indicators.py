@@ -6,8 +6,8 @@ import numpy as np
 
 WINDOW_SECONDS = 4.0
 MIN_WINDOW_SAMPLES = 5
-THRESHOLD_SIGMAS = 3.0
-MIN_THRESHOLD_RATIO = 1.3
+THRESHOLD_SIGMAS = 5 #es el "k". antes era 3.0, definimos 5 porque daba mejores resultados
+MIN_THRESHOLD_RATIO = 1.3 #es el "m"
 
 
 def turbulence(amplitudes: np.ndarray) -> float:
