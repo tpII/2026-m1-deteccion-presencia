@@ -154,3 +154,17 @@ Es requisito que la computadora donde corren el broker MQTT y el backend esté c
 - Se reorganizó la vista conjunta de PIR y CSI para consultar en una misma pantalla la señal del PIR, los indicadores de movimiento y forma del canal, la amplitud media de las subportadoras y los mapas de calor de ambiente vacío, caminando y sentado quieto.
 - El backend recibe las muestras por MQTT, calcula los indicadores y la detección de presencia de CSI, y guarda automáticamente las lecturas y los resultados en SQLite. También se guarda cada perfil de calibración de CSI con su fecha, hora y ambiente.
 - Se incorporaron botones para registrar lo observado durante la prueba, con ambiente y hora con milisegundos. Las marcas se vinculan con las muestras siguientes para identificar falsos positivos y falsos negativos por período de calibración.
+
+## 22/11 _ Problemas con el iPhone como punto de acceso (Caso 2)
+
+Al repetir las pruebas del Caso 2 usando un iPhone como punto de acceso, la detección por CSI funcionó mal. Con la habitación vacía indicaba presencia, y una vez que detectaba a una persona, no volvía a ausencia aunque la habitación quedara vacía. Los umbrales de calibración salieron hasta 10 veces más altos que en las pruebas con router y variaban mucho entre una calibración y otra.
+
+<img width="1107" height="498" alt="image" src="https://github.com/user-attachments/assets/bbbd5a41-1b5f-4171-a158-fa9a4a3def5c" />
+
+<img width="1030" height="455" alt="image" src="https://github.com/user-attachments/assets/7ac91c2d-dac7-4266-9181-f6283c08d31d" />
+
+
+En la primer anterior, con la habitación vacía, el indicador de movimiento queda todo el tiempo por encima de su umbral y el de forma salta de golpe entre dos niveles (0,55 y 0,09) sin que haya nadie. En la segunda imagen, con una persona caminando, el indicador de forma toma el mismo valor (0,55) que tenía con la habitación vacía, por lo que no permite distinguir entre ambas situaciones.
+
+Para diagnosticarlo, se agregó al firmware un registro de los tipos de paquete recibidos. Se observó que el iPhone cambia constantemente la velocidad de transmisión (MCS) paquete a paquete, y que los paquetes llegan con amplitudes y perfiles distintos según esa velocidad. El sistema interpreta esos cambios como si fueran producidos por una persona. Filtrar los paquetes por velocidad mejoró solo parcialmente el resultado, mejoro el indicador de movimiento pero no el de forma.
+
