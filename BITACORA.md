@@ -169,3 +169,39 @@ En la primer imagen, con la habitación vacía, el indicador de movimiento queda
 
 Para diagnosticarlo, se agregó al firmware un registro de los tipos de paquete recibidos. Se observó que el iPhone cambia constantemente la velocidad de transmisión (MCS) paquete a paquete, y que los paquetes llegan con amplitudes y perfiles distintos según esa velocidad. El sistema interpreta esos cambios como si fueran producidos por una persona. Filtrar los paquetes por velocidad mejoró solo parcialmente el resultado, mejoro el indicador de movimiento pero no el de forma.
 
+
+## 23/11 — Pruebas
+
+Se realizaron distintas pruebas con el fin de comparar los dos métodos de detección a la vez, realizando distintas situaciones.
+
+Aclaración: En todas las pruebas se uso el router wifi como acceso point para el metodo del csi.
+
+La zona de medición fue configurada de la siguiente forma (imagen explicativa para que se entiendan los videos):
+
+<img width="840" height="525" alt="imagen zona de medicion drawio" src="https://github.com/user-attachments/assets/4a0bb392-2e8e-40f0-a4d5-4b933f49e257" />
+
+
+Las pruebas realizadas fueron las siguientes (videos en https://drive.google.com/drive/folders/1RMSU0koLPMjxaEGXVrOkOLzCYzQEMD0H?usp=drive_link ):
+
+Prueba 1: pasar caminando por la zona e irme.
+Los dos metodos detectaron correctamente. Es notorio que si venis caminando desde lejos sobre la linea de vision del PIR, el PIR detecta antes, mientras que el csi detecta recien cuando te acercas al router o esp correspondientes.
+
+Prueba 2: acercarme a dejar un objeto en la zona de medicion e irme.
+Esta prueba se repitio dos veces:
+- La primera vez se dejo una silla en la zona de medicion. Mientras estoy dejando la silla me detectan los dos, al dejar la silla e irme el PIR deja de detectar movimiento, mientras que el csi continua detectando presencia. Este resultado es esperable porque esa silla no estaba cuando se hizo la calibración inicial, por lo que llevarla a la zona de medicion distorsiona las ondas csi y esto se ve reflejado en el cambio de los indicadores.
+- La segunda vez se probó un objeto mas grande, un sillon. Ocurrió lo mismo, el csi detecta el objeto en la zona (no estaba cuando se hizo la calibracion), mientras que el PIR no lo detecta.
+
+Prueba 3: ir a la zona de medicion, sentarme y quedarme quieto.
+Despues de unos segundos, el PIR deja de detectar movimiento mientras que el csi continua detectando presencia.
+
+Prueba 4: Prender un ventilador apuntando a la zona de medición.
+Se observaron falsos positivos en el método del CSI.
+
+Prueba 5: caminar por una habitacion de al lado a la habitacion medida (con una pared que separa). Ninguno de los métodos pudo detectar movimiento o presencia en la habitacion de al lado. 
+
+Prueba 6: revolear un objeto a la zona de medicion.
+Esta prueba se repitió 3 veces y se obtuvo diferentes resultados:
+- La primera vez, el objeto fue arrojado mas cerca del sensor PIR, pasando justo por adelante del mismo, por lo que el PIR lo detecto por uno o dos segundos, luego el CSI tambien lo detectó por unos segundos y despues lo dejo de detectar.
+- La segunda vez, el objeto fue arrojado en el medio de la zona de medicion. El PIR no logro detectarlo, aunque paso por su linea de vision, mientras que el CSI si lo detecto continuamente desde que el objeto toco el piso.
+- La tercera vez el objeto fue arrojado en el medio nuevamente. Mismos resultados que en el segundo intento de la prueba. 
+
