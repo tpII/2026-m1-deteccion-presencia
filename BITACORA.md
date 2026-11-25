@@ -244,8 +244,7 @@ Para hacer el procesamiento de los datos, se buscó en las siguientes tablas de 
 Resultados:
 
 Se graficó una linea de tiempo con la detección de cada sensor e indicadores del CSI durante los 6 minutos de prueba.
-
-<img width="1444" height="840" alt="image" src="https://github.com/user-attachments/assets/6ccc198b-08a4-416e-a993-b625906f766a" />
+<img width="2200" height="1140" alt="linea_de_tiempo" src="https://github.com/user-attachments/assets/ba276196-ce25-4985-9169-874c04d5aaee" />
 
 Se observa que con la persona caminando, ambos sensores detectaron la presencia casi todo el tiempo. Con la persona quieta, el PIR la perdió durante gran parte del tiempo, mientras que el CSI la siguió detectando. En ese tramo, el indicador de movimiento del CSI cae por debajo de su umbral, y es el indicador de forma el que mantiene la detección (esto indica que no hay movimiento pero la señal CSI se distorsiona por lo que se detecta presencia).
 
@@ -273,7 +272,8 @@ A partir de estos valores se calculan:
 - **Especificidad** = VN / (VN + FP): de todo el tiempo en que no hubo nadie, qué porcentaje el sensor indicó correctamente ausencia.
 - **Exactitud** = (VP + VN) / total: qué porcentaje del tiempo total el sensor acertó.
 
-<img width="1568" height="679" alt="image" src="https://github.com/user-attachments/assets/f8912328-adfb-4bcc-b51c-4cdd149ea6b3" />
+<img width="1800" height="681" alt="matrices_confusion" src="https://github.com/user-attachments/assets/d4ae5eb0-b5e4-488b-96fd-a2920c1088a0" />
+
 
 En cuanto a los tiempos de respuesta, al entrar a la habitación el PIR detectó entre 4 y 6 s antes que el CSI. La causa principal es porque durante toda la prueba, la persona ingresó por el campo de visión del PIR, que la detecta a varios metros de distancia, mientras que el CSI es más sensible cerca de la línea entre el router y el ESP32, por lo que recién detectó al acercarse a esa zona. A esto se suma que el CSI calcula sus indicadores sobre una ventana de 4 s, lo que agrega una pequeña demora. Por lo tanto, esta diferencia depende de la ubicación de los equipos y del recorrido, y no solo del tiempo de respuesta de cada sensor.
 
