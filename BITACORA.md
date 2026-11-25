@@ -219,7 +219,11 @@ Con el router Wi-Fi como emisor, el PIR y el CSI funcionando en simultáneo y el
 5. Persona fuera de la habitación (60 seg).
 6. Persona caminando nuevamente (60 seg).
 
-En cada cambio de situación se marcó desde la web los indicadores agregados recientemente (presente o ausente) en los paneles de ambos sensores. Cada vez que se presiona uno de los botones indicadores, la web envía la marca al backend, que la guarda como una nueva fila en la tabla observations de la base de datos, con estos datos:
+En cada cambio de situación se marcó desde la web los indicadores agregados recientemente (presente o ausente) en los paneles de ambos sensores:
+
+<img width="915" height="372" alt="imagen_indicadores drawio" src="https://github.com/user-attachments/assets/fe0dc8c9-1a71-4995-9e58-4ab782631820" />
+
+Cada vez que se presiona uno de los botones indicadores, la web envía la marca al backend, que la guarda como una nueva fila en la tabla observations de la base de datos, con estos datos:
 
 - el sensor al que corresponde (case_id: PIR o CSI);
 - la situación marcada (scenario: por ejemplo, presente o ausente);
