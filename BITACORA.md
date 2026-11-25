@@ -205,3 +205,71 @@ Esta prueba se repitió 3 veces y se obtuvo diferentes resultados:
 - La segunda vez, el objeto fue arrojado en el medio de la zona de medicion. El PIR no logro detectarlo, aunque paso por su linea de vision, mientras que el CSI si lo detecto continuamente desde que el objeto toco el piso.
 - La tercera vez el objeto fue arrojado en el medio nuevamente. Mismos resultados que en el segundo intento de la prueba. 
 
+
+## 25/11 — Procesamiento de datos obtenidos en prueba conjunta PIR + CSI 
+
+Se realizaron pruebas para almacenar datos en la BD y posteriormente procesarlos.
+
+Con el router Wi-Fi como emisor, el PIR y el CSI funcionando en simultáneo y el CSI calibrado previamente con la habitación vacía, se realizó la siguiente secuencia, de unos 6 minutos en total:
+
+1. Habitación vacía (60 seg).
+2. Persona caminando por la zona (60 seg).
+3. Persona sentada quieta (60 seg).
+4. Persona quieta fuera del campo de visión del PIR (60 seg).
+5. Persona fuera de la habitación (60 seg).
+6. Persona caminando nuevamente (60 seg).
+
+En cada cambio de situación se marcó desde la web los indicadores agregados recientemente (presente o ausente) en los paneles de ambos sensores. Cada vez que se presiona uno de los botones indicadores, la web envía la marca al backend, que la guarda como una nueva fila en la tabla observations de la base de datos, con estos datos:
+
+- el sensor al que corresponde (case_id: PIR o CSI);
+- la situación marcada (scenario: por ejemplo, presente o ausente);
+- el ambiente de la prueba (environment);
+- la hora de la marca (observed_at);
+- un identificador de la ejecución del backend (run_id).
+
+Para finalizar la prueba luego del paso 6, se precionó el botón "Terminar observación" que guarda una fila sin situación, indicando el fin de la observación. Cada marca se aplica a todas las muestras de ese sensor que llegan después de su hora, hasta la marca siguiente. Además, se anotó a mano la hora de inicio de cada situación, para distinguir los tramos que comparten la misma marca, como "caminando" y "sentado quieto", que se registran ambos como presencia.
+
+Para hacer el procesamiento de los datos, se buscó en las siguientes tablas de la base de datos SQLite:
+
+- telemetry: cada muestra recibida de ambos sensores, con su hora y si detectó presencia. En el CSI incluye además los indicadores de movimiento y forma. En la prueba se registraron unas 10 muestras por segundo del PIR y unas 20 del CSI.
+- observations: las marcas de presencia real registradas desde la web.
+- csi_calibration_events: la calibración del CSI utilizada (umbral de movimiento 0,041 y de forma 0,077).
+
+*Aclaración: si bien el ping al router se mantuvo cada 100 ms (10 por segundo), el ESP32 obtiene el CSI de todos los paquetes que recibe del router. Además de las respuestas al ping, recibe las confirmaciones de la conexión MQTT por cada mensaje que publica, lo que duplica la cantidad de muestras (20 por segundo). Esto no favorece al CSI en la comparación, porque los resultados se expresan como porcentaje del tiempo y no como cantidad de muestras, es decir que cada sensor se evalúa con sus propias muestras sobre los mismos intervalos de tiempo y ese porcentaje no depende de cuántas muestras por segundo tome cada uno.
+
+Resultados:
+
+Se graficó una linea de tiempo con la detección de cada sensor e indicadores del CSI durante los 6 minutos de prueba.
+
+<img width="1444" height="840" alt="image" src="https://github.com/user-attachments/assets/6ccc198b-08a4-416e-a993-b625906f766a" />
+
+Se observa que con la persona caminando, ambos sensores detectaron la presencia casi todo el tiempo. Con la persona quieta, el PIR la perdió durante gran parte del tiempo, mientras que el CSI la siguió detectando. En ese tramo, el indicador de movimiento del CSI cae por debajo de su umbral, y es el indicador de forma el que mantiene la detección (esto indica que no hay movimiento pero la señal CSI se distorsiona por lo que se detecta presencia).
+
+Se calculó el porcentaje del tiempo con presencia detectada en cada situación:
+
+| Situación | Real | PIR | CSI |
+|---|---|---|---|
+| Habitación vacía | Ausente | 0 % | 0 % |
+| Caminando | Presente | 96 % | 99 % |
+| Sentado quieto | Presente | 56 % | 100 % |
+| Quieto fuera del PIR | Presente | 37 % | 100 % |
+| Fuera de la habitación | Ausente | 6 % | 10 % |
+| Caminando | Presente | 100 % | 98 % |
+
+Por último, se calcularon las respectivas matrices de confusión del PIR y del CSI. Para realizar este calculo, cada muestra se clasifica según la presencia real (marcada desde la web) y la presencia detectada por el sensor:
+
+- **Verdadero positivo (VP):** había alguien y el sensor lo detectó.
+- **Falso negativo (FN):** había alguien y el sensor no lo detectó.
+- **Falso positivo (FP):** no había nadie y el sensor detectó presencia.
+- **Verdadero negativo (VN):** no había nadie y el sensor no detectó presencia.
+
+A partir de estos valores se calculan:
+
+- **Sensibilidad** = VP / (VP + FN): de todo el tiempo en que hubo alguien, qué porcentaje lo detectó el sensor.
+- **Especificidad** = VN / (VN + FP): de todo el tiempo en que no hubo nadie, qué porcentaje el sensor indicó correctamente ausencia.
+- **Exactitud** = (VP + VN) / total: qué porcentaje del tiempo total el sensor acertó.
+
+<img width="1568" height="679" alt="image" src="https://github.com/user-attachments/assets/f8912328-adfb-4bcc-b51c-4cdd149ea6b3" />
+
+En cuanto a los tiempos de respuesta, al entrar a la habitación el PIR detectó entre 4 y 6 s antes que el CSI. La causa principal es porque durante toda la prueba, la persona ingresó por el campo de visión del PIR, que la detecta a varios metros de distancia, mientras que el CSI es más sensible cerca de la línea entre el router y el ESP32, por lo que recién detectó al acercarse a esa zona. A esto se suma que el CSI calcula sus indicadores sobre una ventana de 4 s, lo que agrega una pequeña demora. Por lo tanto, esta diferencia depende de la ubicación de los equipos y del recorrido, y no solo del tiempo de respuesta de cada sensor.
+
