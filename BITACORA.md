@@ -239,7 +239,8 @@ Para hacer el procesamiento de los datos, se buscó en las siguientes tablas de 
 - observations: las marcas de presencia real registradas desde la web.
 - csi_calibration_events: la calibración del CSI utilizada (umbral de movimiento 0,041 y de forma 0,077).
 
-*Aclaración: si bien el ping al router se mantuvo cada 100 ms (10 por segundo), el ESP32 obtiene el CSI de todos los paquetes que recibe del router. Además de las respuestas al ping, recibe las confirmaciones de la conexión MQTT por cada mensaje que publica, lo que duplica la cantidad de muestras (20 por segundo). Esto no favorece al CSI en la comparación, porque los resultados se expresan como porcentaje del tiempo y no como cantidad de muestras, es decir que cada sensor se evalúa con sus propias muestras sobre los mismos intervalos de tiempo y ese porcentaje no depende de cuántas muestras por segundo tome cada uno.
+*Aclaración: si bien el ping al router se mantuvo cada 100 ms (10 por segundo), el ESP32 obtiene el CSI de todos los paquetes que recibe del router. Además de las respuestas al ping, recibe las confirmaciones de la conexión MQTT por cada mensaje que publica, lo que duplica la cantidad de muestras (20 por segundo). Esto no favorece al CSI en la comparación, porque resultados no se expresan como cantidades absolutas de muestras, sino como proporción, es deicr, muestras que detectaron presencia sobre el total de muestras de cada sensor en ese tramo. Como las muestras llegan distribuidas de forma pareja en el tiempo, esa proporción equivale al porcentaje del tiempo con presencia detectada, independientemente de si el sensor entrega 10 o 20 muestras por segundo.
+
 
 Resultados:
 
