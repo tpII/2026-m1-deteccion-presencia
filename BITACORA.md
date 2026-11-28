@@ -293,7 +293,7 @@ Se implementó, en el script de análisis, una grilla temporal común de 500 ms.
 <img width="1880" height="751" alt="matrices_confusion_grilla" src="https://github.com/user-attachments/assets/6f5860e2-8df5-41c9-8dad-54c1a4f6bb0d" />
 
 
-Los resultados obtenidos con la grilla común son casi iguales a los del análisis anterior, las métricas variaron menos de un punto porcentual (por ejemplo, la sensibilidad del PIR pasó de 72 % a 71,8 % y la del CSI de 99 % a 99,8 %). Esto indicaria que la diferencia en la cantidad de muestras por segundo de cada método no había sesgado la comparación inicial, ya que en ambos casos los resultados reflejan la proporción del tiempo en que cada sensor detectó presencia.
+Los resultados obtenidos con la grilla común son muy similares a los del análisis anterior, por ejemplo, la sensibilidad del PIR se mantuvo en 72 % y la del CSI pasó de 99 % a 100 %. La mayor diferencia se dio en la especificidad del PIR, que pasó de 97 % a 99 %. Esto indicaria que la diferencia en la cantidad de muestras por segundo de cada método no había sesgado la comparación inicial, ya que en ambos casos los resultados reflejan la proporción del tiempo en que cada sensor detectó presencia.
 De igual manera, este nuevo procesamiento permite que ambos métodos se evalúen sobre los mismos instantes y con el mismo N, por lo que la comparación es equitativa por construcción y no depende de la frecuencia con la que cada sensor entrega sus datos. 
 
 
