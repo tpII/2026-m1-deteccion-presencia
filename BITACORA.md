@@ -325,10 +325,6 @@ Los datos se procesaron igual que en la prueba con router, con la grilla tempora
 
 <img width="2200" height="1237" alt="linea_de_tiempo_grilla_con_iphone" src="https://github.com/user-attachments/assets/24a588fd-408a-426f-8e59-628c0a58115d" />
 
-<img width="1880" height="758" alt="matrices_confusion_grilla_con_iphone" src="https://github.com/user-attachments/assets/df81b2ee-5c25-430e-893b-7a7a49df7841" />
-
-
-
 
 | Situación | Real | PIR | CSI |
 |---|---|---|---|
@@ -336,6 +332,11 @@ Los datos se procesaron igual que en la prueba con router, con la grilla tempora
 | Caminando | Presente | 70/70 (100 %) | 46/70 (66 %) |
 | Sentado al costado del PIR | Presente | 7/118 (6 %) | 44/118 (37 %) |
 | Afuera | Ausente | 0/76 (0 %) | 65/76 (86 %) |
+
+<img width="1880" height="758" alt="matrices_confusion_grilla_con_iphone" src="https://github.com/user-attachments/assets/df81b2ee-5c25-430e-893b-7a7a49df7841" />
+
+
+
 
 El CSI con el iPhone no distingue entre presencia y ausencia. Con la habitación vacía indicó presencia el 86 % del tiempo, y con la persona caminando, solo el 66 %. Su exactitud (33 %) es peor que la de una decisión al azar.
 El indicador de movimiento queda inutilizado, la calibración fijó su umbral en 0,237, unas 6 veces más alto que con el router, y el indicador nunca lo alcanzó (osciló alrededor de 0,12), estuviera o no la persona. Todas las detecciones del CSI vinieron del indicador de forma, que oscila alrededor de su umbral (0,364) sin relación con la presencia real.
