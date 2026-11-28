@@ -278,3 +278,31 @@ A partir de estos valores se calculan:
 
 En cuanto a los tiempos de respuesta, al entrar a la habitación el PIR detectó entre 4 y 6 s antes que el CSI. La causa principal es porque durante toda la prueba, la persona ingresó por el campo de visión del PIR, que la detecta a varios metros de distancia, mientras que el CSI es más sensible cerca de la línea entre el router y el ESP32, por lo que recién detectó al acercarse a esa zona. A esto se suma que el CSI calcula sus indicadores sobre una ventana de 4 s, lo que agrega una pequeña demora. Por lo tanto, esta diferencia depende de la ubicación de los equipos y del recorrido, y no solo del tiempo de respuesta de cada sensor.
 
+
+## 28/11 — Rehaciendo el procesamiento de datos en prueba conjunta PIR + CSI 
+
+En el primer análisis, cada sensor se evaluó con sus propias muestras, tal como llegaban a la base de datos. Pero cada método entrega datos a un ritmo distinto, según su funcionamiento interno. Por un lado, el PIR publica una lectura de su pin cada 100 ms (10 por segundo). Por otro lado, el CSI genera una decisión por cada paquete recibido del router (20 paquetes por segundo). Así, las matrices de confusión de cada sensor se armaban con unidades distintas y con una cantidad de casos diferente ( 3.500 muestras para el PIR y más de 7.000 para el CSI), lo que genera una comparación no equitativa entre ambos métodos.
+
+Para abordar esta problemática de comparación no equitativa se optó por dejar que cada método tenga sus tiempos de deteccion internos propios durante las mediciones en vivo, y que el muestreo equitativo se realice durante el post procesamiento de los datos de la BD.
+Se implementó, en el script de análisis, una grilla temporal común de 500 ms. Se tomó un instante cada 500 ms a lo largo de la prueba, lo que dio 698
+ instantes en total. En cada uno se tomó el último dato de cada metodo de sensado recibido antes de ese momento (tabla telemetry), que representa su estado vigente, y se lo comparó con la presencia real registrada para ese instante (tabla observations). Esto equivale a que ambos sistemas decidan en los mismos instantes, como lo haría un reloj común en vivo. De esta forma, ambos métodos quedaron evaluados sobre los mismos 698 instantes, con el mismo N en las dos matrices de confusión.
+
+<img width="2200" height="1251" alt="linea_de_tiempo_grilla" src="https://github.com/user-attachments/assets/12b69148-c5df-4781-b27f-4faeb9559841" />
+ 
+
+<img width="1880" height="751" alt="matrices_confusion_grilla" src="https://github.com/user-attachments/assets/6f5860e2-8df5-41c9-8dad-54c1a4f6bb0d" />
+
+
+Los resultados obtenidos con la grilla común son casi iguales a los del análisis anterior, las métricas variaron menos de un punto porcentual (por ejemplo, la sensibilidad del PIR pasó de 72 % a 71,8 % y la del CSI de 99 % a 99,8 %). Esto indicaria que la diferencia en la cantidad de muestras por segundo de cada método no había sesgado la comparación inicial, ya que en ambos casos los resultados reflejan la proporción del tiempo en que cada sensor detectó presencia.
+De igual manera, este nuevo procesamiento permite que ambos métodos se evalúen sobre los mismos instantes y con el mismo N, por lo que la comparación es equitativa por construcción y no depende de la frecuencia con la que cada sensor entrega sus datos. 
+
+
+Las latencias de entrada y salida se calcularon aparte, con las horas originales de la base de datos, para que la grilla no les agregue demora.
+
+| Evento | PIR | CSI | Diferencia (CSI − PIR) |
+|---|---|---|---|
+| Entrada 1 | 10:42:53,2 | 10:42:57,6 | CSI 4,4 s después |
+| Salida | 10:46:32,5 | 10:46:21,2 | CSI 11,3 s antes |
+| Entrada 2 | 10:47:30,2 | 10:47:36,4 | CSI 6,1 s después |
+
+Al entrar, el PIR detecta antes, y al salir, el CSI vuelve antes a ausencia. El PIR tarda 11 s más. 
