@@ -322,10 +322,10 @@ En cada cambio de situación se marcó la presencia real desde la web, en los pa
 
 Los datos se procesaron igual que en la prueba con router, con la grilla temporal común de 500 ms. Se evaluaron 364 instantes para ambos sensores.
 
-<img width="2200" height="1320" alt="linea_de_tiempo_grilla_con_iphone" src="https://github.com/user-attachments/assets/e6557439-54b5-423a-abb3-59eabc245e4f" />
+<img width="1880" height="758" alt="matrices_confusion_grilla_con_iphone" src="https://github.com/user-attachments/assets/df81b2ee-5c25-430e-893b-7a7a49df7841" />
 
+<img width="2200" height="1237" alt="linea_de_tiempo_grilla_con_iphone" src="https://github.com/user-attachments/assets/24a588fd-408a-426f-8e59-628c0a58115d" />
 
-<img width="1880" height="819" alt="matrices_confusion_grilla_con_iphone" src="https://github.com/user-attachments/assets/6f99a1b1-8224-4359-a4ce-4852dbcd5a02" />
 
 
 | Situación | Real | PIR | CSI |
