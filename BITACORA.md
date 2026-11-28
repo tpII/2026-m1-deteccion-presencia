@@ -306,3 +306,35 @@ Las latencias de entrada y salida se calcularon aparte, con las horas originales
 | Entrada 2 | 10:47:30,2 | 10:47:36,4 | CSI 6,1 s después |
 
 Al entrar, el PIR detecta antes, y al salir, el CSI vuelve antes a ausencia. El PIR tarda 11 s más. 
+
+
+## 28/11 — Obtención de métricas usando iPhone como access point en el método del CSI
+
+Con el fin de documentar las métricas del funcionamiento del método CSI usando el iPhone como punto de acceso, se realizó una prueba conjunta con el PIR, en el mismo ambiente y con el mismo montaje que la prueba con router, reemplazando el router por el iPhone. Antes de comenzar, se calibró el CSI con la habitación vacía. La prueba duró unos 5 minutos, con la siguiente secuencia:
+
+1. Habitación vacía (60 seg).
+2. Persona caminando por la zona (60 seg).
+3. Persona quieta fuera del campo de visión del PIR (80 seg).
+4. Persona fuera de la habitación (60 seg).
+5. Persona caminando nuevamente (60 seg).
+
+En cada cambio de situación se marcó la presencia real desde la web, en los paneles de ambos sensores.
+
+Los datos se procesaron igual que en la prueba con router, con la grilla temporal común de 500 ms. Se evaluaron 364 instantes para ambos sensores.
+
+<img width="2200" height="1320" alt="linea_de_tiempo_grilla_con_iphone" src="https://github.com/user-attachments/assets/e6557439-54b5-423a-abb3-59eabc245e4f" />
+
+
+<img width="1880" height="819" alt="matrices_confusion_grilla_con_iphone" src="https://github.com/user-attachments/assets/6f99a1b1-8224-4359-a4ce-4852dbcd5a02" />
+
+
+| Situación | Real | PIR | CSI |
+|---|---|---|---|
+| Vacío | Ausente | 0/63 (0 %) | 54/63 (86 %) |
+| Caminando | Presente | 70/70 (100 %) | 46/70 (66 %) |
+| Sentado al costado del PIR | Presente | 7/118 (6 %) | 44/118 (37 %) |
+| Afuera | Ausente | 0/76 (0 %) | 65/76 (86 %) |
+
+El CSI con el iPhone no distingue entre presencia y ausencia. Con la habitación vacía indicó presencia el 86 % del tiempo, y con la persona caminando, solo el 66 %. Su exactitud (33 %) es peor que la de una decisión al azar.
+El indicador de movimiento queda inutilizado, la calibración fijó su umbral en 0,237, unas 6 veces más alto que con el router, y el indicador nunca lo alcanzó (osciló alrededor de 0,12), estuviera o no la persona. Todas las detecciones del CSI vinieron del indicador de forma, que oscila alrededor de su umbral (0,364) sin relación con la presencia real.
+El PIR funcionó como siempre, detectó al caminar y no tuvo falsas alarmas, pero perdió a la persona sentada (6 %), porque estaba quieta y al costado de su campo de visión.
