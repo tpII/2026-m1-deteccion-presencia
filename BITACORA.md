@@ -320,11 +320,13 @@ Con el fin de documentar las métricas del funcionamiento del método CSI usando
 
 En cada cambio de situación se marcó la presencia real desde la web, en los paneles de ambos sensores.
 
-Los datos se procesaron igual que en la prueba con router, con la grilla temporal común de 500 ms. Se evaluaron 364 instantes para ambos sensores.
+Los datos se procesaron igual que en la prueba con router, con la grilla temporal común de 500 ms. Se obtuvieron 532 instantes, de los cuales se evaluaron solo 364 para ambos sensores. Los instante eliminados (no usados para el procesamiento de datos) se deben a las transiciones (8 s antes y después de cada cambio de marca), es decir, como las marcas se hacen a mano, la persona puede empezar a entrar o salir unos segundos antes o después de marcar. Evaluar esos instantes contaría como error una demora del operador y no del sensor. Tambien, si en un instante algún sensor no había enviado datos en el último segundo, no se puede saber su estado actual, por lo que ese instante no se evalúa para ninguno de los dos.
+
+
+<img width="2200" height="1237" alt="linea_de_tiempo_grilla_con_iphone" src="https://github.com/user-attachments/assets/24a588fd-408a-426f-8e59-628c0a58115d" />
 
 <img width="1880" height="758" alt="matrices_confusion_grilla_con_iphone" src="https://github.com/user-attachments/assets/df81b2ee-5c25-430e-893b-7a7a49df7841" />
 
-<img width="2200" height="1237" alt="linea_de_tiempo_grilla_con_iphone" src="https://github.com/user-attachments/assets/24a588fd-408a-426f-8e59-628c0a58115d" />
 
 
 
